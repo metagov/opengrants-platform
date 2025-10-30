@@ -11,6 +11,10 @@ python-dotenv
 polars
 pyarrow>=8.0.0
 
+# Linters
+ruff
+black
+mypy
 
 # Optional / Dev
 pandas
