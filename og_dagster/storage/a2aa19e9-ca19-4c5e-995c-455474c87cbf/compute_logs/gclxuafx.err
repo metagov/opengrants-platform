@@ -1,0 +1,49 @@
+2025-10-30 23:04:12 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - 16387 - LOGS_CAPTURED - Started capturing logs in process (pid: 16387).
+2025-10-30 23:04:12 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - 16387 - fetch_giveth_data - STEP_START - Started execution of step "fetch_giveth_data".
+2025-10-30 23:04:12 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - 🚀 Fetching Giveth data...
+2025-10-30 23:04:13 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 16 QF rounds.
+2025-10-30 23:04:15 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 20 (skip=50).
+2025-10-30 23:04:17 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 5 projects from round 20 (skip=100).
+2025-10-30 23:04:20 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 21 (skip=50).
+2025-10-30 23:04:22 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 15 (skip=50).
+2025-10-30 23:04:25 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 2 (skip=50).
+2025-10-30 23:04:29 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 4 (skip=50).
+2025-10-30 23:04:31 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 4 (skip=100).
+2025-10-30 23:04:33 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 4 (skip=150).
+2025-10-30 23:04:39 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 5 (skip=50).
+2025-10-30 23:04:41 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 5 (skip=100).
+2025-10-30 23:04:43 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 6 (skip=50).
+2025-10-30 23:04:44 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 6 (skip=100).
+2025-10-30 23:04:45 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 6 (skip=150).
+2025-10-30 23:04:47 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 6 (skip=200).
+2025-10-30 23:04:50 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 9 projects from round 7 (skip=50).
+2025-10-30 23:04:54 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 8 (skip=50).
+2025-10-30 23:04:59 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 9 (skip=50).
+2025-10-30 23:05:01 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 9 (skip=100).
+2025-10-30 23:05:06 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 10 (skip=50).
+2025-10-30 23:05:08 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 10 (skip=100).
+2025-10-30 23:05:19 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 11 (skip=50).
+2025-10-30 23:05:21 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 11 (skip=100).
+2025-10-30 23:05:23 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 12 (skip=50).
+2025-10-30 23:05:25 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 12 (skip=100).
+2025-10-30 23:05:27 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 12 (skip=150).
+2025-10-30 23:05:30 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 13 (skip=50).
+2025-10-30 23:05:32 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 13 (skip=100).
+2025-10-30 23:05:34 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 13 (skip=150).
+2025-10-30 23:05:38 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 14 (skip=50).
+2025-10-30 23:05:40 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 10 projects from round 14 (skip=100).
+2025-10-30 23:05:41 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 3 projects from round 14 (skip=150).
+2025-10-30 23:05:42 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Fetched 297 projects total.
+2025-10-30 23:05:42 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - 🧱 Writing Bronze layer tables to Postgres...
+2025-10-30 23:05:42 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - 🧱 Writing Bronze layer tables to Postgres...
+2025-10-30 23:05:43 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - ✅ Data loaded into bronze_giveth_qf_rounds and bronze_giveth_projects
+2025-10-30 23:05:43 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - 16387 - fetch_giveth_data - STEP_OUTPUT - Yielded output "bronze__giveth_qf_rounds" of type "Any". (Type check passed).
+2025-10-30 23:05:43 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Writing file at: /app/storage/bronze__giveth_qf_rounds using PickledObjectFilesystemIOManager...
+2025-10-30 23:05:43 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - 16387 - fetch_giveth_data - ASSET_MATERIALIZATION - Materialized value bronze__giveth_qf_rounds.
+2025-10-30 23:05:43 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - 16387 - fetch_giveth_data - HANDLED_OUTPUT - Handled output "bronze__giveth_qf_rounds" using IO manager "io_manager"
+2025-10-30 23:05:43 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - 16387 - fetch_giveth_data - STEP_OUTPUT - Yielded output "bronze__giveth_projects" of type "Any". (Type check passed).
+2025-10-30 23:05:43 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - Writing file at: /app/storage/bronze__giveth_projects using PickledObjectFilesystemIOManager...
+2025-10-30 23:05:43 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - 16387 - fetch_giveth_data - ASSET_MATERIALIZATION - Materialized value bronze__giveth_projects.
+2025-10-30 23:05:43 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - 16387 - fetch_giveth_data - HANDLED_OUTPUT - Handled output "bronze__giveth_projects" using IO manager "io_manager"
+2025-10-30 23:05:43 +0000 - dagster - INFO - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - fetch_giveth_data - ✅ Giveth data fetch and load complete.
+2025-10-30 23:05:43 +0000 - dagster - DEBUG - __ASSET_JOB - a2aa19e9-ca19-4c5e-995c-455474c87cbf - 16387 - fetch_giveth_data - STEP_SUCCESS - Finished execution of step "fetch_giveth_data" in 1m25s.

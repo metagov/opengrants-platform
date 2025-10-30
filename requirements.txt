@@ -1,0 +1,17 @@
+# Base
+dlt
+dagster
+dagster-webserver
+dbt-core
+dbt-postgres
+duckdb
+psycopg2-binary
+sqlalchemy
+python-dotenv
+polars
+pyarrow>=8.0.0
+
+
+# Optional / Dev
+pandas
+requests

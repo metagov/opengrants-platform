@@ -1,0 +1,4 @@
+# og_dagster/workspace.yaml
+load_from:
+  - python_file: 
+      relative_path: jobs/etl_giveth_job.py

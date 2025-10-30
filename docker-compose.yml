@@ -1,0 +1,61 @@
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: opengrants
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  dagster:
+    build:
+      context: .                 # build context = repo root
+      dockerfile: og_dagster/Dockerfile
+    container_name: dagster
+    restart: always
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./og_dagster:/app
+      - ./duckdb:/data/duckdb
+
+  dlt:
+    build: ./dlt_pipelines
+    container_name: dlt
+    restart: on-failure
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - ./dlt_pipelines:/app
+      - ./duckdb:/data/duckdb
+    command: ["python", "loaders/sample_loader.py"]
+
+  dbt:
+    build: ./dbt_project
+    container_name: dbt
+    restart: on-failure
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    volumes:
+      - ./dbt_project:/app
+      - ./duckdb:/data/duckdb
+    command: ["dbt", "run"]
+
+volumes:
+  postgres_data:
+  duckdb:
+    driver: local

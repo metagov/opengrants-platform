@@ -1,0 +1,72 @@
+2025-10-30 22:52:04 +0000 - dagster - DEBUG - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - 5647 - LOGS_CAPTURED - Started capturing logs in process (pid: 5647).
+2025-10-30 22:52:04 +0000 - dagster - DEBUG - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - 5647 - fetch_giveth_data - STEP_START - Started execution of step "fetch_giveth_data".
+2025-10-30 22:52:04 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - 🚀 Fetching Giveth data...
+2025-10-30 22:52:05 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 16 QF rounds.
+2025-10-30 22:52:07 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 20 (skip=50).
+2025-10-30 22:52:09 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 5 projects from round 20 (skip=100).
+2025-10-30 22:52:12 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 21 (skip=50).
+2025-10-30 22:52:14 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 15 (skip=50).
+2025-10-30 22:52:20 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 2 (skip=50).
+2025-10-30 22:52:24 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 4 (skip=50).
+2025-10-30 22:52:25 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 4 (skip=100).
+2025-10-30 22:52:27 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 4 (skip=150).
+2025-10-30 22:52:31 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 5 (skip=50).
+2025-10-30 22:52:33 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 5 (skip=100).
+2025-10-30 22:52:36 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 6 (skip=50).
+2025-10-30 22:52:37 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 6 (skip=100).
+2025-10-30 22:52:38 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 6 (skip=150).
+2025-10-30 22:52:40 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 6 (skip=200).
+2025-10-30 22:52:43 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 9 projects from round 7 (skip=50).
+2025-10-30 22:52:47 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 8 (skip=50).
+2025-10-30 22:52:51 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 9 (skip=50).
+2025-10-30 22:52:56 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 9 (skip=100).
+2025-10-30 22:53:00 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 10 (skip=50).
+2025-10-30 22:53:03 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 10 (skip=100).
+2025-10-30 22:53:07 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 11 (skip=50).
+2025-10-30 22:53:09 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 11 (skip=100).
+2025-10-30 22:53:10 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 12 (skip=50).
+2025-10-30 22:53:12 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 12 (skip=100).
+2025-10-30 22:53:14 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 12 (skip=150).
+2025-10-30 22:53:17 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 13 (skip=50).
+2025-10-30 22:53:19 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 13 (skip=100).
+2025-10-30 22:53:21 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 13 (skip=150).
+2025-10-30 22:53:25 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 14 (skip=50).
+2025-10-30 22:53:30 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 10 projects from round 14 (skip=100).
+2025-10-30 22:53:31 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 3 projects from round 14 (skip=150).
+2025-10-30 22:53:32 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - Fetched 297 projects total.
+2025-10-30 22:53:32 +0000 - dagster - INFO - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - fetch_giveth_data - 🧱 Writing Bronze layer tables to Postgres...
+2025-10-30 22:53:33 +0000 - dagster - ERROR - __ASSET_JOB - 7052c5ed-cd3e-4500-8d31-12c25e9056b3 - 5647 - fetch_giveth_data - STEP_FAILURE - Execution of step "fetch_giveth_data" failed.
+
+dagster._core.errors.DagsterExecutionStepExecutionError: Error occurred while executing op "fetch_giveth_data"::
+
+TypeError: Object of type Series is not JSON serializable
+
+Stack Trace:
+  File "/usr/local/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 57, in op_execution_error_boundary
+    yield
+  File "/usr/local/lib/python3.12/site-packages/dagster/_utils/__init__.py", line 392, in iterate_with_context
+    next_output = next(iterator)
+                  ^^^^^^^^^^^^^^
+  File "/app/ops/giveth_loader.py", line 150, in fetch_giveth_data
+    qf_rounds_df = sanitize_for_sql(qf_rounds_df)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/ops/giveth_loader.py", line 34, in sanitize_for_sql
+    df[col].map_elements(lambda x: json.dumps(x)).alias(col)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/polars/series/series.py", line 5813, in map_elements
+    self._s.map_elements(
+  File "/app/ops/giveth_loader.py", line 34, in <lambda>
+    df[col].map_elements(lambda x: json.dumps(x)).alias(col)
+                                   ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/json/__init__.py", line 231, in dumps
+    return _default_encoder.encode(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+
