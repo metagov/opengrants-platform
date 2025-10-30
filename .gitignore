@@ -20,3 +20,4 @@ og_dagster/history
 og_dagster/.telemetry
 og_dagster/.nux
 og_dagster/.logs_queue
+og_dagster/storage
