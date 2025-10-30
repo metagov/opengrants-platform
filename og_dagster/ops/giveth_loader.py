@@ -138,17 +138,38 @@ def fetch_giveth_data():
     """
 
     all_projects = []
+    PAGE_SIZE = 50
+    MAX_PAGES = 200  # safety cap (10 000 projects per round)
+
     for round_ in qf_rounds:
         rid = int(round_["id"])
         skip = 0
+        page = 0
         while True:
-            result = run_query(projects_query, {"qfRoundId": rid, "skip": skip, "take": 50})
+            result = run_query(
+                projects_query,
+                {"qfRoundId": rid, "skip": skip, "take": PAGE_SIZE}
+            )
             projects = result.get("allProjects", {}).get("projects", [])
+
             if not projects:
+                logger.info(f"✅ No more projects for round {rid} after skip={skip}.")
                 break
+
             all_projects.extend([flatten_dict(p) for p in projects])
-            skip += 50
-            logger.info(f"Fetched {len(projects)} projects from round {rid} (skip={skip}).")
+            fetched = len(projects)
+            logger.info(f"Fetched {fetched} projects from round {rid} (skip={skip}).")
+
+            # stop if fewer than PAGE_SIZE returned → last page
+            if fetched < PAGE_SIZE:
+                break
+
+            skip += PAGE_SIZE
+            page += 1
+            if page >= MAX_PAGES:
+                logger.warning(f"⚠️ Reached max page limit for round {rid}, stopping early.")
+                break
+
 
     projects_df = align_columns(all_projects)
     logger.info(f"Fetched {len(projects_df)} projects total.")
