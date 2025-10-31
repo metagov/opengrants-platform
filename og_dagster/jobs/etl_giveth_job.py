@@ -1,5 +1,5 @@
 from dagster import define_asset_job, AssetSelection, Definitions
-from ops.giveth_loader import fetch_giveth_data
+from assets.bronze.giveth import fetch_giveth_data
 
 # Define ETL job for Giveth bronze layer
 giveth_etl_job = define_asset_job(
