@@ -1,6 +1,4 @@
-# og_dagster/Dockerfile
 FROM python:3.12-slim
-
 WORKDIR /app
 
 # Copy shared requirements
