@@ -1,35 +1,42 @@
 import json
 import os
 import time
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 import polars as pl
 import requests
+import yaml
 from sqlalchemy import create_engine
-
 from dagster import AssetOut, Output, get_dagster_logger, multi_asset
 
 logger = get_dagster_logger()
 
-# ======================
+# ============================================================
 # DATABASE CONFIG
-# ======================
+# ============================================================
 POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
 POSTGRES_DB = os.getenv("POSTGRES_DB", "opengrants")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgres")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 
-DB_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+DB_URL = (
+    f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@"
+    f"{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+)
 engine = create_engine(DB_URL)
 
 ENDPOINT = "https://mainnet.serve.giveth.io/graphql"
+SCHEMA_MAP_DIR = Path("configs/schema_maps")
+SCHEMA_MAP_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ======================
+# ============================================================
 # HELPERS
-# ======================
+# ============================================================
 def _to_json_safe(x):
     if x is None:
         return None
@@ -76,9 +83,7 @@ def run_query(query, variables, retries=3, delay=5):
                 raise
 
 
-def flatten_dict(
-    d: dict[str, Any], parent_key: str = '', sep: str = '_'
-) -> dict[str, Any]:
+def flatten_dict(d: dict[str, Any], parent_key: str = "", sep: str = "_") -> dict[str, Any]:
     items = []
     for k, v in d.items():
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
@@ -90,14 +95,13 @@ def flatten_dict(
 
 
 def align_columns(data: list[dict]) -> pl.DataFrame:
-    """Safely aligns all dicts into a Polars DataFrame with consistent column types."""
+    """Safely aligns dicts into a Polars DataFrame with consistent column types."""
     if not data:
         return pl.DataFrame()
 
     all_keys = sorted(set().union(*(row.keys() for row in data)))
     aligned = [{key: row.get(key, None) for key in all_keys} for row in data]
 
-    # Ensure consistent string conversion to avoid schema inference errors
     safe_aligned = []
     for row in aligned:
         safe_row = {}
@@ -116,14 +120,64 @@ def align_columns(data: list[dict]) -> pl.DataFrame:
                     safe_row[k] = v
         safe_aligned.append(safe_row)
 
-    # Build dataframe with schema inference disabled
     return pl.DataFrame(safe_aligned, infer_schema_length=None)
 
 
+# ============================================================
+# SCHEMA AUTO-MAP GENERATION
+# ============================================================
+def _save_schema_yaml(df: pl.DataFrame, name: str):
+    """Compare schema to last version and write a draft YAML if changed."""
+    schema_snapshot = {col: str(df[col].dtype) for col in df.columns}
 
-# ======================
+    # Find last schema version
+    existing = sorted(SCHEMA_MAP_DIR.glob(f"daoip5_{name}_v*.yaml"))
+    last_schema = {}
+    if existing:
+        with open(existing[-1], "r") as f:
+            try:
+                last_schema = yaml.safe_load(f) or {}
+            except Exception:
+                last_schema = {}
+
+    old_cols = set(last_schema.get("detected_columns", {}).keys() if last_schema else [])
+    new_cols = set(schema_snapshot.keys())
+
+    added = list(new_cols - old_cols)
+    removed = list(old_cols - new_cols)
+
+    if added or removed:
+        version = f"v{len(existing) + 1}"
+        draft_path = SCHEMA_MAP_DIR / f"daoip5_{name}_{version}_draft.yaml"
+
+        schema_yaml = {
+            "version": version,
+            "source": "giveth",
+            "generated_at": datetime.utcnow().isoformat(),
+            "detected_columns": schema_snapshot,
+            "daoip5_mapping": {
+                "project": {},
+                "grant_pool": {},
+                "application": {},
+                "unmapped": added,
+            },
+            "changes": {"added": added, "removed": removed},
+        }
+
+        with open(draft_path, "w") as f:
+            yaml.safe_dump(schema_yaml, f, sort_keys=False)
+
+        logger.info(
+            f"🆕 Schema change detected for {name}: added={added}, removed={removed}. "
+            f"Draft written to {draft_path}. Review before promotion."
+        )
+    else:
+        logger.info(f"✅ No schema changes detected for {name}.")
+
+
+# ============================================================
 # MAIN DAGSTER ASSET
-# ======================
+# ============================================================
 @multi_asset(
     outs={
         "bronze__giveth_qf_rounds": AssetOut(
@@ -137,12 +191,12 @@ def align_columns(data: list[dict]) -> pl.DataFrame:
     },
 )
 def fetch_giveth_data():
-    """Fetch Giveth QF Rounds and Projects with enforced 10-item pagination limit."""
+    """Fetch Giveth QF Rounds and Projects with 10-item enforced pagination."""
     logger.info("🚀 Fetching Giveth data...")
 
-    # ------------------------------
+    # ====================================================
     # 1. QF ROUNDS
-    # ------------------------------
+    # ====================================================
     qf_rounds_query = """
     query GetRounds($activeOnly: Boolean!) {
       qfRounds(activeOnly: $activeOnly) {
@@ -178,9 +232,9 @@ def fetch_giveth_data():
     qf_rounds_df = align_columns(qf_rounds_flat)
     logger.info(f"📦 Rounds fetched: {len(qf_rounds_df)}")
 
-    # ------------------------------
-    # 2. PROJECTS BY ROUND (10-item enforced pagination)
-    # ------------------------------
+    # ====================================================
+    # 2. PROJECTS BY ROUND
+    # ====================================================
     projects_query = """
     query GetProjects($qfRoundId: Int!, $skip: Int!, $take: Int!) {
       allProjects(qfRoundId: $qfRoundId, skip: $skip, take: $take, orderBy: {
@@ -191,120 +245,33 @@ def fetch_giveth_data():
           id
           title
           slug
-          slugHistory
           description
-          descriptionSummary
-          traceCampaignId
-          givingBlocksId
-          changeId
           website
-          youtube
           creationDate
           updatedAt
-          latestUpdateCreationDate
-          organization { id name website }
-          coOrdinates
-          image
-          impactLocation
-          categories {
-            id
-          }
-          qfRounds {
-            id
-            title
-          }
-          balance
-          stripeAccountId
           walletAddress
           verified
-          verificationStatus
-          isImported
-          giveBacks
-          donations {
-            id
-          }
-          qualityScore
-          contacts {
-            url
-          }
-          reactions{
-            id
-          }
-          addresses {
-            id
-          }
-          socialMedia {
-            id
-          }
-          anchorContracts {
-            id
-          }
-          status{
-            id
-            name
-          }
-          adminUserId
-          statusHistory {
-            id
-          }
-          projectVerificationForm {
-            id
-          }
-          featuredUpdate {
-            id
-          }
-          verificationFormStatus
-          socialProfiles { id name link socialNetwork isVerified }
-          projectEstimatedMatchingView { projectId qfRoundId }
+          reviewStatus
           totalDonations
           totalTraceDonations
           totalReactions
-          totalProjectUpdates
-          sumDonationValueUsdForActiveQfRound
-          countUniqueDonorsForActiveQfRound
-          countUniqueDonors
           listed
           isGivbackEligible
-          reviewStatus
-          projectUrl
-          prevStatusId
-          adminJsBaseUrl
-          campaigns {
-              id
-              slug
-              title
-              type
-              isActive
-              isNew
-              isFeatured
-              description
-              hashtags
-              relatedProjectsSlugs
-              landingLink
-              updatedAt
-              createdAt
-          }
-          estimatedMatching {
-            projectDonationsSqrtRootSum
-            allProjectsSum
-            matchingPool
-            matching
-          }
+          campaigns { id title slug isActive createdAt }
         }
       }
     }
     """
 
     all_projects = []
-    PAGE_SIZE = 10  # enforced Giveth API cap
-    MAX_PAGES = 2000  # safety cap (20k projects max per round)
+    PAGE_SIZE = 10
+    MAX_PAGES = 2000
 
     for round_ in qf_rounds:
         rid = int(round_["id"])
         skip = 0
         total_for_round = 0
         seen_ids = set()
-
         logger.info(f"🔍 Fetching projects for round {rid}...")
 
         for page in range(MAX_PAGES):
@@ -312,58 +279,51 @@ def fetch_giveth_data():
             result = run_query(projects_query, vars)
             projects = result.get("allProjects", {}).get("projects", [])
             fetched = len(projects)
-
             if not projects:
-                logger.info(
-                    f"✅ Completed round {rid}: total {total_for_round} projects."
-                )
                 break
-
-            first_id = projects[0].get("id") if projects else None
+            first_id = projects[0].get("id")
             if first_id in seen_ids:
-                logger.warning(
-                    f"⚠️ Pagination stuck for round {rid} at skip={skip}. Breaking."
-                )
                 break
             seen_ids.add(first_id)
-
             all_projects.extend([flatten_dict(p) for p in projects])
             total_for_round += fetched
-            logger.info(f"Fetched {fetched} projects from round {rid} (skip={skip}).")
-
-            # Stop if fewer than PAGE_SIZE (last page)
+            logger.info(f"Fetched {fetched} projects (skip={skip}).")
             if fetched < PAGE_SIZE:
-                logger.info(f"✅ Finished fetching all pages for round {rid}.")
                 break
-
             skip += PAGE_SIZE
-            time.sleep(1)  # small delay to avoid rate-limit
+            time.sleep(1)
 
         logger.info(f"📊 Round {rid} — total projects fetched: {total_for_round}")
 
-    # ------------------------------
-    # 3. CREATE DATAFRAMES
-    # ------------------------------
     projects_df = align_columns(all_projects)
     logger.info(f"📦 Total projects fetched across rounds: {len(projects_df)}")
 
-    # ------------------------------
-    # 4. SANITIZE & LOAD TO DB
-    # ------------------------------
+    # ====================================================
+    # 3. SANITIZE + LOAD
+    # ====================================================
     qf_rounds_df = sanitize_for_sql(qf_rounds_df)
     projects_df = sanitize_for_sql(projects_df)
+
+    qf_rounds_df = qf_rounds_df.with_columns(pl.lit(datetime.utcnow()).alias("_loaded_at"))
+    projects_df = projects_df.with_columns(pl.lit(datetime.utcnow()).alias("_loaded_at"))
 
     logger.info("🧱 Writing Bronze layer tables to Postgres...")
     qf_rounds_df.write_database(
         table_name="bronze_giveth_qf_rounds",
         connection=engine,
-        if_table_exists="replace",
+        mode="append"
     )
     projects_df.write_database(
         table_name="bronze_giveth_projects",
         connection=engine,
-        if_table_exists="replace",
+        mode="append"
     )
+
+    # ====================================================
+    # 4. SCHEMA TRACKING
+    # ====================================================
+    _save_schema_yaml(qf_rounds_df, "giveth_qf_rounds")
+    _save_schema_yaml(projects_df, "giveth_projects")
 
     logger.info(f"✅ Rows written -> bronze_giveth_qf_rounds: {len(qf_rounds_df)}")
     logger.info(f"✅ Rows written -> bronze_giveth_projects: {len(projects_df)}")

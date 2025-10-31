@@ -79,6 +79,14 @@ The **Medallion (Bronze–Silver–Gold)** model structures our data pipeline in
 
 ````
 
+| Layer       | Role                        | Example Asset            | Notes                              |
+| ----------- | --------------------------- | ------------------------ | ---------------------------------- |
+| **Bronze**  | Raw ingestion               | `bronze_giveth_projects` | One-to-one with API/CSV schema     |
+| **Silver**  | Normalized internal schema  | `silver_giveth_projects` | Flattened, typed, consistent types |
+| **DAOIP-5** | Interoperable export schema | `daoip5_projects`        | Strict JSON-LD or flat relational  |
+| **Gold**    | Aggregated metrics          | `gold_funding_summary`   | Join DAOIP-5 tables for dashboards |
+
+
 ---
 
 ## 🧰 Local Development Setup
