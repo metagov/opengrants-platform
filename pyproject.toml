@@ -1,0 +1,15 @@
+[tool.black]
+line-length = 88
+target-version = ['py312']
+skip-string-normalization = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+fix = true
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+ignore_missing_imports = true
+disallow_untyped_defs = false
