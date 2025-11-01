@@ -18,6 +18,13 @@ services:
       context: .                 # build context = repo root
       dockerfile: og_dagster/Dockerfile
     container_name: dagster
+    environment:
+      - DAGSTER_HOME=/app
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-opengrants}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
     restart: always
     depends_on:
       - postgres

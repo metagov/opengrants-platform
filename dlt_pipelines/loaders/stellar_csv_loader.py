@@ -15,7 +15,7 @@ def stellar_csv_resource(file_path: str = "/app/data/stellar_grants.csv"):
         yield record
 
 
-@dlt.pipeline(
+pipeline = dlt.pipeline(
     pipeline_name="stellar_csv_pipeline",
     destination="postgres",
     dataset_name="bronze_stellar"

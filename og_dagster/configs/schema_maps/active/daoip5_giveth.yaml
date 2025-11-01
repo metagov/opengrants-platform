@@ -1,0 +1,360 @@
+# ============================================================
+# DAOIP-5 Unified Schema Map — Giveth (Strict Compliance)
+# ============================================================
+
+manifest:
+  schema_name: daoip5_giveth
+  version: 1.0.7
+  source_system: "Giveth Mainnet API"
+  last_updated: "2025-10-31T18:40:00Z"
+  description: >
+    Strict DAOIP-5-compliant schema mapping for Giveth grant rounds and projects.
+    This schema preserves interoperability across DAOIP-based ecosystems while 
+    allowing custom metadata through x-giveth extensions.
+
+schemas:
+
+  # ----------------------------------------------------------
+  # DAOIP-5: GrantPool Schema (Rounds)
+  # ----------------------------------------------------------
+  grant_pools:
+    table: bronze_giveth_qf_rounds
+    target_table: silver_giveth_rounds
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:giveth:grantPool:{v}' if v else None"
+      name:
+        source: 
+          - name
+          # - title
+        type: string
+        required: true
+      description:
+        source: description
+        type: string
+      grantFundingMechanism:
+        source: null
+        type: enum
+        allowed:
+          - "Quadratic Funding"
+          - "Direct Grants"
+          - "Retro Funding"
+          - "Streaming Quadratic Funding"
+          - "Bounties"
+          - "Delegated Domain Allocation"
+          - "Impact Attestations"
+        transform: "lambda _: 'Quadratic Funding'"
+      isOpen:
+        source: isActive
+        type: boolean
+      closeDate:
+        source: endDate
+        type: datetime
+      totalGrantPoolSizeInUSD:
+        source: allocatedFundUSD
+        type: float
+        required: true
+      image:
+        source: bannerBgImage
+        type: string
+      applicationsURI:
+        source: null
+        type: string
+        description: >
+          Not provided by Giveth API — left null for now.
+
+    extensions:
+      io.giveth:
+        allocatedTokenSymbol:
+          source: allocatedTokenSymbol
+          type: string
+        allocatedTokenChainId:
+          source: allocatedTokenChainId
+          type: integer
+        allocatedFundUSDPreferred:
+          source: allocatedFundUSDPreferred
+          type: boolean
+        minimumPassportScore:
+          source: minimumPassportScore
+          type: integer
+        clusterMatchingSyncAt:
+          source: clusterMatchingSyncAt
+          type: datetime
+        isDataAnalysisDone:
+          source: isDataAnalysisDone
+          type: boolean
+        eligibleNetworks:
+          source: eligibleNetworks
+          type: string
+        allocatedFund:
+          source: allocatedFund
+          type: bigint
+          description: "Original allocated fund amount in native token"
+        beginDate:
+          source: beginDate
+          type: datetime
+          description: "Round start date"
+        minMBDScore:
+          source: minMBDScore
+          type: bigint
+          description: "Minimum MBD score requirement"
+        minimumValidUsdValue:
+          source: minimumValidUsdValue
+          type: double precision
+          description: "Minimum USD value for valid donations"
+        slug:
+          source: slug
+          type: string
+          description: "URL slug for the round"
+        sponsorsImgs:
+          source: sponsorsImgs
+          type: json
+          description: "Sponsor images array"
+          json_schema:
+            type: array
+            items:
+              type: string
+  # ----------------------------------------------------------
+  # DAOIP-5: Project Schema (Projects)
+  # ----------------------------------------------------------
+  projects:
+    table: bronze_giveth_projects
+    target_table: silver_giveth_projects
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:giveth:project:{v}' if v else None"
+      name:
+        source: title
+        type: string
+        required: true
+      description:
+        source: 
+          - description
+          # - descriptionSummary
+        type: string
+      contentURI:
+        source: 
+          - projectUrl
+          # - website
+        type: string
+      email:
+        source: contacts
+        type: json
+        json_schema:
+          type: array
+          items:
+            type: object
+            properties:
+              url: { type: string, format: "email" }
+            required: ["url"]
+      membersURI:
+        source: organization_website
+        type: string
+      attestationIssuersURI:
+        source: null
+        type: string
+      image:
+        source: image
+        type: string
+      coverImage:
+        source: null
+        type: json
+        json_schema:
+          type: object
+          properties:
+            id: { type: [ "string", "integer" ] }
+      licenseURI:
+        source: null
+        type: string
+      socials:
+        source: 
+          - socialProfiles
+        type: json
+        json_schema:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              link: { type: string, format: "uri" }
+              socialNetwork: { type: string }
+              isVerified: { type: boolean }
+
+    extensions:
+      io.giveth:
+        verified:
+          source: verified
+          type: boolean
+        verificationStatus:
+          source: verificationStatus
+          type: string
+        totalDonations:
+          source: totalDonations
+          type: number
+        countUniqueDonors:
+          source: countUniqueDonors
+          type: integer
+        impactLocation:
+          source: impactLocation
+          type: string
+        walletAddress:
+          source: walletAddress
+          type: string
+        campaigns:
+          source: campaigns
+          type: json
+        reviewStatus:
+          source: reviewStatus
+          type: string
+        isGivbackEligible:
+          source: isGivbackEligible
+          type: boolean
+        traceCampaignId:
+          source: traceCampaignId
+          type: string
+        totalTraceDonations:
+          source: totalTraceDonations
+          type: number
+        adminUserId:
+          source: adminUserId
+          type: integer
+        addresses:
+          source: addresses
+          type: json
+        adminJsBaseUrl:
+          source: adminJsBaseUrl
+          type: string
+        anchorContracts:
+          source: anchorContracts
+          type: json
+        balance:
+          source: balance
+          type: bigint
+        categories:
+          source: categories
+          type: json
+        changeId:
+          source: changeId
+          type: string
+        coOrdinates:
+          source: coOrdinates
+          type: json
+        countUniqueDonorsForActiveQfRound:
+          source: countUniqueDonorsForActiveQfRound
+          type: bigint
+        creationDate:
+          source: creationDate
+          type: datetime
+        descriptionSummary:
+          source: descriptionSummary
+          type: string
+        donations:
+          source: donations
+          type: json
+        estimatedMatching:
+          source: estimatedMatching
+          type: json
+        featuredUpdate:
+          source: featuredUpdate
+          type: json
+        giveBacks:
+          source: giveBacks
+          type: boolean
+        givingBlocksId:
+          source: givingBlocksId
+          type: string
+        isImported:
+          source: isImported
+          type: boolean
+        latestUpdateCreationDate:
+          source: latestUpdateCreationDate
+          type: datetime
+        listed:
+          source: listed
+          type: boolean
+        organization:
+          source:
+            - organization_id
+            - organization_name
+          type: json
+          transform: "lambda org_id, org_name: {'id': org_id, 'name': org_name} if org_id or org_name else None"
+        prevStatusId:
+          source: prevStatusId
+          type: string
+        projectEstimatedMatchingView:
+          source: projectEstimatedMatchingView
+          type: json
+        projectVerificationForm:
+          source: projectVerificationForm
+          type: json
+        qfRounds:
+          source: qfRounds
+          type: json
+        qualityScore:
+          source: qualityScore
+          type: integer
+        reactions:
+          source: reactions
+          type: json
+        slug:
+          source: slug
+          type: string
+        slugHistory:
+          source: slugHistory
+          type: json
+        socialMediaRaw:
+          source: socialMedia
+          type: json
+        status:
+          source:
+            - status_id
+            - status_name
+          type: json
+          transform: "lambda status_id, status_name: {'id': status_id, 'name': status_name} if status_id or status_name else None"
+        statusHistory:
+          source: statusHistory
+          type: json
+        stripeAccountId:
+          source: stripeAccountId
+          type: string
+        sumDonationValueUsdForActiveQfRound:
+          source: sumDonationValueUsdForActiveQfRound
+          type: double precision
+        totalProjectUpdates:
+          source: totalProjectUpdates
+          type: integer
+        totalReactions:
+          source: totalReactions
+          type: integer
+        updatedAt:
+          source: updatedAt
+          type: datetime
+        verificationFormStatus:
+          source: verificationFormStatus
+          type: string
+        website:
+          source: website
+          type: string
+        youtube:
+          source: youtube
+          type: string
+
+meta:
+  daoip_version: 5
+  author: "Rashmi V. Abbigeri <rashmi@metagov.org>"
+  mapping_strategy: "DAOIP-5 compliant + x-giveth extensions"
+  compatible_with: ["opengrants-silver-pipeline>=0.3.0"]
+  validation_rules:
+    json_fields_must_parse: true
+    json_schema_enforced: true
+    id_format: "daoip-5:giveth"
+    enum_enforced: true
+    required_fields: ["id", "name", "description", "totalGrantPoolSizeInUSD"]
