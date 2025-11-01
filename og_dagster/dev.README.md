@@ -22,3 +22,10 @@ psql:
 | 🟤 Bronze  | `ops/`                 | `fetch_giveth_data`                               | —                     | `bronze_giveth_*` |
 | ⚪ Silver   | `assets/silver/`       | `silver_giveth_projects` / `silver_giveth_rounds` | Bronze outputs        | `silver_daoip5_*` |
 | 🟡 Configs | `configs/schema_maps/` | YAML field mappings                               | Used by Silver assets | —                 |
+
+
+
+UPDATE bronze_giveth_qf_rounds
+SET "allocatedFundUSD" = 127350 
+WHERE id = '11';
+

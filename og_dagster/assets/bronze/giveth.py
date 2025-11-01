@@ -6,9 +6,8 @@ from typing import Any
 import numpy as np
 import polars as pl
 import requests
-from sqlalchemy import create_engine
-
 from dagster import AssetOut, Output, get_dagster_logger, multi_asset
+from sqlalchemy import create_engine
 
 logger = get_dagster_logger()
 
@@ -118,7 +117,6 @@ def align_columns(data: list[dict]) -> pl.DataFrame:
 
     # Build dataframe with schema inference disabled
     return pl.DataFrame(safe_aligned, infer_schema_length=None)
-
 
 
 # ======================

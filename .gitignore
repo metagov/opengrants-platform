@@ -60,3 +60,7 @@ package-lock.json
 *.seed
 docker-compose.override.yml
 .env.docker
+
+
+# --- Misc ---
+tree.txt
