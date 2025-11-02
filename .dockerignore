@@ -1,0 +1,10 @@
+.*
+__pycache__/
+.venv/
+node_modules/
+.git/
+*.log
+*.duckdb
+duckdb/
+dlt_pipelines/
+og_dagster/
