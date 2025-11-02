@@ -1,0 +1,18 @@
+opengrants:
+  target: dev_postgres
+  outputs:
+    dev_postgres:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST') }}"
+      user: "{{ env_var('POSTGRES_USER') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      dbname: "{{ env_var('POSTGRES_DB') }}"
+      port: "{{ env_var('POSTGRES_PORT') | int }}"
+      schema: public
+      threads: 4
+
+    dev_duckdb:
+      type: duckdb
+      path: /app/local.duckdb
+      schema: main
+      threads: 4

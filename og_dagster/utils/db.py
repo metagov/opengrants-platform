@@ -1,10 +1,15 @@
 import os
-
+import duckdb
 from dagster import get_dagster_logger
 from sqlalchemy import create_engine
 
 logger = get_dagster_logger()
 
+
+def get_duckdb_connection():
+    path = os.getenv("DUCKDB_CACHE_PATH", "./duckdb/data/local.duckdb")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return duckdb.connect(path)
 
 def get_pg_engine():
     """

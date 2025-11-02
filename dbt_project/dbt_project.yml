@@ -1,0 +1,11 @@
+name: opengrants
+version: 1.0.0
+profile: opengrants
+config-version: 2
+
+model-paths: ["models"]
+
+models:
+  +materialized: view
+  gold:
+    +materialized: table
