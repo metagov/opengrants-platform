@@ -29,3 +29,10 @@ UPDATE bronze_giveth_qf_rounds
 SET "allocatedFundUSD" = 127350 
 WHERE id = '11';
 
+| Layer            | Source                                | Refreshed By    | Used For            |
+| ---------------- | ------------------------------------- | --------------- | ------------------- |
+| **Silver**       | Postgres                              | Dagster         | Raw normalized data |
+| **Silver Cache** | DuckDB                                | Dagster sync op | Fast dashboards     |
+| **Gold**         | Postgres                              | dbt             | Aggregated metrics  |
+| **Gold Cache**   | DuckDB                                | dbt macro       | Ecosystem stats     |
+| **Dashboard**    | DuckDB (primary), Postgres (fallback) | —               | User interface      |
