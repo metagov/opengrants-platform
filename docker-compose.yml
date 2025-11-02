@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   postgres:
     container_name: postgres
@@ -65,13 +64,8 @@ services:
       - ./duckdb:/data/duckdb
     env_file:
       - .env
-    command:
+    entrypoint:
       - dbt
-      - run
-      - '--project-dir'
-      - /app
-      - '--profiles-dir'
-      - /app
     working_dir: /app
 
 volumes:

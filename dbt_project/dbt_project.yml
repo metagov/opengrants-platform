@@ -3,9 +3,12 @@ version: 1.0.0
 profile: opengrants
 config-version: 2
 
-model-paths: ["models"]
+model-paths: [ "models" ]
 
 models:
   +materialized: view
   gold:
     +materialized: table
+    +depends_on:
+    - ref('gold__all_projects')
+    - ref('gold__all_grant_pools')
