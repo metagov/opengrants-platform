@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: silver
+    description: "Silver layer standardized tables from Dagster/Postgres"
+    schema: public
+    tables:
+      - name: silver_giveth_projects
+        description: "Giveth standardized project data"
+      - name: silver_giveth_grant_pools
+        description: "Giveth standardized grant pool (round) data"
