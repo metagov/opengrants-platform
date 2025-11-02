@@ -1,11 +1,12 @@
 version: 2
 
 sources:
-  - name: silver
-    description: "Silver layer standardized tables from Dagster/Postgres"
-    schema: public
-    tables:
-      - name: silver_giveth_projects
-        description: "Giveth standardized project data"
-      - name: silver_giveth_grant_pools
-        description: "Giveth standardized grant pool (round) data"
+- name: silver
+  description: "Postgres schema containing Silver-layer normalized grant data"
+  database: opengrants
+  schema: public
+  tables:
+  - name: silver_giveth_projects
+    description: "DAOIP-5-compliant Giveth project data (Silver layer)"
+  - name: silver_giveth_grant_pools
+    description: "DAOIP-5-compliant Giveth grant pool data (Silver layer)"
