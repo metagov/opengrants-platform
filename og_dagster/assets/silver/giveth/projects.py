@@ -1,7 +1,8 @@
 import polars as pl
 from dagster import Output, asset
 from utils.db import get_pg_engine
-from utils.helpers import build_silver
+from utils.translate_to_silver import build_silver
+from utils.db import drop_dependent_views
 
 
 @asset(
@@ -17,12 +18,16 @@ def silver_giveth_projects(context):
         infer_schema_length=10000
     )
     context.log.info(f"Loaded {len(bronze)} bronze Giveth projects.")
+    
 
     df_silver = build_silver(
         bronze,
         "/app/configs/schema_maps/active/daoip5_giveth.yaml",
         "projects",
     )
+
+    drop_dependent_views(engine, "silver_giveth_projects", context)
+
 
     # ✅ Write Silver back to Postgres
     df_silver.write_database(
