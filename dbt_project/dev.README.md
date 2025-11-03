@@ -9,3 +9,10 @@ dbt run --target dev_duckdb
 duckdb dbt_project/local.duckdb
 D SHOW TABLES;
 D SELECT * FROM gold__funding_metrics LIMIT 10;
+
+
+### Main Commands
+
+- docker compose build dbt 
+- docker compose run dbt run
+- docker compose run dbt list --resource-type source
