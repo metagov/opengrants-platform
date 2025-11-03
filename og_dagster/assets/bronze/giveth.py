@@ -1,123 +1,27 @@
-import json
-import os
+# giveth_assets.py
 import time
-from typing import Any
-
-import numpy as np
-import polars as pl
-import requests
-from dagster import AssetOut, Output, get_dagster_logger, multi_asset
 from sqlalchemy import create_engine
 
-logger = get_dagster_logger()
+from dagster import AssetOut, Output, multi_asset
+from utils.graphql_helpers import (
+    logger,
+    POSTGRES_USER,
+    POSTGRES_PASSWORD,
+    POSTGRES_DB,
+    POSTGRES_HOST,
+    POSTGRES_PORT,
+    run_query,
+    flatten_dict,
+    align_columns,
+    sanitize_for_sql,
+)
+
 
 # ======================
 # DATABASE CONFIG
 # ======================
-POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
-POSTGRES_DB = os.getenv("POSTGRES_DB", "opengrants")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgres")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-
 DB_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 engine = create_engine(DB_URL)
-
-ENDPOINT = "https://mainnet.serve.giveth.io/graphql"
-
-
-# ======================
-# HELPERS
-# ======================
-def _to_json_safe(x):
-    if x is None:
-        return None
-    if isinstance(x, np.ndarray):
-        return json.dumps(x.tolist())
-    if isinstance(x, pl.Series):
-        return json.dumps(x.to_list())
-    if isinstance(x, (list, dict, tuple)):
-        return json.dumps(x)
-    try:
-        json.dumps(x)
-        return x
-    except Exception:
-        return str(x)
-
-
-def sanitize_for_sql(df: pl.DataFrame) -> pl.DataFrame:
-    for col in df.columns:
-        s = df[col]
-        if s.dtype in (pl.List, pl.Object):
-            df = df.with_columns(s.map_elements(_to_json_safe).alias(col))
-    return df
-
-
-def run_query(query, variables, retries=3, delay=5):
-    for attempt in range(retries):
-        try:
-            resp = requests.post(
-                ENDPOINT, json={"query": query, "variables": variables}
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            if "data" not in data or data["data"] is None:
-                raise ValueError(f"No 'data' field in response: {data}")
-            return data["data"]
-        except Exception as e:
-            if attempt < retries - 1:
-                logger.warning(
-                    f"[Retry {attempt+1}] Giveth API error: {e}. Retrying in {delay}s..."
-                )
-                time.sleep(delay)
-                delay *= 2
-            else:
-                raise
-
-
-def flatten_dict(
-    d: dict[str, Any], parent_key: str = '', sep: str = '_'
-) -> dict[str, Any]:
-    items = []
-    for k, v in d.items():
-        new_key = f"{parent_key}{sep}{k}" if parent_key else k
-        if isinstance(v, dict):
-            items.extend(flatten_dict(v, new_key, sep=sep).items())
-        else:
-            items.append((new_key, v))
-    return dict(items)
-
-
-def align_columns(data: list[dict]) -> pl.DataFrame:
-    """Safely aligns all dicts into a Polars DataFrame with consistent column types."""
-    if not data:
-        return pl.DataFrame()
-
-    all_keys = sorted(set().union(*(row.keys() for row in data)))
-    aligned = [{key: row.get(key, None) for key in all_keys} for row in data]
-
-    # Ensure consistent string conversion to avoid schema inference errors
-    safe_aligned = []
-    for row in aligned:
-        safe_row = {}
-        for k, v in row.items():
-            if isinstance(v, (dict, list)):
-                safe_row[k] = json.dumps(v)
-            elif isinstance(v, (np.ndarray, pl.Series)):
-                safe_row[k] = json.dumps(v.tolist())
-            elif v is None:
-                safe_row[k] = None
-            else:
-                # Always cast to str for mixed-type fields
-                if not isinstance(v, (int, float, bool, type(None))):
-                    safe_row[k] = str(v)
-                else:
-                    safe_row[k] = v
-        safe_aligned.append(safe_row)
-
-    # Build dataframe with schema inference disabled
-    return pl.DataFrame(safe_aligned, infer_schema_length=None)
-
 
 # ======================
 # MAIN DAGSTER ASSET
@@ -125,7 +29,7 @@ def align_columns(data: list[dict]) -> pl.DataFrame:
 @multi_asset(
     outs={
         "bronze__giveth_qf_rounds": AssetOut(
-            metadata={"description": "Raw Giveth QF Rounds"},
+            metadata={"description": "Raw Giveth QF Rounds with Stats"},
             tags={"layer": "bronze", "source": "giveth", "domain": "grants"},
         ),
         "bronze__giveth_projects": AssetOut(
@@ -135,15 +39,39 @@ def align_columns(data: list[dict]) -> pl.DataFrame:
     },
 )
 def fetch_giveth_data():
-    """Fetch Giveth QF Rounds and Projects with enforced 10-item pagination limit."""
+    """Fetch Giveth QF Rounds Stats and Projects with enforced 10-item pagination limit."""
     logger.info("🚀 Fetching Giveth data...")
 
     # ------------------------------
-    # 1. QF ROUNDS
+    # 1. FIRST GET ALL QF ROUND SLUGS (inactive only)
     # ------------------------------
-    qf_rounds_query = """
-    query GetRounds($activeOnly: Boolean!) {
-      qfRounds(activeOnly: $activeOnly) {
+    qf_rounds_slugs_query = """
+    query GetRoundsSlugs {
+      qfRounds(activeOnly: false) {
+        id
+        slug
+        isActive
+      }
+    }
+    """
+    qf_rounds_slugs_data = run_query(qf_rounds_slugs_query, {})
+    qf_rounds_slugs = qf_rounds_slugs_data.get("qfRounds", [])
+    
+    # Filter only inactive rounds
+    inactive_rounds = [r for r in qf_rounds_slugs if not r.get("isActive", True)]
+    logger.info(f"📦 Found {len(inactive_rounds)} inactive QF rounds to fetch stats for")
+
+    # ------------------------------
+    # 2. FETCH DETAILED STATS FOR EACH ROUND USING QFRoundStats
+    # ------------------------------
+    qf_round_stats_query = """
+    query QFRoundStats($slug: String!) {
+      qfRoundStats(slug: $slug) {
+        uniqueDonors
+        donationsCount
+        allDonationsUsdValue
+        matchingPool
+        qfRound {
           id
           name
           title
@@ -164,20 +92,56 @@ def fetch_giveth_data():
           endDate
           qfStrategy
           bannerBgImage
+          displaySize
+          bannerFull
+          bannerMobile
+          hubCardImage
           sponsorsImgs
           isDataAnalysisDone
-          clusterMatchingSyncAt 
+          clusterMatchingSyncAt
+        }
       }
     }
     """
-    qf_rounds_data = run_query(qf_rounds_query, {"activeOnly": False})
-    qf_rounds = qf_rounds_data.get("qfRounds", [])
-    qf_rounds_flat = [flatten_dict(r) for r in qf_rounds]
+
+    all_qf_rounds_stats = []
+    
+    for round_slug in inactive_rounds:
+        slug = round_slug["slug"]
+        logger.info(f"📊 Fetching stats for round: {slug}")
+        
+        try:
+            stats_data = run_query(qf_round_stats_query, {"slug": slug})
+            qf_round_stats = stats_data.get("qfRoundStats", {})
+            
+            if qf_round_stats:
+                # Combine the stats with the round data
+                combined_data = {
+                    **qf_round_stats,
+                    "qfRound": qf_round_stats.get("qfRound", {})
+                }
+                all_qf_rounds_stats.append(combined_data)
+                logger.info(f"✅ Successfully fetched stats for {slug}")
+            else:
+                logger.warning(f"⚠️ No stats data returned for {slug}")
+                
+            time.sleep(0.5)  # Small delay between requests
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to fetch stats for {slug}: {e}")
+            continue
+
+    # Flatten the nested structure
+    qf_rounds_flat = []
+    for stats in all_qf_rounds_stats:
+        flat_stats = flatten_dict(stats)
+        qf_rounds_flat.append(flat_stats)
+    
     qf_rounds_df = align_columns(qf_rounds_flat)
-    logger.info(f"📦 Rounds fetched: {len(qf_rounds_df)}")
+    logger.info(f"📦 QF Rounds with stats fetched: {len(qf_rounds_df)}")
 
     # ------------------------------
-    # 2. PROJECTS BY ROUND (10-item enforced pagination)
+    # 3. PROJECTS BY ROUND (10-item enforced pagination) - using IDs from stats
     # ------------------------------
     projects_query = """
     query GetProjects($qfRoundId: Int!, $skip: Int!, $take: Int!) {
@@ -297,8 +261,13 @@ def fetch_giveth_data():
     PAGE_SIZE = 10  # enforced Giveth API cap
     MAX_PAGES = 2000  # safety cap (20k projects max per round)
 
-    for round_ in qf_rounds:
-        rid = int(round_["id"])
+    # Use round IDs from the stats we fetched
+    for round_stats in all_qf_rounds_stats:
+        qf_round_data = round_stats.get("qfRound", {})
+        rid = int(qf_round_data.get("id", 0))
+        if rid == 0:
+            continue
+            
         skip = 0
         total_for_round = 0
         seen_ids = set()
@@ -340,13 +309,13 @@ def fetch_giveth_data():
         logger.info(f"📊 Round {rid} — total projects fetched: {total_for_round}")
 
     # ------------------------------
-    # 3. CREATE DATAFRAMES
+    # 4. CREATE DATAFRAMES
     # ------------------------------
     projects_df = align_columns(all_projects)
     logger.info(f"📦 Total projects fetched across rounds: {len(projects_df)}")
 
     # ------------------------------
-    # 4. SANITIZE & LOAD TO DB
+    # 5. SANITIZE & LOAD TO DB
     # ------------------------------
     qf_rounds_df = sanitize_for_sql(qf_rounds_df)
     projects_df = sanitize_for_sql(projects_df)

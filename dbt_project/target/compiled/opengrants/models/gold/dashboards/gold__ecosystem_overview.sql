@@ -2,7 +2,7 @@
 
 SELECT
     f.source,
-    f.total_funding_usd,
+    f.total_pool_size_usd,
     f.avg_pool_size_usd,
     d.total_donations_usd,
     d.total_projects,

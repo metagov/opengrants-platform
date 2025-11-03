@@ -4,13 +4,11 @@
 
 manifest:
   schema_name: daoip5_giveth
-  version: 1.0.7
+  version: 1.0.8
   source_system: "Giveth Mainnet API"
-  last_updated: "2025-10-31T18:40:00Z"
+  last_updated: "2025-11-03T15:07:56Z"
   description: >
-    Strict DAOIP-5-compliant schema mapping for Giveth grant rounds and projects.
-    This schema preserves interoperability across DAOIP-based ecosystems while 
-    allowing custom metadata through x-giveth extensions.
+    Strict DAOIP-5-compliant schema mapping for Giveth grant rounds and projects. This schema preserves interoperability across DAOIP-based ecosystems while  allowing custom metadata through x-giveth extensions.
 
 schemas:
 
@@ -23,43 +21,41 @@ schemas:
 
     fields:
       id:
-        source: id
+        source: qfRound_id
         type: string
         required: true
         transform: "lambda v: f'daoip-5:giveth:grantPool:{v}' if v else None"
       name:
-        source: 
-          - name
-          # - title
+        source: qfRound_name
         type: string
         required: true
       description:
-        source: description
+        source: qfRound_description
         type: string
       grantFundingMechanism:
         source: null
         type: enum
         allowed:
-          - "Quadratic Funding"
-          - "Direct Grants"
-          - "Retro Funding"
-          - "Streaming Quadratic Funding"
-          - "Bounties"
-          - "Delegated Domain Allocation"
-          - "Impact Attestations"
+        - "Quadratic Funding"
+        - "Direct Grants"
+        - "Retro Funding"
+        - "Streaming Quadratic Funding"
+        - "Bounties"
+        - "Delegated Domain Allocation"
+        - "Impact Attestations"
         transform: "lambda _: 'Quadratic Funding'"
       isOpen:
-        source: isActive
+        source: qfRound_isActive
         type: boolean
       closeDate:
-        source: endDate
+        source: qfRound_endDate
         type: datetime
       totalGrantPoolSizeInUSD:
-        source: allocatedFundUSD
+        source: qfRound_allocatedFundUSD
         type: float
         required: true
       image:
-        source: bannerBgImage
+        source: qfRound_bannerBgImage
         type: string
       applicationsURI:
         source: null
@@ -69,55 +65,86 @@ schemas:
 
     extensions:
       io.giveth:
+        uniqueDonors:
+          source: uniqueDonors
+          type: integer
+        donationsCount:
+          source: donationsCount
+          type: integer
+        allDonationsUsdValue:
+          source: allDonationsUsdValue
+          type: float
+        matchingPool:
+          source: matchingPool
+          type: integer
         allocatedTokenSymbol:
-          source: allocatedTokenSymbol
+          source: qfRound_allocatedTokenSymbol
           type: string
         allocatedTokenChainId:
-          source: allocatedTokenChainId
+          source: qfRound_allocatedTokenChainId
           type: integer
         allocatedFundUSDPreferred:
-          source: allocatedFundUSDPreferred
+          source: qfRound_allocatedFundUSDPreferred
           type: boolean
         minimumPassportScore:
-          source: minimumPassportScore
+          source: qfRound_minimumPassportScore
           type: integer
         clusterMatchingSyncAt:
-          source: clusterMatchingSyncAt
+          source: qfRound_clusterMatchingSyncAt
           type: datetime
         isDataAnalysisDone:
-          source: isDataAnalysisDone
+          source: qfRound_isDataAnalysisDone
           type: boolean
         eligibleNetworks:
-          source: eligibleNetworks
+          source: qfRound_eligibleNetworks
           type: string
         allocatedFund:
-          source: allocatedFund
-          type: bigint
+          source: qfRound_allocatedFund
+          type: integer
           description: "Original allocated fund amount in native token"
         beginDate:
-          source: beginDate
+          source: qfRound_beginDate
           type: datetime
           description: "Round start date"
         minMBDScore:
-          source: minMBDScore
-          type: bigint
+          source: qfRound_minMBDScore
+          type: integer
           description: "Minimum MBD score requirement"
         minimumValidUsdValue:
-          source: minimumValidUsdValue
-          type: double precision
+          source: qfRound_minimumValidUsdValue
+          type: float
           description: "Minimum USD value for valid donations"
         slug:
-          source: slug
+          source: qfRound_slug
           type: string
           description: "URL slug for the round"
         sponsorsImgs:
-          source: sponsorsImgs
+          source: qfRound_sponsorsImgs
           type: json
           description: "Sponsor images array"
-          json_schema:
-            type: array
-            items:
-              type: string
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
+        title:
+          source: qfRound_title
+          type: string
+        displaySize:
+          source: qfRound_displaySize
+          type: integer
+        maximumReward:
+          source: qfRound_maximumReward
+          type: float
+        qfStrategy:
+          source: qfRound_qfStrategy
+          type: string
+        bannerFull:
+          source: qfRound_bannerFull
+          type: string
+        bannerMobile:
+          source: qfRound_bannerMobile
+          type: string
+        hubCardImage:
+          source: qfRound_hubCardImage
+          type: string
+
   # ----------------------------------------------------------
   # DAOIP-5: Project Schema (Projects)
   # ----------------------------------------------------------
@@ -136,27 +163,24 @@ schemas:
         type: string
         required: true
       description:
-        source: 
-          - description
-          # - descriptionSummary
+        source: description
         type: string
       contentURI:
-        source: 
-          - projectUrl
-          # - website
+        source: projectUrl
         type: string
       email:
         source: contacts
         type: json
+        transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         json_schema:
           type: array
           items:
             type: object
             properties:
               url: { type: string, format: "email" }
-            required: ["url"]
+            required: [ "url" ]
       membersURI:
-        source: organization_website
+        source: website
         type: string
       attestationIssuersURI:
         source: null
@@ -166,18 +190,14 @@ schemas:
         type: string
       coverImage:
         source: null
-        type: json
-        json_schema:
-          type: object
-          properties:
-            id: { type: [ "string", "integer" ] }
+        type: string
       licenseURI:
         source: null
         type: string
       socials:
-        source: 
-          - socialProfiles
+        source: socialProfiles
         type: json
+        transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         json_schema:
           type: array
           items:
@@ -198,7 +218,7 @@ schemas:
           type: string
         totalDonations:
           source: totalDonations
-          type: number
+          type: float
         countUniqueDonors:
           source: countUniqueDonors
           type: integer
@@ -211,6 +231,7 @@ schemas:
         campaigns:
           source: campaigns
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         reviewStatus:
           source: reviewStatus
           type: string
@@ -222,34 +243,38 @@ schemas:
           type: string
         totalTraceDonations:
           source: totalTraceDonations
-          type: number
+          type: float
         adminUserId:
           source: adminUserId
           type: integer
         addresses:
           source: addresses
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         adminJsBaseUrl:
           source: adminJsBaseUrl
           type: string
         anchorContracts:
           source: anchorContracts
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         balance:
           source: balance
-          type: bigint
+          type: integer
         categories:
           source: categories
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         changeId:
           source: changeId
           type: string
         coOrdinates:
           source: coOrdinates
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         countUniqueDonorsForActiveQfRound:
           source: countUniqueDonorsForActiveQfRound
-          type: bigint
+          type: integer
         creationDate:
           source: creationDate
           type: datetime
@@ -259,12 +284,15 @@ schemas:
         donations:
           source: donations
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         estimatedMatching:
           source: estimatedMatching
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         featuredUpdate:
           source: featuredUpdate
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         giveBacks:
           source: giveBacks
           type: boolean
@@ -281,53 +309,56 @@ schemas:
           source: listed
           type: boolean
         organization:
-          source:
-            - organization_id
-            - organization_name
+          source: organization
           type: json
-          transform: "lambda org_id, org_name: {'id': org_id, 'name': org_name} if org_id or org_name else None"
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         prevStatusId:
           source: prevStatusId
           type: string
         projectEstimatedMatchingView:
           source: projectEstimatedMatchingView
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         projectVerificationForm:
           source: projectVerificationForm
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         qfRounds:
           source: qfRounds
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         qualityScore:
           source: qualityScore
           type: integer
         reactions:
           source: reactions
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         slug:
           source: slug
           type: string
         slugHistory:
           source: slugHistory
           type: json
-        socialMediaRaw:
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
+        socialMedia:
           source: socialMedia
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         status:
-          source:
-            - status_id
-            - status_name
+          source: status
           type: json
-          transform: "lambda status_id, status_name: {'id': status_id, 'name': status_name} if status_id or status_name else None"
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         statusHistory:
           source: statusHistory
           type: json
+          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         stripeAccountId:
           source: stripeAccountId
           type: string
         sumDonationValueUsdForActiveQfRound:
           source: sumDonationValueUsdForActiveQfRound
-          type: double precision
+          type: float
         totalProjectUpdates:
           source: totalProjectUpdates
           type: integer
@@ -351,10 +382,10 @@ meta:
   daoip_version: 5
   author: "Rashmi V. Abbigeri <rashmi@metagov.org>"
   mapping_strategy: "DAOIP-5 compliant + x-giveth extensions"
-  compatible_with: ["opengrants-silver-pipeline>=0.3.0"]
+  compatible_with: [ "opengrants-silver-pipeline>=0.3.0" ]
   validation_rules:
     json_fields_must_parse: true
     json_schema_enforced: true
     id_format: "daoip-5:giveth"
     enum_enforced: true
-    required_fields: ["id", "name", "description", "totalGrantPoolSizeInUSD"]
+    required_fields: [ "id", "name", "description", "totalGrantPoolSizeInUSD" ]
