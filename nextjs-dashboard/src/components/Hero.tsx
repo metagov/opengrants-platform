@@ -5,7 +5,8 @@ export const Hero = ({ title }: { title: string }) => (
     justifyContent="center"
     alignItems="center"
     height="100vh"
-    bgGradient="linear(to-l, heroGradientStart, heroGradientEnd)"
+    bgColor={"red.700"}
+    // bgGradient="linear(to-l, heroGradientStart, heroGradientEnd)"
     bgClip="text"
   >
     <Heading fontSize="6vw">{title}</Heading>
@@ -13,5 +14,5 @@ export const Hero = ({ title }: { title: string }) => (
 );
 
 Hero.defaultProps = {
-  title: "with-chakra-ui-typescript",
+  title: "OpenGrants Analytics",
 };

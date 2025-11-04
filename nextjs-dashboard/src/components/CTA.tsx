@@ -11,31 +11,19 @@ export const CTA = () => (
     maxWidth="3xl"
     py={3}
   >
-    <Button
-      as={ChakraLink}
-      isExternal
-      href="https://chakra-ui.com"
-      variant="outline"
-      colorScheme="green"
-      rounded="button"
-      flexGrow={1}
-      mx={2}
-      width="full"
-    >
-      chakra-ui
-    </Button>
+   
     <Button
       as={ChakraLink}
       isExternal
       href="https://github.com/vercel/next.js/blob/canary/examples/with-chakra-ui"
       variant="solid"
-      colorScheme="green"
+      colorScheme="red"
       rounded="button"
       flexGrow={3}
       mx={2}
       width="full"
     >
-      View Repo
+      View Details
     </Button>
   </Container>
 );

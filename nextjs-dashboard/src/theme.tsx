@@ -1,4 +1,3 @@
-// theme.js
 import { extendTheme } from "@chakra-ui/react";
 
 // 1. Font setup
@@ -8,25 +7,25 @@ const fonts = {
   mono: `'Menlo', monospace`,
 };
 
-// 2. Color palette based on your MINI Brand Kit
+// 2. Brand Colors — based on your logo palette
 const colors = {
   brand: {
-    50: "#ffe8f7",
-    100: "#fbc2ec",
-    200: "#f48bdd",
-    300: "#eb54cc",
-    400: "#e12bbd",
-    500: "#c912a3", // Primary pink/purple core
-    600: "#a00b83",
-    700: "#780664",
-    800: "#500345",
-    900: "#2a0126",
+    50: "#FDEBF1",
+    100: "#F8C6D2",
+    200: "#F18AA5",
+    300: "#E94E78",
+    400: "#D92052",
+    500: "#800020", // Deep maroon — primary brand color
+    600: "#640019",
+    700: "#490013",
+    800: "#2E000C",
+    900: "#190005",
   },
   accent: {
-    100: "#c9f7f5",
-    300: "#00cfc8",
-    500: "#009e98",
-    700: "#007872",
+    olive: "#8B9A46",
+    teal: "#006E7F",
+    purple: "#2A0055",
+    cream: "#EEEEEE",
   },
   gray: {
     50: "#f9f9f9",
@@ -52,24 +51,28 @@ const breakpoints = {
   xl: "80em",
 };
 
-// 4. Semantic tokens for light/dark mode harmony
+// 4. Semantic tokens for theme harmony
 const semanticTokens = {
   colors: {
     text: {
       default: "#16161D",
-      _dark: "#E4E4E4",
+      _dark: "#EEEEEE",
     },
     background: {
       default: "#FFFFFF",
       _dark: "#0D0D0D",
     },
     heroGradientStart: {
-      default: "brand.700",
-      _dark: "brand.200",
+      default: "#800020",
+      _dark: "#8B9A46",
     },
     heroGradientEnd: {
+      default: "#2A0055",
+      _dark: "#006E7F",
+    },
+    link: {
       default: "brand.500",
-      _dark: "brand.100",
+      _dark: "accent.cream",
     },
   },
   radii: {
@@ -82,10 +85,20 @@ const styles = {
   global: {
     "html, body": {
       fontFamily: `'Inter', sans-serif`,
-      background: "background",
+      backgroundColor: "background",
       color: "text",
       lineHeight: "1.6",
       scrollBehavior: "smooth",
+    },
+    h1: {
+      fontSize: ["4xl", "5xl", "6xl"],
+      fontWeight: "700",
+      color: "brand.500",
+    },
+    h2: {
+      fontSize: ["2xl", "3xl"],
+      fontWeight: "600",
+      color: "brand.500",
     },
     a: {
       color: "brand.500",
@@ -101,34 +114,47 @@ const styles = {
   },
 };
 
-// 6. Final theme export
+// 6. Component styles (buttons, headings, etc.)
+const components = {
+  Button: {
+    baseStyle: {
+      borderRadius: "12px",
+      fontWeight: "600",
+    },
+    variants: {
+      solid: {
+        bg: "brand.500",
+        color: "white",
+        _hover: { bg: "brand.400" },
+        _active: { bg: "brand.600" },
+      },
+      outline: {
+        borderColor: "brand.500",
+        color: "brand.500",
+        _hover: { bg: "brand.50" },
+      },
+      ghost: {
+        color: "brand.500",
+        _hover: { bg: "brand.50" },
+      },
+    },
+  },
+  Heading: {
+    baseStyle: {
+      fontFamily: "heading",
+      color: "brand.500",
+    },
+  },
+};
+
+// 7. Export theme
 const theme = extendTheme({
   fonts,
   colors,
   breakpoints,
   semanticTokens,
   styles,
-  components: {
-    Button: {
-      baseStyle: {
-        borderRadius: "12px",
-        fontWeight: "600",
-      },
-      variants: {
-        solid: {
-          bg: "brand.500",
-          color: "white",
-          _hover: { bg: "brand.400" },
-          _active: { bg: "brand.600" },
-        },
-        outline: {
-          borderColor: "brand.500",
-          color: "brand.500",
-          _hover: { bg: "brand.50" },
-        },
-      },
-    },
-  },
+  components,
 });
 
 export default theme;
