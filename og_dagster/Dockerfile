@@ -10,6 +10,7 @@ COPY . /app
 
 # Expose Dagster webserver port
 EXPOSE 3000
+ENV PYTHONPATH=/app
 
 # Start Dagster UI + daemon
 CMD ["dagster", "dev", "-w", "workspace.yaml", "-h", "0.0.0.0", "-p", "3000"]

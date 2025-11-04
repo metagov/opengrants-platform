@@ -25,6 +25,7 @@ services:
     volumes:
       - ./og_dagster:/app
       - ./duckdb:/data/duckdb
+      - ./raw_data:/app/raw_data
     environment:
       - DAGSTER_HOME=/app
       - DUCKDB_CACHE_PATH=/app/duckdb/data/local.duckdb

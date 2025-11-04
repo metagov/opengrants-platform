@@ -5,22 +5,19 @@ import polars as pl
 from dagster import asset, get_dagster_logger
 
 from utils.db import get_pg_engine
-from utils.helpers import sanitize_for_sql, align_columns
+from utils.graphql_helpers import sanitize_for_sql, align_columns
 
 logger = get_dagster_logger()
 
 @asset(
     name="bronze_scf_csv_ingest",
-    description="Ingest raw SCF CSVs (Awarded Projects, Awarded Submissions, Rounds) into Postgres bronze layer.",
-    group_name="bronze"
+    description="Ingest raw SCF CSVs into Postgres bronze layer.",
+    group_name="bronze",
 )
 def bronze_scf_csv_ingest(context):
-    """
-    Loads raw SCF CSV files from raw_data/SCF into Postgres bronze tables.
-    """
-
-    base_dir = os.getenv("RAW_DATA_PATH", "raw_data/SCF/11_November_2025")
+    base_dir = os.getenv("RAW_DATA_PATH", "/app/raw_data/SCF/11_November_2025")
     engine = get_pg_engine()
+    context.log.info(f"📂 Loading CSVs from: {base_dir}")
 
     csv_files = {
         "bronze_scf_projects": "Awarded Projects [Build only]-By Active _ Category 11_November_2025.csv",
@@ -30,17 +27,26 @@ def bronze_scf_csv_ingest(context):
 
     for table_name, filename in csv_files.items():
         file_path = os.path.join(base_dir, filename)
+        # ✅ Normalize and escape path for Polars
+        safe_path = file_path.replace("[", "\\[").replace("]", "\\]").replace(" ", "\\ ")
+        context.log.info(f"🔍 Attempting to read: {safe_path}")
+
         if not os.path.exists(file_path):
-            context.log.warning(f"⚠️ File not found: {file_path}")
+            context.log.warning(f"⚠️ File not found at {file_path}")
             continue
 
-        context.log.info(f"📥 Loading {file_path}")
-        df = pl.read_csv(file_path)
-        df = sanitize_for_sql(df)
-        pdf = df.to_pandas()
+        try:
+            # ✅ Use `glob=False` to disable wildcard expansion
+            df = pl.read_csv(file_path, has_header=True, glob=False)
+            df = sanitize_for_sql(df)
+            pdf = df.to_pandas()
 
-        with engine.begin() as conn:
-            pdf.to_sql(table_name, conn, if_exists="replace", index=False)
-        context.log.info(f"✅ Loaded {len(df)} records into {table_name}")
+            with engine.begin() as conn:
+                pdf.to_sql(table_name, conn, if_exists="replace", index=False)
+
+            context.log.info(f"✅ Loaded {len(df)} records into {table_name}")
+
+        except Exception as e:
+            context.log.error(f"❌ Failed reading {file_path}: {e}")
 
     context.log.info("🎯 Bronze SCF ingest complete.")

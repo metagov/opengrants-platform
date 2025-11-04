@@ -3,7 +3,7 @@ from dagster import AssetSelection, Definitions, define_asset_job
 
 # Define ETL job for Giveth bronze layer
 giveth_etl_job = define_asset_job(
-    name="giveth_etl_job",
+    name="bronze_giveth_job",
     selection=AssetSelection.assets(
         fetch_giveth_data
     ),  # auto-detects both bronze assets
