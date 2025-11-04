@@ -42,7 +42,6 @@ The **Medallion (Bronze–Silver–Gold)** model structures our data pipeline in
 - Stored in DuckDB for fast querying and dashboard integration.
 - Examples: funding trends, grant round stats, ecosystem funding distributions.
 
-```
 
 ```
       ┌──────────┐
@@ -60,7 +59,7 @@ The **Medallion (Bronze–Silver–Gold)** model structures our data pipeline in
       └──────────┘
 ```
 
-````
+
 
 ---
 
@@ -140,9 +139,7 @@ GitHub Actions automates:
 * [Docker Install on WSL Tutorial](https://daniel.es/blog/how-to-install-docker-in-wsl-without-docker-desktop/)
 
 
-```
-
 ##### Contact: rashmi@metagov.org
-ipelines`
+
 
 
