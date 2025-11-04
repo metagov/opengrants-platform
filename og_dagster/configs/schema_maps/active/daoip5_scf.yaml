@@ -1,0 +1,301 @@
+# ============================================================
+# DAOIP-5 Unified Schema Map — Stellar Community Fund (SCF)
+# ============================================================
+
+manifest:
+  schema_name: daoip5_scf
+  version: 1.0.0
+  source_system: "Stellar Community Fund (Airtable CSV)"
+  last_updated: "2025-11-03T00:00:00Z"
+  description: >
+    DAOIP-5 compliant mapping for Stellar Community Fund data (Projects, 
+    Grant Applications, and Grant Pools). All extra fields are preserved 
+    under extensions to avoid data loss.
+
+schemas:
+
+  # ----------------------------------------------------------
+  # DAOIP-5: Project Schema
+  # ----------------------------------------------------------
+  projects:
+    table: bronze_scf_projects
+    target_table: silver_scf_projects
+
+    fields:
+      id:
+        source: Title
+        type: string
+        transform: "lambda v: f'daoip-5:scf:project:{v.lower().replace(' ', '_')}' if v else None"
+        required: true
+      name:
+        source: Title
+        type: string
+        required: true
+      description:
+        source: Description
+        type: string
+      contentURI:
+        source: Website
+        type: string
+      category:
+        source: Category
+        type: string
+      image:
+        source: Thumbnail
+        type: string
+      impactLocation:
+        source: Regions of Operation
+        type: string
+      openSource:
+        source: "Open-Source?"
+        type: boolean
+      socials:
+        source:
+          - Github
+          - Discord
+          - X
+          - LinkedIn
+        type: json
+        transform: |
+          lambda Github, Discord, X, LinkedIn: [
+            {"name": "Github", "link": Github},
+            {"name": "Discord", "link": Discord},
+            {"name": "X", "link": X},
+            {"name": "LinkedIn", "link": LinkedIn},
+          ]
+      relatedGrantPool:
+        source: "Round (from Awarded Submissions)"
+        type: string
+        transform: "lambda v: f'daoip-5:scf:grantPool:{v.lower().replace(' ', '_')}' if v else None"
+
+    extensions:
+      io.scf:
+        totalAwardedUSD:
+          source: "Total Awarded"
+          type: float
+        totalPaidUSD:
+          source: "Total Paid"
+          type: float
+        auditReportURI:
+          source: "Public Audit Report (from Audits) (from Audit Bank)"
+          type: string
+        analytics:
+          source: Analytics
+          type: string
+        teamDescription:
+          source: "Team Description"
+          type: string
+        submissionsCount:
+          source: Submissions
+          type: integer
+        awardedSubmissionsCount:
+          source: "Awarded Submissions"
+          type: integer
+        sorobanUsed:
+          source: Soroban?
+          type: boolean
+        integrationStatus:
+          source: Integration Status
+          type: string
+        submissionURLAll:
+          source: "Submission URL (from All Submissions)"
+          type: string
+        submissionURLAwarded:
+          source: "Submission URL (from Awarded Submissions)"
+          type: string
+
+  # ----------------------------------------------------------
+  # DAOIP-5: GrantApplication Schema
+  # ----------------------------------------------------------
+  grant_applications:
+    table: bronze_scf_submissions
+    target_table: silver_scf_grant_applications
+
+    fields:
+      id:
+        source: "Submission / Project"
+        type: string
+        transform: "lambda v: f'daoip-5:scf:application:{v.lower().replace(' ', '_')}' if v else None"
+        required: true
+      name:
+        source: "Submission Title"
+        type: string
+        required: true
+      description:
+        source: "One-Sentence-Description"
+        type: string
+      contentURI:
+        source: "Submission URL"
+        type: string
+      fundingAmountUSD:
+        source: "Total Awarded (USD)"
+        type: float
+      relatedProject:
+        source: Project
+        type: string
+        transform: "lambda v: f'daoip-5:scf:project:{v.lower().replace(' ', '_')}' if v else None"
+      relatedGrantPool:
+        source: Round
+        type: string
+        transform: "lambda v: f'daoip-5:scf:grantPool:{v.lower().replace(' ', '_')}' if v else None"
+      grantType:
+        source: "Award Type"
+        type: string
+
+    extensions:
+      io.scf:
+        trancheCompletionPercent:
+          source: "Tranche Completion %"
+          type: float
+        totalPaidUSD:
+          source: "Total Paid (USD)"
+          type: float
+        totalPaidXLM:
+          source: "Total Paid (XLM)"
+          type: float
+        mostRecentPaymentDate:
+          source: "Most Recent Payment Date"
+          type: datetime
+        useSoroban:
+          source: "Use Soroban?"
+          type: boolean
+        trancheDetails:
+          source:
+            - "Tranche 1 - Deliverables"
+            - "Tranche 2 - Testnet"
+            - "Tranche 3 - Mainnet"
+          type: json
+          transform: |
+            lambda t1, t2, t3: {"Tranche 1": t1, "Tranche 2": t2, "Tranche 3": t3}
+        goToMarketPlan:
+          source: "Go-To-Market Plan"
+          type: string
+        tractionEvidence:
+          source: "Traction Evidence"
+          type: string
+        technicalArchitecture:
+          source: "Technical Architecture"
+          type: string
+        successCriteria:
+          source: "Success Criteria"
+          type: string
+        productsAndServices:
+          source: "Products & Services"
+          type: string
+        teamMembers:
+          source: "Team Members"
+          type: string
+        codeURI:
+          source: Code
+          type: string
+        videoURI:
+          source: Video
+          type: string
+        websiteURI:
+          source: Website
+          type: string
+        pitchDeckURI:
+          source: "Pitch Deck (from Project)"
+          type: string
+        awardCompletionDurationWeeks:
+          source: "\"Award Completion Duration (if Mainnet in Weeks)\""
+          type: float
+        trancheCompletion:
+          source: "Tranche Completion"
+          type: string
+        linkedin:
+          source: "LinkedIn (from Project)"
+          type: string
+        twitter:
+          source: "X (from Project)"
+          type: string
+        discord:
+          source: "Discord (from Project)"
+          type: string
+
+  # ----------------------------------------------------------
+  # DAOIP-5: GrantPool Schema
+  # ----------------------------------------------------------
+  grant_pools:
+    table: bronze_scf_rounds
+    target_table: silver_scf_grant_pools
+
+    fields:
+      id:
+        source: Name
+        type: string
+        transform: "lambda v: f'daoip-5:scf:grantPool:{v.lower().replace(' ', '_')}' if v else None"
+        required: true
+      name:
+        source: Name
+        type: string
+        required: true
+      description:
+        source: Description
+        type: string
+      openDate:
+        source: "Submission Open Date"
+        type: datetime
+      closeDate:
+        source: "Submission Close Date"
+        type: datetime
+      applicationsURI:
+        source: "Round URL"
+        type: string
+      totalGrantPoolSizeInUSD:
+        source: "Total Awarded (USD)"
+        type: float
+      image:
+        source: Image
+        type: string
+
+    extensions:
+      org.stellar.communityfund:
+        phase:
+          source: Phase
+          type: string
+        percentAwarded:
+          source: "% Awarded"
+          type: float
+        totalPaidUSD:
+          source: "Total Paid (USD)"
+          type: float
+        totalPaidXLM:
+          source: "Total Paid (XLM)"
+          type: float
+        averageAwardedUSD:
+          source: "Average Awarded in USD"
+          type: float
+        votersNumber:
+          source: "Voters Number"
+          type: integer
+        projectPitches:
+          source: "Project Pitches"
+          type: string
+        scfVersion:
+          source: "SCF Version"
+          type: string
+        roundRecap:
+          source: "Round Recap"
+          type: string
+        year:
+          source: Year
+          type: integer
+        quarterYear:
+          source: "\"Quarter Year\""
+          type: string
+        type:
+          source: Type
+          type: string
+
+meta:
+  daoip_version: 5
+  author: "Rashmi V. Abbigeri <rashmi@metagov.org>"
+  mapping_strategy: "DAOIP-5 compliant + io.scf extensions"
+  compatible_with: ["opengrants-silver-pipeline>=0.3.0"]
+  validation_rules:
+    json_fields_must_parse: true
+    json_schema_enforced: true
+    id_format: "daoip-5:scf"
+    enum_enforced: false
+    required_fields: ["id", "name", "description", "totalGrantPoolSizeInUSD"]

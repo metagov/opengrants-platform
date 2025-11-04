@@ -74,7 +74,7 @@ export default function Index() {
           fontWeight="extrabold"
           letterSpacing="tight"
         >
-          OpenGrants
+          Ecosystem
         </Heading>
         <Text
           fontSize="lg"
@@ -88,7 +88,7 @@ export default function Index() {
           <BarSegment data={chartData} />
         </Box>
 
-      <Link href="/overview">
+      <Link href="/about">
         <Button
           mt={8}
           variant="outline"
