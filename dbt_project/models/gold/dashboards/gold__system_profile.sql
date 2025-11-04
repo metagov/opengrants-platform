@@ -1,4 +1,7 @@
+--dbt_project/models/gold/dashboards/gold__system_profile.sql
 {{ config(materialized='table') }}
+
+-- Giveth-only system profile combining verification and engagement insights.
 
 SELECT
     p.source,
@@ -13,6 +16,7 @@ LEFT JOIN {{ ref('gold__engagement_metrics') }} e
   ON v.source = e.source
 LEFT JOIN {{ ref('gold__all_projects') }} p
   ON v.source = p.source
+WHERE p.source = 'Giveth'
 GROUP BY
     p.source,
     v.verification_status,
