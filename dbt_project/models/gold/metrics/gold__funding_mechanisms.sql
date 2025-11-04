@@ -1,3 +1,4 @@
+--dbt_project/models/gold/metrics/gold__funding_mechanisms.sql
 {{ config(materialized='table') }}
 
 SELECT

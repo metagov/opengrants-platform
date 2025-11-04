@@ -8,9 +8,7 @@ manifest:
   source_system: "Stellar Community Fund (Airtable CSV)"
   last_updated: "2025-11-03T00:00:00Z"
   description: >
-    DAOIP-5 compliant mapping for Stellar Community Fund data (Projects, 
-    Grant Applications, and Grant Pools). All extra fields are preserved 
-    under extensions to avoid data loss.
+    DAOIP-5 compliant mapping for Stellar Community Fund data (Projects, Grant Applications, and Grant Pools). All extra fields are preserved under extensions to avoid data loss.
 
 schemas:
 
@@ -37,45 +35,45 @@ schemas:
       contentURI:
         source: Website
         type: string
-      category:
-        source: Category
-        type: string
       image:
         source: Thumbnail
         type: string
-      impactLocation:
-        source: Regions of Operation
-        type: string
-      openSource:
-        source: "Open-Source?"
-        type: boolean
       socials:
         source:
-          - Github
-          - Discord
-          - X
-          - LinkedIn
+        - Github
+        - Discord
+        - X
+        - LinkedIn
         type: json
         transform: |
           lambda Github, Discord, X, LinkedIn: [
-            {"name": "Github", "link": Github},
-            {"name": "Discord", "link": Discord},
-            {"name": "X", "link": X},
-            {"name": "LinkedIn", "link": LinkedIn},
+            {"name": "GitHub", "value": Github} if Github else None,
+            {"name": "Discord", "value": Discord} if Discord else None,
+            {"name": "X", "value": X} if X else None,
+            {"name": "LinkedIn", "value": LinkedIn} if LinkedIn else None,
           ]
-      relatedGrantPool:
-        source: "Round (from Awarded Submissions)"
-        type: string
-        transform: "lambda v: f'daoip-5:scf:grantPool:{v.lower().replace(' ', '_')}' if v else None"
 
     extensions:
       io.scf:
+        impactLocation:
+          source: "Regions of Operation"
+          type: string
+        openSource:
+          source: "Open-Source?"
+          type: boolean
+        relatedGrantPool:
+          source: "Round (from Awarded Submissions)"
+          type: string
+          transform: "lambda v: f'daoip-5:scf:grantPool:{v.lower().replace(' ', '_')}' if v else None"
         totalAwardedUSD:
           source: "Total Awarded"
           type: float
         totalPaidUSD:
           source: "Total Paid"
           type: float
+        category:
+          source: Category
+          type: string
         auditReportURI:
           source: "Public Audit Report (from Audits) (from Audit Bank)"
           type: string
@@ -127,23 +125,52 @@ schemas:
       contentURI:
         source: "Submission URL"
         type: string
-      fundingAmountUSD:
-        source: "Total Awarded (USD)"
-        type: float
-      relatedProject:
+      projectId:
         source: Project
         type: string
         transform: "lambda v: f'daoip-5:scf:project:{v.lower().replace(' ', '_')}' if v else None"
-      relatedGrantPool:
+      grantPoolId:
         source: Round
         type: string
         transform: "lambda v: f'daoip-5:scf:grantPool:{v.lower().replace(' ', '_')}' if v else None"
-      grantType:
-        source: "Award Type"
-        type: string
+      fundsAskedInUSD:
+        source: "Total Awarded (USD)"
+        type: float
+      status:
+        source: null
+        type: enum
+        allowed:
+        - "pending"
+        - "in_review"
+        - "approved"
+        - "funded"
+        - "rejected"
+        - "completed"
+        transform: |
+          lambda row: "approved" if row.get("Total Awarded (USD)") and float(row.get("Total Awarded (USD)", 0)) > 0 else "pending"
+      socials:
+        source:
+        - "LinkedIn (from Project)"
+        - "X (from Project)"
+        - "Discord (from Project)"
+        - Github
+        type: json
+        transform: |
+          lambda LinkedIn, X, Discord, Github: [
+            {"platform": "LinkedIn", "url": LinkedIn} if LinkedIn else None,
+            {"platform": "Twitter", "url": X} if X else None,
+            {"platform": "Discord", "url": Discord} if Discord else None,
+            {"platform": "GitHub", "url": Github} if Github else None,
+          ]
 
     extensions:
       io.scf:
+        fundingAmountUSD:
+          source: "Total Awarded (USD)"
+          type: float
+        grantType:
+          source: "Award Type"
+          type: string
         trancheCompletionPercent:
           source: "Tranche Completion %"
           type: float
@@ -161,9 +188,9 @@ schemas:
           type: boolean
         trancheDetails:
           source:
-            - "Tranche 1 - Deliverables"
-            - "Tranche 2 - Testnet"
-            - "Tranche 3 - Mainnet"
+          - "Tranche 1 - Deliverables"
+          - "Tranche 2 - Testnet"
+          - "Tranche 3 - Mainnet"
           type: json
           transform: |
             lambda t1, t2, t3: {"Tranche 1": t1, "Tranche 2": t2, "Tranche 3": t3}
@@ -203,15 +230,6 @@ schemas:
         trancheCompletion:
           source: "Tranche Completion"
           type: string
-        linkedin:
-          source: "LinkedIn (from Project)"
-          type: string
-        twitter:
-          source: "X (from Project)"
-          type: string
-        discord:
-          source: "Discord (from Project)"
-          type: string
 
   # ----------------------------------------------------------
   # DAOIP-5: GrantPool Schema
@@ -233,24 +251,36 @@ schemas:
       description:
         source: Description
         type: string
-      openDate:
-        source: "Submission Open Date"
-        type: datetime
-      closeDate:
-        source: "Submission Close Date"
-        type: datetime
       applicationsURI:
         source: "Round URL"
         type: string
       totalGrantPoolSizeInUSD:
         source: "Total Awarded (USD)"
         type: float
-      image:
-        source: Image
-        type: string
+      grantFundingMechanism:
+        source: null
+        type: enum
+        allowed:
+        - "Quadratic Funding"
+        - "Direct Grants"
+        - "Retro Funding"
+        - "Streaming Quadratic Funding"
+        - "Bounties"
+        - "Delegated Domain Allocation"
+        - "Impact Attestations"
+        transform: "lambda _: 'Direct Grants'"
 
     extensions:
       org.stellar.communityfund:
+        openDate:
+          source: "Submission Open Date"
+          type: datetime
+        closeDate:
+          source: "Submission Close Date"
+          type: datetime
+        image:
+          source: Image
+          type: string
         phase:
           source: Phase
           type: string
@@ -292,10 +322,10 @@ meta:
   daoip_version: 5
   author: "Rashmi V. Abbigeri <rashmi@metagov.org>"
   mapping_strategy: "DAOIP-5 compliant + io.scf extensions"
-  compatible_with: ["opengrants-silver-pipeline>=0.3.0"]
+  compatible_with: [ "opengrants-silver-pipeline>=0.3.0" ]
   validation_rules:
     json_fields_must_parse: true
     json_schema_enforced: true
     id_format: "daoip-5:scf"
     enum_enforced: false
-    required_fields: ["id", "name", "description", "totalGrantPoolSizeInUSD"]
+    required_fields: [ "id", "name", "description", "totalGrantPoolSizeInUSD" ]

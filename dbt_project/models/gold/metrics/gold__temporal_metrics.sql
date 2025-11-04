@@ -1,3 +1,4 @@
+-- dbt_project/models/gold/metrics/gold__temporal_metrics.sql   
 {{ config(materialized='table') }}
 
 SELECT
