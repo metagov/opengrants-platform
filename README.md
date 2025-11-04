@@ -1,4 +1,4 @@
-# OpenGrants Data Platform — Developer Guide
+# OpenGrants Data Platform
 
 This document explains the architecture, local development setup, and design principles for the OpenGrants monorepo.
 
@@ -144,4 +144,5 @@ GitHub Actions automates:
 
 ##### Contact: rashmi@metagov.org
 ipelines`
+
 
