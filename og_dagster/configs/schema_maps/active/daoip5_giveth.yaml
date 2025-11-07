@@ -8,7 +8,7 @@ manifest:
   source_system: "Giveth Mainnet API"
   last_updated: "2025-11-03T15:07:56Z"
   description: >
-    Strict DAOIP-5-compliant schema mapping for Giveth grant rounds and projects. This schema preserves interoperability across DAOIP-based ecosystems while  allowing custom metadata through x-giveth extensions.
+    DAOIP-5-compliant schema mapping for Giveth grant rounds and projects. This schema preserves interoperability across DAOIP-based ecosystems while  allowing custom metadata through x-giveth extensions.
 
 schemas:
 
