@@ -10,6 +10,7 @@ sqlalchemy
 python-dotenv
 polars
 pyarrow>=8.0.0
+yamale
 
 # Linters
 ruff

@@ -1,0 +1,70 @@
+# ============================================================
+# DAOIP-5 Schema Validation (Yamale)
+# ============================================================
+
+manifest:
+  schema_name: str()
+  version: str()
+  source_system: str()
+  last_updated: str(required=False)
+  description: str()
+schemas: include('schemas_block')
+meta: include('meta_schema')
+---
+
+# ============================================================
+# SCHEMAS BLOCK
+# ============================================================
+schemas_block:
+  projects: include('entity_schema')
+  grant_pools: include('entity_schema')
+  grant_applications: include('entity_schema', required=False)
+---
+
+# ============================================================
+# ENTITY SCHEMA
+# ============================================================
+entity_schema:
+  table: str()
+  target_table: str()
+  fields: map(include('field_schema'), key=str())
+  extensions: map(include('extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+---
+
+# ============================================================
+# FIELD SCHEMA
+# ============================================================
+field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string', 'integer', 'float', 'boolean', 'datetime', 'json', 'enum')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+  json_schema: map(required=False)
+---
+
+# ============================================================
+# EXTENSION VALIDATION (single-line safe)
+# ============================================================
+extension_fields: map(include('field_schema'), key=str())
+
+# ============================================================
+# META SCHEMA
+# ============================================================
+meta_schema:
+  daoip_version: int()
+  author: str()
+  mapping_strategy: str()
+  compatible_with: list(str(), required=False)
+  validation_rules: include('validation_rules_schema')
+---
+
+# ============================================================
+# VALIDATION RULES SCHEMA
+# ============================================================
+validation_rules_schema:
+  json_fields_must_parse: bool(required=False)
+  json_schema_enforced: bool(required=False)
+  id_format: str(required=False)
+  enum_enforced: bool(required=False)
+  required_fields: list(str(), required=False)
