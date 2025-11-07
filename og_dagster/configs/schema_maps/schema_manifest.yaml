@@ -38,7 +38,7 @@ project_schema:
     socials: include('socials_field_schema')
     membersURI: include('optional_uri_field_schema')
     attestationIssuersURI: include('optional_json_array_field_schema')
-    relaventTo: include('optional_json_array_field_schema')
+    relevantTo: include('optional_json_array_field_schema')
     licenseURI: include('optional_uri_field_schema')
   extensions: map(include('project_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
 ---
