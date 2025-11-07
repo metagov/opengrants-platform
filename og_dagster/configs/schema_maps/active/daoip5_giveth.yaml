@@ -8,7 +8,7 @@ manifest:
   source_system: "Giveth Mainnet API"
   last_updated: "2025-11-03T15:07:56Z"
   description: >
-    DAOIP-5-compliant schema mapping for Giveth grant rounds and projects. This schema preserves interoperability across DAOIP-based ecosystems while  allowing custom metadata through x-giveth extensions.
+    DAOIP-5-compliant schema mapping for Giveth grant rounds and projects. This schema preserves interoperability across DAOIP-based ecosystems while  allowing custom metadata through io.giveth extensions.
 
 schemas:
 
@@ -60,8 +60,32 @@ schemas:
       applicationsURI:
         source: null
         type: string
-        description: >
-          Not provided by Giveth API — left null for now.
+      coverImage:
+        source: null
+        type: string
+        required: false
+      email:
+        source: null
+        type: string
+        required: false
+      governanceURI:
+        source: null
+        type: string
+        required: false
+      attestationIssuersURI:
+        source: null
+        type: string
+        required: false
+      requiredCredentials:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+      totalGrantPoolSize:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: [{'amount': 0, 'denomination': 'ETH'}]"
 
     extensions:
       io.giveth:
@@ -101,27 +125,21 @@ schemas:
         allocatedFund:
           source: qfRound_allocatedFund
           type: integer
-          description: "Original allocated fund amount in native token"
         beginDate:
           source: qfRound_beginDate
           type: datetime
-          description: "Round start date"
         minMBDScore:
           source: qfRound_minMBDScore
           type: integer
-          description: "Minimum MBD score requirement"
         minimumValidUsdValue:
           source: qfRound_minimumValidUsdValue
           type: float
-          description: "Minimum USD value for valid donations"
         slug:
           source: qfRound_slug
           type: string
-          description: "URL slug for the round"
         sponsorsImgs:
           source: qfRound_sponsorsImgs
           type: json
-          description: "Sponsor images array"
           transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
         title:
           source: qfRound_title
@@ -170,43 +188,38 @@ schemas:
         type: string
       email:
         source: contacts
-        type: json
-        transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        json_schema:
-          type: array
-          items:
-            type: object
-            properties:
-              url: { type: string, format: "email" }
-            required: [ "url" ]
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v)[0]['url'] if v and isinstance(v, str) and json.loads(v) else None"
       membersURI:
         source: website
         type: string
+        required: false
       attestationIssuersURI:
         source: null
-        type: string
+        type: json
+        required: false
+        transform: "lambda _: []"
       image:
         source: image
         type: string
       coverImage:
         source: null
         type: string
+        required: false
       licenseURI:
         source: null
         type: string
+        required: false
+      relevantTo:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
       socials:
         source: socialProfiles
         type: json
         transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        json_schema:
-          type: array
-          items:
-            type: object
-            properties:
-              name: { type: string }
-              link: { type: string, format: "uri" }
-              socialNetwork: { type: string }
-              isVerified: { type: boolean }
 
     extensions:
       io.giveth:
@@ -381,7 +394,7 @@ schemas:
 meta:
   daoip_version: 5
   author: "Rashmi V. Abbigeri <rashmi@metagov.org>"
-  mapping_strategy: "DAOIP-5 compliant + x-giveth extensions"
+  mapping_strategy: "DAOIP-5 compliant + io.giveth extensions"
   compatible_with: [ "opengrants-silver-pipeline>=0.3.0" ]
   validation_rules:
     json_fields_must_parse: true
