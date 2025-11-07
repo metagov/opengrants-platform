@@ -1,0 +1,397 @@
+# ============================================================
+# DAOIP-5 Schema Validation (Yamale)
+# ============================================================
+
+manifest:
+  schema_name: str()
+  version: str()
+  source_system: str()
+  last_updated: str(required=False)
+  description: str()
+schemas: include('schemas_block')
+meta: include('meta_schema')
+---
+
+# ============================================================
+# SCHEMAS BLOCK
+# ============================================================
+schemas_block:
+  projects: include('project_schema')
+  grant_pools: include('grant_pool_schema')
+  grant_applications: include('grant_application_schema', required=False)
+---
+
+# ============================================================
+# PROJECT SCHEMA
+# ============================================================
+project_schema:
+  table: str()
+  target_table: str()
+  fields:
+    id: include('id_field_schema')
+    name: include('name_field_schema')
+    description: include('description_field_schema')
+    contentURI: include('uri_field_schema')
+    image: include('image_field_schema')
+    coverImage: include('optional_image_field_schema')
+    email: include('optional_email_field_schema')
+    socials: include('socials_field_schema')
+    membersURI: include('optional_uri_field_schema')
+    attestationIssuersURI: include('optional_json_array_field_schema')
+    relaventTo: include('optional_json_array_field_schema')
+    licenseURI: include('optional_uri_field_schema')
+  extensions: map(include('project_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+---
+
+# ============================================================
+# GRANT APPLICATION SCHEMA
+# ============================================================
+grant_application_schema:
+  table: str()
+  target_table: str()
+  fields:
+    id: include('id_field_schema')
+    name: include('name_field_schema')
+    grantPoolName: include('string_field_schema')
+    createdAt: include('datetime_field_schema')
+    discussionTo: include('optional_string_field_schema')
+    licenseURI: include('optional_uri_field_schema')
+    isInactive: include('boolean_field_schema')
+    applicationCompletionRate: include('optional_float_field_schema')
+    description: include('description_field_schema')
+    contentURI: include('uri_field_schema')
+    projectId: include('project_id_field_schema')
+    grantPoolId: include('grant_pool_id_field_schema')
+    fundsAskedInUSD: include('optional_currency_field_schema')
+    fundsAsked: include('optional_funding_field_schema')
+    fundsApproved: include('optional_funding_field_schema')
+    payoutAddress: include('optional_payout_address_field_schema')
+    payouts: include('optional_payouts_field_schema')
+    fundsApprovedInUSD: include('currency_field_schema')
+    status: include('application_status_field_schema')
+    socials: include('application_socials_field_schema')
+  extensions: map(include('grant_application_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+---
+
+# ============================================================
+# GRANT POOL SCHEMA
+# ============================================================
+grant_pool_schema:
+  table: str()
+  target_table: str()
+  fields:
+    id: include('id_field_schema')
+    name: include('name_field_schema')
+    description: include('description_field_schema')
+    applicationsURI: include('uri_field_schema')
+    totalGrantPoolSizeInUSD: include('currency_field_schema')
+    isOpen: include('boolean_field_schema')
+    closeDate: include('datetime_field_schema')
+    image: include('image_field_schema')
+    coverImage: include('optional_image_field_schema')
+    email: include('optional_email_field_schema')
+    grantFundingMechanism: include('funding_mechanism_field_schema')
+    governanceURI: include('optional_uri_field_schema')
+    attestationIssuersURI: include('optional_uri_field_schema')
+    requiredCredentials: include('optional_json_array_field_schema')
+    totalGrantPoolSize: include('optional_grant_pool_size_field_schema')
+  extensions: map(include('grant_pool_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+---
+
+# ============================================================
+# CORE FIELD TYPE DEFINITIONS
+# ============================================================
+
+# Basic Field Types
+string_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+optional_string_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str(required=False)
+  required: bool()
+  allowed: list(required=False)
+
+integer_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('integer')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+float_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('float')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+boolean_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('boolean')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+datetime_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('datetime')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+enum_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('enum')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list()
+  json_schema: map(required=False)
+
+json_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('json')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+  json_schema: map(required=False)
+
+# Optional Variants
+optional_integer_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('integer')
+  transform: str(required=False)
+  required: bool()
+  allowed: list(required=False)
+
+optional_float_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('float')
+  transform: str(required=False)
+  required: bool()
+  allowed: list(required=False)
+
+optional_boolean_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('boolean')
+  transform: str(required=False)
+  required: bool()
+  allowed: list(required=False)
+
+optional_datetime_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('datetime')
+  transform: str(required=False)
+  required: bool()
+  allowed: list(required=False)
+
+optional_json_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('json')
+  transform: str(required=False)
+  required: bool()
+  allowed: list(required=False)
+  json_schema: map(required=False)
+
+# ============================================================
+# DOMAIN-SPECIFIC FIELD TYPES
+# ============================================================
+
+# ID Fields
+id_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str()
+  required: bool()
+
+project_id_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str()
+  required: bool(required=False)
+
+grant_pool_id_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str()
+  required: bool(required=False)
+
+# Content Fields
+name_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str(required=False)
+  required: bool()
+
+description_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str(required=False)
+  required: bool(required=False)
+
+# URI Fields
+uri_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str(required=False)
+  required: bool(required=False)
+
+optional_uri_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str(required=False)
+  required: bool()
+
+# Media Fields
+image_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str(required=False)
+  required: bool(required=False)
+
+optional_image_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str(required=False)
+  required: bool()
+
+# Contact Fields
+optional_email_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('string')
+  transform: str(required=False)
+  required: bool()
+
+# Social Fields
+socials_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('json')
+  transform: str()
+  required: bool(required=False)
+
+application_socials_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('json')
+  transform: str()
+  required: bool(required=False)
+
+# Financial Fields
+currency_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('float')
+  transform: str(required=False)
+  required: bool(required=False)
+
+optional_currency_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('float')
+  transform: str(required=False)
+  required: bool()
+
+optional_funding_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('json')
+  transform: str()
+  required: bool()
+
+# Payment Fields
+optional_payout_address_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('json')
+  transform: str()
+  required: bool()
+
+optional_payouts_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('json')
+  transform: str()
+  required: bool()
+
+# Grant Pool Specific
+funding_mechanism_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('enum')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list()
+
+optional_grant_pool_size_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('json')
+  transform: str()
+  required: bool()
+
+# Application Specific
+application_status_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('enum')
+  transform: str()
+  required: bool(required=False)
+  allowed: list()
+
+# Array Fields
+optional_json_array_field_schema:
+  source: any(str(), list(str()), null())
+  type: enum('json')
+  transform: str()
+  required: bool()
+
+# ============================================================
+# EXTENSION FIELD TYPES
+# ============================================================
+
+# Project Extension Fields
+project_extension_fields: map(include('project_extension_field'), key=str())
+project_extension_field:
+  source: any(str(), list(str()), null())
+  type: enum('string', 'integer', 'float', 'boolean', 'datetime', 'json')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+# Grant Application Extension Fields
+grant_application_extension_fields: map(include('grant_application_extension_field'), key=str())
+grant_application_extension_field:
+  source: any(str(), list(str()), null())
+  type: enum('string', 'integer', 'float', 'boolean', 'datetime', 'json')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+# Grant Pool Extension Fields
+grant_pool_extension_fields: map(include('grant_pool_extension_field'), key=str())
+grant_pool_extension_field:
+  source: any(str(), list(str()), null())
+  type: enum('string', 'integer', 'float', 'boolean', 'datetime', 'json')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+# Generic Extension Fields (fallback)
+extension_fields: map(include('field_schema'), key=str())
+
+# ============================================================
+# META SCHEMA
+# ============================================================
+meta_schema:
+  daoip_version: int()
+  author: str()
+  mapping_strategy: str()
+  compatible_with: list(str(), required=False)
+  validation_rules: include('validation_rules_schema')
+---
+
+# ============================================================
+# VALIDATION RULES SCHEMA
+# ============================================================
+validation_rules_schema:
+  json_fields_must_parse: bool(required=False)
+  json_schema_enforced: bool(required=False)
+  id_format: str(required=False)
+  enum_enforced: bool(required=False)
+  required_fields: list(str(), required=False)
