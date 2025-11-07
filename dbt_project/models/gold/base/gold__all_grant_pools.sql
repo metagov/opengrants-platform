@@ -1,17 +1,47 @@
---dbt_project/models/gold/base/gold__all_grant_pools.sql
-
 {{ config(materialized='view') }}
 
--- Unified grant pools view across ecosystems (Giveth, SCF, and more)
+-- ============================================================
+-- Unified DAOIP-5 Grant Pools across ecosystems
+-- ============================================================
+
 SELECT
   'Giveth' AS source,
-  *
+  id,
+  name,
+  description,
+  applicationsURI,
+  "totalGrantPoolSizeInUSD",
+  "isOpen",
+  "closeDate",
+  "image",
+  "coverImage",
+  "email",
+  "grantFundingMechanism",
+  "governanceURI",
+  "attestationIssuersURI",
+  "requiredCredentials",
+  "totalGrantPoolSize",
+  extensions
 FROM {{ source('silver', 'silver_giveth_grant_pools') }}
 
 UNION ALL
 
 SELECT
   'SCF' AS source,
-  *
-FROM {{ source('silver', 'silver_scf_grant_pools') }}
-
+  id,
+  name,
+  description,
+  applicationsURI,
+  "totalGrantPoolSizeInUSD",
+  "isOpen",
+  "closeDate",
+  "image",
+  "coverImage",
+  "email",
+  "grantFundingMechanism",
+  "governanceURI",
+  "attestationIssuersURI",
+  "requiredCredentials",
+  "totalGrantPoolSize",
+  extensions
+FROM {{ source('silver', 'silver_scf_grant_pools') }};
