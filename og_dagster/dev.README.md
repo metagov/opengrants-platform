@@ -24,10 +24,14 @@ psql:
 | 🟡 Configs | `configs/schema_maps/` | YAML field mappings                               | Used by Silver assets | —                 |
 
 
+## Update GIV-ARB AllocatedFundUSD 
+UPDATE bronze_giveth_qf_rounds                                                          
+SET "qfRound_allocatedFundUSD" = 127350 
+WHERE "bronze_giveth_qf_rounds.qfRound_id" = '11';
 
-UPDATE bronze_giveth_qf_rounds
-SET "allocatedFundUSD" = 127350 
-WHERE id = '11';
+ SELECT ("qfRound_id","qfRound_allocatedFundUSD", "qfRound_name") from bronze_giveth_qf_rounds;
+
+---
 
 | Layer            | Source                                | Refreshed By    | Used For            |
 | ---------------- | ------------------------------------- | --------------- | ------------------- |
