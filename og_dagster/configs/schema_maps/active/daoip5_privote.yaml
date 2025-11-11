@@ -137,10 +137,12 @@ schemas:
       totalGrantPoolSizeInUSD:
         source: null
         type: float
+        required: true
         transform: "lambda v: 500000.0"
       totalGrantPoolSize:
         source: null
         type: json
+        required: false
         transform: "lambda _: {'currency': 'USD', 'amount': 500000.0}"
       isOpen:
         source: null
@@ -247,27 +249,33 @@ schemas:
       fundsAskedInUSD:
         source: privote_contract_recipients__metadata__funding_sources.amount
         type: float
+        required: true
         transform: "lambda v: float(v) if v else 0.0"
       fundsAsked:
         source: privote_contract_recipients__metadata__funding_sources
         type: json
+        required: false
         transform: "lambda rows: rows"
       fundsApproved:
-        source: null
+        source: privote_contract_recipients__metadata__funding_sources.amount
         type: json
+        required: false
         transform: "lambda _: {'currency': 'USD', 'amount': 0.0}"
       payoutAddress:
         source: metadata__payout_address
         type: json
+        required: false
         transform: "lambda v: {'address': v} if v else None"
       payouts:
         source: null
         type: json
+        required: false
         transform: "lambda _: []"
       fundsApprovedInUSD:
-        source: null
+        source: privote_contract_recipients__metadata__funding_sources.amount
         type: float
         transform: "lambda _: 0.0"
+        required: true
       status:
         source: "pending"
         type: enum
