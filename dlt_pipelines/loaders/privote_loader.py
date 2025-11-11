@@ -49,7 +49,10 @@ CONTRACT_ABI = [
 # --------------------------------------------------------------------
 # DLT Resource
 # --------------------------------------------------------------------
-@dlt.resource(write_disposition="merge", primary_key="contract_id")
+@dlt.resource(
+    write_disposition="merge", 
+    primary_key="contract_id"
+)
 def privote_contract_recipients():
     """Fetch all recipients and metadata from Privote registry."""
     w3 = Web3(Web3.HTTPProvider(RPC_ENDPOINT))
@@ -63,18 +66,43 @@ def privote_contract_recipients():
     for i in range(count):
         try:
             rec = contract.functions.getRecipient(i).call()
+            
+            # Base record
             record = {
                 "contract_id": rec[0].hex(),
                 "recipient_address": rec[2],
                 "metadata_url": rec[1],
-                "metadata": None,
             }
 
             if rec[1]:
                 try:
                     resp = requests.get(rec[1], timeout=10)
                     if resp.ok:
-                        record["metadata"] = resp.json()
+                        metadata = resp.json()
+                        
+                        # Flatten the metadata to top-level columns
+                        if isinstance(metadata, dict):
+                            # Extract all the fields you want at the top level
+                            record.update({
+                                "name": metadata.get("name"),
+                                "short_bio": metadata.get("short_bio"),
+                                "bio": metadata.get("bio"),
+                                "profile_image_url": metadata.get("profile_image_url"),
+                                "banner_image_url": metadata.get("banner_image_url"),
+                                "website_url": metadata.get("website_url"),
+                                "payout_address": metadata.get("payout_address"),
+                                "github": metadata.get("github"),
+                                "twitter": metadata.get("twitter"),
+                                "contribution_description": metadata.get("contribution_description"),
+                                "impact_description": metadata.get("impact_description"),
+                                "submitted_at": metadata.get("submitted_at"),
+                                "creator": metadata.get("creator"),
+                                # Keep nested structures as JSON
+                                "contribution_links": metadata.get("contribution_links"),
+                                "funding_sources": metadata.get("funding_sources"),
+                                "impact_category": metadata.get("impact_category")
+                            })
+                            
                 except Exception as err:
                     print(f"⚠️ Failed to fetch metadata for {rec[1]}: {err}")
 
@@ -109,25 +137,13 @@ def run_pipeline():
         dataset_name=dataset,
     )
 
+    # DROP THE EXISTING SCHEMA TO START FRESH
+    print("🗑️ Dropping existing schema to start fresh...")
+    pipeline.drop()
+
     load_info = pipeline.run(privote_source())
-    # Safely access the key, defaulting to 0 if not found
-    total_completed = load_info.load_packages[0].jobs.get("completed_jobs_count", 0)
-
-    # You can then check if total_completed is greater than 0 if needed
-    print(load_info.load_packages[0].jobs.keys())
-    if total_completed > 0:
-        print(f"Total completed jobs: {total_completed}")
-    else:
-        # Handle the case where no jobs completed or the key wasn't present
-        if load_info.has_failed_jobs:
-            print("Warning: There are failed jobs in the load package.")
-            # You can print more details about the failures
-            print(load_info.failed_jobs) 
-            # Or use the built-in raise method if you want to stop execution
-            # load_info.raise_on_failed_jobs()
-        print("No completed jobs count available, possibly due to failures or incompleteness.")
-
-    # Print summary of completed jobs (compatible with new DLT versions)
+    
+    # Your existing summary code...
     jobs = load_info.load_packages[0].jobs
     completed = jobs.get("completed_jobs", [])
     failed = jobs.get("failed_jobs", [])

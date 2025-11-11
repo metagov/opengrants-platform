@@ -1,0 +1,2 @@
+id,name,description,applicationsURI,totalGrantPoolSizeInUSD,isOpen,closeDate,image,grantFundingMechanism
+daoip-5:gitcoin:grantPool:gg24_privote,GG24 Privote: Privacy Quadratic Funding Round,"Quadratic Funding round on Arbitrum conducted using the Privote registry for privacy-preserving submissions under Gitcoin GG24.",https://privote.gitcoin.co/api/rounds/gg24_privacy,50000,false,2024-05-01T00:00:00Z,https://cdn.gitcoin.co/rounds/gg24-privote-banner.png,Quadratic Funding
