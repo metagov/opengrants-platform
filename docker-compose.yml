@@ -17,7 +17,7 @@ services:
     build:
       context: .
       dockerfile: og_dagster/Dockerfile
-    restart: always
+    restart: unless-stopped
     depends_on:
       - postgres
     ports:
@@ -34,8 +34,18 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-opengrants}
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-opengrants}
     env_file:
       - .env
+    command:
+      - dagster
+      - dev
+      - '-h'
+      - 0.0.0.0
+      - '-p'
+      - '3000'
+      - '-w'
+      - workspace.yaml
 
   dlt:
     container_name: dlt
