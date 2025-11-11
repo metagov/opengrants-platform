@@ -1,0 +1,12 @@
+
+    
+    
+    truncate table "opengrants"."public"."privote_grant_pool";
+    -- dbt seed --
+    
+          insert into "opengrants"."public"."privote_grant_pool" ("id", "name", "description", "applicationsURI", "totalGrantPoolSizeInUSD", "isOpen", "closeDate", "image", "grantFundingMechanism") values
+          (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+      
+
+;
+  

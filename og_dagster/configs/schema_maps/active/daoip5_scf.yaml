@@ -69,7 +69,7 @@ schemas:
         type: json
         transform: "lambda _: []"
         required: false
-      relaventTo:
+      relevantTo:
         source: null
         type: json
         transform: "lambda _: []"

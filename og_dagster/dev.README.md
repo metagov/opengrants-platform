@@ -1,42 +1,63 @@
-### Commands 
-1. ```docker compose build dagster```
+# Database Management Commands
 
-2. ```docker compose up dagster```
+## Docker & Dagster Commands
 
-3. ```docker compose --verbose up dagster```
+```bash
+# Build and run Dagster
+docker compose build dagster
+docker compose up dagster
 
-4. ```docker compose restart dagster```
+# Verbose mode for debugging
+docker compose --verbose up dagster
 
-psql:
-1. ```docker exec -it postgres psql -U postgres -d opengrants```
-5. `\dt bronze_*`
+# Restart Dagster service
+docker compose restart dagster
+```
 
-\c opengrants;
-\d bronze_giveth_qf_rounds;
-\d bronze_giveth_projects;
+## PostgreSQL Commands
 
+```bash
+# Access PostgreSQL database
+docker exec -it postgres psql -U postgres -d opengrants
 
+# List bronze tables
+\dt bronze_*
 
-| Layer      | Folder                 | Example Asset                                     | Depends On            | Destination Table |
-| ---------- | ---------------------- | ------------------------------------------------- | --------------------- | ----------------- |
-| 🟤 Bronze  | `ops/`                 | `fetch_giveth_data`                               | —                     | `bronze_giveth_*` |
-| ⚪ Silver   | `assets/silver/`       | `silver_giveth_projects` / `silver_giveth_rounds` | Bronze outputs        | `silver_daoip5_*` |
-| 🟡 Configs | `configs/schema_maps/` | YAML field mappings                               | Used by Silver assets | —                 |
+# Switch to opengrants database and describe tables
+\c opengrants
+\d bronze_giveth_qf_rounds
+\d bronze_giveth_projects
+```
 
+## Data Pipeline Architecture
 
-## Update GIV-ARB AllocatedFundUSD 
+### Layer Structure
+
+| Layer | Folder | Example Asset | Depends On | Destination Table |
+|-------|--------|---------------|------------|-------------------|
+| 🟤 Bronze | `ops/` | `fetch_giveth_data` | — | `bronze_giveth_*` |
+| ⚪ Silver | `assets/silver/` | `silver_giveth_projects` / `silver_giveth_rounds` | Bronze outputs | `silver_daoip5_*` |
+| 🟡 Configs | `configs/schema_maps/` | YAML field mappings | Used by Silver assets | — |
+
+### Data Flow & Storage
+
+| Layer | Source | Refreshed By | Used For |
+|-------|--------|--------------|----------|
+| **Silver** | Postgres | Dagster | Raw normalized data |
+| **Silver Cache** | DuckDB | Dagster sync op | Fast dashboards |
+| **Gold** | Postgres | dbt | Aggregated metrics |
+| **Gold Cache** | DuckDB | dbt macro | Ecosystem stats |
+| **Dashboard** | DuckDB (primary), Postgres (fallback) | — | User interface |
+
+## Database Operations
+
+### Update GIV-ARB AllocatedFundUSD
+```sql
 UPDATE bronze_giveth_qf_rounds                                                          
 SET "qfRound_allocatedFundUSD" = 127350 
 WHERE "bronze_giveth_qf_rounds.qfRound_id" = '11';
 
- SELECT ("qfRound_id","qfRound_allocatedFundUSD", "qfRound_name") from bronze_giveth_qf_rounds;
-
----
-
-| Layer            | Source                                | Refreshed By    | Used For            |
-| ---------------- | ------------------------------------- | --------------- | ------------------- |
-| **Silver**       | Postgres                              | Dagster         | Raw normalized data |
-| **Silver Cache** | DuckDB                                | Dagster sync op | Fast dashboards     |
-| **Gold**         | Postgres                              | dbt             | Aggregated metrics  |
-| **Gold Cache**   | DuckDB                                | dbt macro       | Ecosystem stats     |
-| **Dashboard**    | DuckDB (primary), Postgres (fallback) | —               | User interface      |
+-- Verify the update
+SELECT "qfRound_id", "qfRound_allocatedFundUSD", "qfRound_name" 
+FROM bronze_giveth_qf_rounds;
+```
