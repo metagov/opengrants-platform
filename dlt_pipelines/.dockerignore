@@ -1,0 +1,15 @@
+# Ignore unnecessary files
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.env
+.vscode/
+.git/
+duckdb/
+raw_data/
+og_dagster/
+dbt_project/
+venv/
+.venv/
+node_modules/

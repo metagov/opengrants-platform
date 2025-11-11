@@ -9,7 +9,6 @@ SELECT
   id,
   name,
   description,
-  applicationsURI,
   "totalGrantPoolSizeInUSD",
   "isOpen",
   "closeDate",
@@ -20,8 +19,7 @@ SELECT
   "governanceURI",
   "attestationIssuersURI",
   "requiredCredentials",
-  "totalGrantPoolSize",
-  extensions
+  "totalGrantPoolSize"
 FROM {{ source('silver', 'silver_giveth_grant_pools') }}
 
 UNION ALL
@@ -31,7 +29,6 @@ SELECT
   id,
   name,
   description,
-  applicationsURI,
   "totalGrantPoolSizeInUSD",
   "isOpen",
   "closeDate",
@@ -42,6 +39,5 @@ SELECT
   "governanceURI",
   "attestationIssuersURI",
   "requiredCredentials",
-  "totalGrantPoolSize",
-  extensions
-FROM {{ source('silver', 'silver_scf_grant_pools') }};
+  "totalGrantPoolSize"
+FROM {{ source('silver', 'silver_scf_grant_pools') }}
