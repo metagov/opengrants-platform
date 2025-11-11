@@ -39,7 +39,9 @@ services:
 
   dlt:
     container_name: dlt
-    build: ./dlt_pipelines
+    build:
+      context: .
+      dockerfile: dlt_pipelines/Dockerfile
     restart: on-failure
     depends_on:
       - postgres
@@ -50,7 +52,7 @@ services:
       - .env
     command:
       - python
-      - loaders/sample_loader.py
+      - loaders/privote_loader.py
 
   dbt:
     container_name: dbt

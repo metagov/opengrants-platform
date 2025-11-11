@@ -16,9 +16,7 @@ SELECT
   socials,
   "membersURI",
   "attestationIssuersURI",
-  "relevantTo",
-  "licenseURI",
-  extensions
+  "licenseURI"
 FROM {{ source('silver', 'silver_giveth_projects') }}
 
 UNION ALL
@@ -35,7 +33,5 @@ SELECT
   socials,
   "membersURI",
   "attestationIssuersURI",
-  "relevantTo",
-  "licenseURI",
-  extensions
-FROM {{ source('silver', 'silver_scf_projects') }};
+  "licenseURI"
+FROM {{ source('silver', 'silver_scf_projects') }}
