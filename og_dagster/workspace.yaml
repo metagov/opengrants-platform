@@ -2,6 +2,5 @@
 load_from:
   - python_file: ./jobs/etl_giveth_job.py
   - python_file: ./jobs/etl_silver_job.py
+  - python_file: ./jobs/etl_privote_job.py
   - python_file: ./jobs/etl_scf_job.py
-
-

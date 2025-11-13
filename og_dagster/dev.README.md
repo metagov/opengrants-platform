@@ -61,3 +61,31 @@ WHERE "bronze_giveth_qf_rounds.qfRound_id" = '11';
 SELECT "qfRound_id", "qfRound_allocatedFundUSD", "qfRound_name" 
 FROM bronze_giveth_qf_rounds;
 ```
+
+
+For Privote:
+
+Grant Pools: Complete registry data with poll details
+
+Projects: All recipients with metadata and payout info
+
+Applications: Both claims (funded) and requests (application history)
+
+Voting Data: Tally results + individual votes
+
+Funding: Deposits and distribution amounts
+
+Users: Voter accounts and credit balances
+
+System: MACI configuration and stats
+
+DAOIP-5 Ready Data:
+Grant Pools → registries + poll data
+
+Projects → recipients with metadata
+
+Applications → claims (funded) + requests (all applications)
+
+Funding → deposits + claims.amount
+
+Voting → tallyResults + votes

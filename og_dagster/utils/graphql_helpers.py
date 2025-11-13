@@ -20,7 +20,7 @@ POSTGRES_DB = os.getenv("POSTGRES_DB", "opengrants")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgres")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 
-ENDPOINT = "https://mainnet.serve.giveth.io/graphql"
+ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT") or "https://mainnet.serve.giveth.io/graphql"
 
 
 # ======================

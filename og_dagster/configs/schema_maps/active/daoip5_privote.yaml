@@ -22,10 +22,10 @@ schemas:
       id:
         source: contract_id
         type: string
-        transform: "lambda v: f'daoip-5:privote:project:{v.lower()}' if v else None"
+        transform: "lambda v: f'daoip-5:privote:project:{v.lower()}' if v else 'daoip-5:privote:project:unknown'"
         required: true
       name:
-        source: coalesce(metadata__name, name)
+        source: name
         type: string
         required: true
       description:
@@ -241,7 +241,7 @@ schemas:
       projectId:
         source: contract_id
         type: string
-        transform: "lambda v: f'daoip-5:privote:project:{v.lower()}'"
+        transform: "lambda v: f'daoip-5:privote:project:{v.lower()}' if v else 'daoip-5:privote:project:unknown'"
       grantPoolId:
         source: "daoip-5:gitcoin:grantPool:gg24_privote"
         type: string
