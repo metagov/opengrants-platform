@@ -6,6 +6,9 @@ from assets.silver.giveth.rounds import silver_giveth_grant_pools
 
 # --- SCF Silver Assets ---
 from assets.silver.scf.scf import silver_scf_transform
+# --- Privote Silver Assets ---
+from assets.silver.privote.privote import silver_privote_transform
+
 
 
 # Define Silver Jobs
@@ -22,6 +25,12 @@ silver_scf_etl_job = define_asset_job(
     selection=AssetSelection.assets(silver_scf_transform),
 )
 
+# Privote ETL Job
+silver_privote_etl_job = define_asset_job(
+    name="silver_privote_etl_job",
+    selection=AssetSelection.assets(silver_privote_transform),
+)
+
 # Register Definitions
 
 defs = Definitions(
@@ -29,10 +38,12 @@ defs = Definitions(
         silver_giveth_projects,
         silver_giveth_grant_pools,
         silver_scf_transform,
+        silver_privote_transform,
     ],
     jobs=[
         silver_giveth_etl_job,
         silver_scf_etl_job,
+        silver_privote_etl_job,
     ],
 )
 

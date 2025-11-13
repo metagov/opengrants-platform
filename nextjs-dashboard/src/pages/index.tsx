@@ -50,8 +50,8 @@ export default function Index() {
     () => [
       { name: "Gitcoin", value: 500000, color: "teal.400" },
       { name: "Celo", value: 200000, color: "yellow.300" },
-      { name: "SCF", value: 100000, color: "orange.400" },
-      { name: "Giveth", value: 100000, color: "purple.400" },
+      { name: "SCF", value: 49864415.82, color: "orange.400" },
+      { name: "Giveth", value: 1025000, color: "purple.400" },
     ],
     []
   );
@@ -66,12 +66,12 @@ export default function Index() {
       bg={useColorModeValue("white", "gray.900")}
       px={6}
     >
-      <VStack spacing={8}>
+      <VStack spacing={4}>
         <Heading
           as="h1"
           fontSize={["5xl", "6xl"]}
           color="red.900"
-          fontWeight="extrabold"
+          fontWeight="thin"
           letterSpacing="tight"
         >
           OpenGrants
