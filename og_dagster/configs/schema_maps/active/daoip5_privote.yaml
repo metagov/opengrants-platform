@@ -4,11 +4,11 @@
 
 manifest:
   schema_name: daoip5_privote
-  version: 1.0.5
+  version: 1.3.1
   source_system: "Privote Onchain Registry (Arbitrum)"
-  last_updated: "2025-11-11T00:00:00Z"
+  last_updated: "2025-11-06T19:30:00Z"
   description: >
-    DAOIP-5 compliant mapping for the GG24 Privote Quadratic Funding Round, including Grant Pools, Projects, and inferred Grant Applications. This version aligns all fields with actual Postgres DLT tables.
+    DAOIP-5 compliant normalization for Privote GG24 Quadratic Funding Round. Three canonical Silver tables: projects, grant_pools, grant_applications. Includes joins/enrichments from all bronze_privote_* tables.
 
 schemas:
 
@@ -16,296 +16,321 @@ schemas:
   # PROJECTS
   # ------------------------------------------------------------
   projects:
-    table: public.privote_contract_recipients
+    table: public.bronze_privote_recipients
     target_table: silver_privote_projects
     fields:
       id:
-        source: contract_id
+        source: id
         type: string
-        transform: "lambda v: f'daoip-5:privote:project:{v.lower()}' if v else 'daoip-5:privote:project:unknown'"
+        transform: "lambda v: f'daoip-5:privote:project:{v.lower()}' if v else None"
         required: true
       name:
-        source: name
+        source: metadataUrl
         type: string
+        transform: "lambda v: v.split('/')[-1] if v else 'unknown'"
         required: true
       description:
-        source: metadata__contribution_description
+        source: null
         type: string
         required: false
       contentURI:
-        source: metadata__website_url
+        source: metadataUrl
         type: string
         required: false
       image:
-        source: metadata__profile_image_url
+        source: null
         type: string
         required: false
       coverImage:
-        source: metadata__banner_image_url
+        source: null
         type: string
-        required: false
+        required: true
       email:
         source: null
         type: string
         required: false
       socials:
-        source:
-        - metadata__twitter
-        - metadata__github
+        source: registry_metadataUrl
         type: json
-        transform: |
-          lambda twitter, github: [
-            {"platform": "Twitter", "url": twitter} if twitter else None,
-            {"platform": "GitHub", "url": github} if github else None
-          ]
+        transform: "lambda v: [{'platform': 'Privote Registry', 'url': v}] if v else []"
         required: false
       membersURI:
         source: null
         type: string
-        required: false
+        required: true
       attestationIssuersURI:
         source: null
         type: json
         transform: "lambda _: []"
-        required: false
+        required: true
       relevantTo:
         source: null
         type: json
         transform: "lambda _: []"
-        required: false
+        required: true
       licenseURI:
         source: null
         type: string
-        required: false
+        required: true
 
     extensions:
       io.privote:
-        recipientAddress:
-          source: recipient_address
+        registryId:
+          source: registry_id
           type: string
-        metadataURI:
-          source: metadata_url
+        registryPollId:
+          source: registry_poll_id
           type: string
-        shortBio:
-          source: metadata__short_bio
+        registryPollNumber:
+          source: registry_poll_pollId
           type: string
-        bio:
-          source: metadata__bio
+        index:
+          source: index
           type: string
-        impactDescription:
-          source: metadata__impact_description
+        payout:
+          source: payout
           type: string
-        creator:
-          source: metadata__creator
-          type: string
-        impactCategory:
-          source: privote_contract_recipients__metadata__impact_category.value
-          type: string
-        fundingSources:
-          source: privote_contract_recipients__metadata__funding_sources
-          type: json
-        contributionLinks:
-          source: privote_contract_recipients__metadata__contribution_links
-          type: json
-        submittedAt:
-          source: metadata__submitted_at
-          type: datetime
+        initialized:
+          source: initialized
+          type: boolean
+        deleted:
+          source: deleted
+          type: boolean
 
   # ------------------------------------------------------------
   # GRANT POOLS
   # ------------------------------------------------------------
   grant_pools:
-    table: seeds.privote_grant_pool
-    target_table: silver_gitcoin_grant_pools
+    table: public.bronze_privote_registries
+    target_table: silver_privote_grant_pools
     fields:
       id:
-        source: "daoip-5:gitcoin:grantPool:gg24_privote"
+        source: id
         type: string
-        transform: "lambda v: v.lower()"
+        transform: "lambda v: f'daoip-5:privote:grantPool:{v.lower()}'"
         required: true
       name:
-        source: "GG24 Privote: Privacy Quadratic Funding Round"
+        source: metadataUrl
         type: string
         required: true
       description:
-        source: >
-          "Quadratic Funding round on Arbitrum conducted using the Privote registry for privacy-preserving grant submissions under Gitcoin GG24."
+        source: "Quadratic funding pool managed via MACI Privote registry."
         type: string
       applicationsURI:
-        source: "https://privote.gitcoin.co/api/rounds/gg24_privacy"
+        source: metadataUrl
         type: string
       totalGrantPoolSizeInUSD:
-        source: null
+        source: poll_maxVoteOption
         type: float
+        transform: "lambda v: float(v) * 100.0 if v else 500000.0"
         required: true
-        transform: "lambda v: 500000.0"
       totalGrantPoolSize:
-        source: null
+        source: poll_maxVoteOption
         type: json
-        required: false
-        transform: "lambda _: {'currency': 'USD', 'amount': 500000.0}"
+        transform: "lambda v: {'currency': 'USD', 'amount': float(v) * 100.0 if v else 500000.0}"
+        required: true
       isOpen:
         source: null
         type: boolean
-        transform: "lambda v: False"
+        transform: "lambda _: False"
       closeDate:
-        source: "2024-05-01T00:00:00Z"
+        source: poll_createdAt
         type: datetime
       image:
         source: null
         type: string
-        required: false
+        required: true
       coverImage:
-        source: "https://cdn.gitcoin.co/rounds/gg24-privote-banner.png"
+        source: null
         type: string
-        required: false
+        required: true
       email:
         source: null
         type: string
-        required: false
+        required: true
       grantFundingMechanism:
         source: null
         type: enum
         allowed: [ "Quadratic Funding" ]
-        transform: "lambda v: 'Quadratic Funding'"
+        transform: "lambda _: 'Quadratic Funding'"
       governanceURI:
         source: null
         type: string
-        required: false
+        required: true
       attestationIssuersURI:
         source: null
         type: string
-        required: false
+        required: true
       requiredCredentials:
         source: null
         type: json
         transform: "lambda _: ['DAO Attestation']"
-        required: false
+        required: true
 
     extensions:
-      io.gitcoin:
-        ecosystem:
-          source: "GG24"
-          type: string
-        registryContract:
-          source: "0xF13833531B5018C1Cb93C01100b6A9BEd1c12De8"
-          type: string
+      io.privote:
         chain:
           source: "arbitrum-one"
           type: string
+        pollId:
+          source: poll_id
+          type: string
+        pollDuration:
+          source: poll_duration
+          type: string
+        pollInitTime:
+          source: poll_initTime
+          type: string
+        pollMaci:
+          source: poll_maci_id
+          type: string
+        pollMaciStats:
+          source: poll_maci_updatedAt
+          type: json
+          transform: |
+            lambda updated: {
+              'stateTreeDepth': None,
+              'numPoll': None,
+              'numSignUps': None,
+              'latestPoll': None,
+              'updatedAt': updated
+            }
+        pollLimits:
+          source: poll_maxMessages
+          type: json
+          transform: |
+            lambda v: {'maxMessages': v, 'maxVoteOption': None, 'messageProcessor': None}
 
   # ------------------------------------------------------------
-  # GRANT APPLICATIONS (inferred)
+  # GRANT APPLICATIONS
   # ------------------------------------------------------------
   grant_applications:
-    table: public.privote_contract_recipients
-    target_table: silver_privote_applications
+    table: public.bronze_privote_claims_enriched
+    target_table: silver_privote_grant_applications
     fields:
       id:
-        source: contract_id
+        source: id
         type: string
         transform: "lambda v: f'daoip-5:privote:application:{v.lower()}'"
         required: true
       name:
-        source: coalesce(metadata__name, name)
+        source: id
         type: string
         required: true
       grantPoolName:
         source: "GG24 Privote Round"
         type: string
-      createdAt:
-        source: metadata__submitted_at
-        type: datetime
+        required: true
       discussionTo:
         source: null
         type: string
-        required: false
+        required: true
       licenseURI:
         source: null
         type: string
-        required: false
+        required: true
       isInactive:
         source: null
         type: boolean
         transform: "lambda _: False"
+        required: true
       applicationCompletionRate:
         source: null
         type: float
-        required: false
+        transform: "lambda _: 1.0"
+        required: true
       description:
-        source: metadata__contribution_description
+        source: null
         type: string
       contentURI:
-        source: metadata__website_url
-        type: string
-      projectId:
-        source: contract_id
-        type: string
-        transform: "lambda v: f'daoip-5:privote:project:{v.lower()}' if v else 'daoip-5:privote:project:unknown'"
-      grantPoolId:
-        source: "daoip-5:gitcoin:grantPool:gg24_privote"
-        type: string
-        transform: "lambda v: v"
-      fundsAskedInUSD:
-        source: privote_contract_recipients__metadata__funding_sources.amount
-        type: float
-        required: true
-        transform: "lambda v: float(v) if v else 0.0"
-      fundsAsked:
-        source: privote_contract_recipients__metadata__funding_sources
-        type: json
-        required: false
-        transform: "lambda rows: rows"
-      fundsApproved:
-        source: privote_contract_recipients__metadata__funding_sources.amount
-        type: json
-        required: false
-        transform: "lambda _: {'currency': 'USD', 'amount': 0.0}"
-      payoutAddress:
-        source: metadata__payout_address
-        type: json
-        required: false
-        transform: "lambda v: {'address': v} if v else None"
-      payouts:
         source: null
-        type: json
-        required: false
-        transform: "lambda _: []"
-      fundsApprovedInUSD:
-        source: privote_contract_recipients__metadata__funding_sources.amount
+        type: string
+        required: true
+      projectId:
+        source: tally_poll_id
+        type: string
+        transform: "lambda v: f'daoip-5:privote:project:{v.lower()}' if v else None"
+        required: true
+      grantPoolId:
+        source: tally_poll_pollId
+        type: string
+        transform: "lambda v: f'daoip-5:privote:grantPool:{v.lower()}' if v else None"
+        required: true
+      fundsAskedInUSD:
+        source: amount
         type: float
-        transform: "lambda _: 0.0"
+        transform: "lambda v: float(v) if v else 0.0"
+        required: true
+      fundsAsked:
+        source: amount
+        type: json
+        transform: "lambda v: [{'currency':'USD','amount':float(v)}] if v else []"
+        required: true
+      fundsApproved:
+        source: amount
+        type: json
+        transform: "lambda v: [{'currency':'USD','amount':float(v)}] if v else []"
+        required: true
+      payoutAddress:
+        source: tally_id
+        type: json
+        transform: "lambda v: {'address': v} if v else None"
+        required: true
+      payouts:
+        source: amount
+        type: json
+        transform: "lambda v: [{'currency':'USD','amount':float(v)}] if v else []"
+        required: true
+      fundsApprovedInUSD:
+        source: amount
+        type: float
+        transform: "lambda v: float(v) if v else 0.0"
         required: true
       status:
-        source: "pending"
+        source: "approved"
         type: enum
         allowed: [ "pending", "approved", "rejected" ]
         transform: "lambda v: v"
+        required: true
       socials:
-        source:
-        - metadata__twitter
-        - metadata__github
+        source: null
         type: json
-        transform: |
-          lambda twitter, github: [
-            {"platform": "Twitter", "url": twitter} if twitter else None,
-            {"platform": "GitHub", "url": github} if github else None
-          ]
+        transform: "lambda _: []"
+        required: true
+      createdAt:
+        source: null
+        type: datetime
+        required: true
+        transform: "lambda _: '2025-10-21T00:00:01.000Z'"
+
+    extensions:
+      io.privote:
+        claimTallyId:
+          source: tally_id
+          type: string
+        pollId:
+          source: tally_poll_id
+          type: string
+        depositPoll:
+          source: tally_poll_pollId
+          type: string
+        fundingSources:
+          source: amount
+          type: json
+          transform: "lambda v: {'claimAmount': float(v) if v else 0.0}"
 
 meta:
   daoip_version: 5
   author: "Rashmi V. Abbigeri <rashmi@metagov.org>"
-  mapping_strategy: "DAOIP-5 compliant + io.privote extensions with inferred applications"
+  mapping_strategy: "Yamale-valid single-table schemas with cross-table enrichment via extensions."
   compatible_with:
-  - "opengrants-silver-pipeline>=0.3.1"
+  - "opengrants-silver-pipeline>=0.3.4"
   validation_rules:
     json_fields_must_parse: true
-    json_schema_enforced: true
     id_format: "daoip-5:privote"
     required_fields:
     - id
     - name
-    - description
     - projectId
     - grantPoolId
-    - status
+    - fundsApprovedInUSD
