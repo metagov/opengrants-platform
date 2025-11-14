@@ -16,7 +16,7 @@ schemas:
   # PROJECTS
   # ------------------------------------------------------------
   projects:
-    table: public.bronze_privote_recipients
+    table: bronze_privote_recipients
     target_table: silver_privote_projects
     fields:
       id:
@@ -101,7 +101,7 @@ schemas:
   # GRANT POOLS
   # ------------------------------------------------------------
   grant_pools:
-    table: public.bronze_privote_registries
+    table: bronze_privote_registries
     target_table: silver_privote_grant_pools
     fields:
       id:
@@ -164,8 +164,8 @@ schemas:
       requiredCredentials:
         source: null
         type: json
-        transform: "lambda _: ['DAO Attestation']"
-        required: true
+        transform: "lambda _: []"
+        required: false
 
     extensions:
       io.privote:
@@ -200,103 +200,128 @@ schemas:
           type: json
           transform: |
             lambda v: {'maxMessages': v, 'maxVoteOption': None, 'messageProcessor': None}
-
   # ------------------------------------------------------------
   # GRANT APPLICATIONS
   # ------------------------------------------------------------
   grant_applications:
-    table: public.bronze_privote_claims_enriched
+    sources:
+    - bronze_privote_claims_enriched
+    - bronze_privote_recipients
+    join_keys: [ "id", "registry_poll_id" ]
     target_table: silver_privote_grant_applications
     fields:
       id:
-        source: id
+        source: bronze_privote_claims_enriched__id
         type: string
         transform: "lambda v: f'daoip-5:privote:application:{v.lower()}'"
         required: true
       name:
-        source: id
+        source:
+        - bronze_privote_recipients__metadataUrl
+        - bronze_privote_recipients__id
         type: string
+        transform: |
+          lambda meta_url, rid: meta_url.split('/')[-1] if meta_url else rid
         required: true
+
       grantPoolName:
         source: "GG24 Privote Round"
         type: string
         required: true
+
       discussionTo:
         source: null
         type: string
         required: true
+
       licenseURI:
         source: null
         type: string
         required: true
+
       isInactive:
         source: null
         type: boolean
         transform: "lambda _: False"
         required: true
+
       applicationCompletionRate:
         source: null
         type: float
         transform: "lambda _: 1.0"
         required: true
+
       description:
-        source: null
+        source: bronze_privote_recipients__registry_metadataUrl
         type: string
+        required: false
+
       contentURI:
-        source: null
+        source: bronze_privote_recipients__metadataUrl
         type: string
         required: true
+
       projectId:
-        source: tally_poll_id
+        source: bronze_privote_recipients__id
         type: string
         transform: "lambda v: f'daoip-5:privote:project:{v.lower()}' if v else None"
         required: true
+
       grantPoolId:
-        source: tally_poll_pollId
+        source: bronze_privote_claims_enriched__tally_poll_pollId
         type: string
         transform: "lambda v: f'daoip-5:privote:grantPool:{v.lower()}' if v else None"
         required: true
+
       fundsAskedInUSD:
-        source: amount
+        source: bronze_privote_claims_enriched__amount
         type: float
         transform: "lambda v: float(v) if v else 0.0"
         required: true
+
       fundsAsked:
-        source: amount
+        source: bronze_privote_claims_enriched__amount
         type: json
         transform: "lambda v: [{'currency':'USD','amount':float(v)}] if v else []"
         required: true
+
       fundsApproved:
-        source: amount
+        source: bronze_privote_claims_enriched__amount
         type: json
         transform: "lambda v: [{'currency':'USD','amount':float(v)}] if v else []"
         required: true
+
       payoutAddress:
-        source: tally_id
+        source: bronze_privote_claims_enriched__tally_id
         type: json
         transform: "lambda v: {'address': v} if v else None"
         required: true
+
       payouts:
-        source: amount
+        source: bronze_privote_claims_enriched__amount
         type: json
         transform: "lambda v: [{'currency':'USD','amount':float(v)}] if v else []"
         required: true
+
       fundsApprovedInUSD:
-        source: amount
+        source: bronze_privote_claims_enriched__amount
         type: float
         transform: "lambda v: float(v) if v else 0.0"
         required: true
+
       status:
         source: "approved"
         type: enum
         allowed: [ "pending", "approved", "rejected" ]
         transform: "lambda v: v"
         required: true
+
       socials:
         source: null
         type: json
         transform: "lambda _: []"
         required: true
+
       createdAt:
         source: null
         type: datetime
@@ -306,16 +331,16 @@ schemas:
     extensions:
       io.privote:
         claimTallyId:
-          source: tally_id
+          source: bronze_privote_claims_enriched__tally_id
           type: string
         pollId:
-          source: tally_poll_id
+          source: bronze_privote_claims_enriched__tally_poll_id
           type: string
         depositPoll:
-          source: tally_poll_pollId
+          source: bronze_privote_claims_enriched__tally_poll_pollId
           type: string
         fundingSources:
-          source: amount
+          source: bronze_privote_claims_enriched__amount
           type: json
           transform: "lambda v: {'claimAmount': float(v) if v else 0.0}"
 
