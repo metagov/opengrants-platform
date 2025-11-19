@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, text
 
 logger = get_dagster_logger()
 
-# utils/db_helpers.py
+# utils/db.py
 
 def drop_dependent_views(engine, table_name, context):
     """Drop views that depend on a table before replacing it."""

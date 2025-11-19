@@ -26,7 +26,7 @@ schemas:
         required: true
         transform: "lambda v: f'daoip-5:giveth:grantPool:{v}' if v else None"
       name:
-        source: qfRound_name
+        source: qfRound_title
         type: string
         required: true
       description:
