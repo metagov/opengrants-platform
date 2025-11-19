@@ -10,14 +10,21 @@
   (
     
 
+-- ============================================================
+-- Funding Metrics per Ecosystem
+-- DAOIP-5 normalized across all grant systems
+-- ============================================================
+
 SELECT
-    source,
-    SUM("totalGrantPoolSizeInUSD") AS total_pool_size_usd,
-    AVG("totalGrantPoolSizeInUSD") AS avg_pool_size_usd,
-    COUNT(*) AS total_rounds,
-    MIN("totalGrantPoolSizeInUSD") AS min_pool_size_usd,
-    MAX("totalGrantPoolSizeInUSD") AS max_pool_size_usd
+    platform as source,
+    COUNT(*) AS total_grant_pools,
+    SUM(COALESCE(total_pool_size_usd, 0)) AS total_pool_size_usd,
+    AVG(NULLIF(total_pool_size_usd, 0)) AS avg_pool_size_usd,
+    MIN(NULLIF(total_pool_size_usd, 0)) AS min_pool_size_usd,
+    MAX(NULLIF(total_pool_size_usd, 0)) AS max_pool_size_usd,
+    SUM(CASE WHEN is_open = true THEN 1 ELSE 0 END) AS currently_open_rounds
 FROM "opengrants"."public"."gold__all_grant_pools"
-GROUP BY source
+GROUP BY platform
+ORDER BY total_pool_size_usd DESC
   );
   

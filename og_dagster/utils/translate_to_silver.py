@@ -203,7 +203,7 @@ def transform_dataframe(df: pl.DataFrame, schema_fields: dict) -> pl.DataFrame:
 def build_silver(engine, schema_path: str, section: str) -> pl.DataFrame:
     """
     Build a validated Silver-layer DataFrame for a given DAOIP-5 schema section.
-    Supports multiple source tables (joined by key) and metadataUrl enrichment.
+    Supports multiple source tables from different schemas.
     """
     schema = load_schema(schema_path)
     if section not in schema["schemas"]:
@@ -222,27 +222,103 @@ def build_silver(engine, schema_path: str, section: str) -> pl.DataFrame:
         dfs: List[pl.DataFrame] = []
 
         for t in sources:
-            with engine.connect() as conn:
-                df_part = pl.read_database(f'SELECT * FROM "{t}"', conn)
-                df_part.columns = [f"{t.split('.')[-1]}__{c}" for c in df_part.columns]
-                dfs.append(df_part)
-
-        # Join sequentially
-        df = dfs[0]
-        for other in dfs[1:]:
-            left_keys = [c for c in df.columns if any(k in c for k in join_keys)]
-            right_keys = [c for c in other.columns if any(k in c for k in join_keys)]
-            if not left_keys or not right_keys:
-                logger.warning(f"⚠️ Could not find join keys {join_keys}; performing cross join.")
-                df = df.join(other, how="cross")
+            # Parse table reference - could be "table", "schema.table", or even "database.schema.table"
+            parts = t.split('.')
+            if len(parts) == 1:
+                # Just table name - use public schema
+                table_schema, table_name = "public", parts[0]
+                full_table_ref = f'"{table_schema}"."{table_name}"'
+            elif len(parts) == 2:
+                # schema.table format
+                table_schema, table_name = parts[0], parts[1]
+                full_table_ref = f'"{table_schema}"."{table_name}"'
             else:
-                df = df.join(other, left_on=left_keys, right_on=right_keys, how="left")
+                # database.schema.table format (or more complex)
+                table_schema, table_name = parts[-2], parts[-1]
+                full_table_ref = f'"{table_schema}"."{table_name}"'
+                logger.info(f"🔍 Using schema '{table_schema}' for table '{table_name}' from reference '{t}'")
+                
+            # Use proper SQL identifier quoting for schema and table
+            with engine.connect() as conn:
+                query = f'SELECT * FROM {full_table_ref}'
+                logger.info(f"🔍 Executing query: {query}")
+                try:
+                    df_part = pl.read_database(query, conn)
+                    
+                    # Create a unique prefix for column names to avoid conflicts
+                    # Use both schema and table name for uniqueness
+                    prefix = f"{table_schema}_{table_name}"
+                    df_part.columns = [f"{prefix}__{c}" for c in df_part.columns]
+                    
+                    dfs.append(df_part)
+                    logger.info(f"✅ Loaded table {full_table_ref} with {df_part.height} rows, {df_part.width} cols")
+                    
+                except Exception as e:
+                    logger.error(f"❌ Failed to load table {full_table_ref}: {e}")
+                    raise
 
-        logger.info(f"✅ Joined {len(sources)} sources → {df.height} rows, {df.width} cols")
+        # Join tables sequentially
+        if not dfs:
+            raise ValueError(f"No tables could be loaded from sources: {sources}")
+            
+        df = dfs[0]
+        logger.info(f"🔗 Starting join process with {len(dfs)} tables")
+        
+        for i, other in enumerate(dfs[1:], 1):
+            logger.info(f"🔗 Joining table {i+1}/{len(dfs)}")
+            
+            # Find join keys - look for columns ending with the join key patterns
+            left_keys = []
+            right_keys = []
+            
+            for join_key in join_keys:
+                # Find columns that end with the join key (after the prefix)
+                left_candidates = [col for col in df.columns if col.endswith(f"__{join_key}")]
+                right_candidates = [col for col in other.columns if col.endswith(f"__{join_key}")]
+                
+                if left_candidates and right_candidates:
+                    left_keys.extend(left_candidates)
+                    right_keys.extend(right_candidates)
+                    logger.info(f"   Found join key '{join_key}': {left_candidates[0]} -> {right_candidates[0]}")
+                    break  # Use the first matching join key
+            
+            if not left_keys or not right_keys:
+                # Fallback: try to find any columns with the join key in the name
+                left_keys = [col for col in df.columns if any(k in col for k in join_keys)]
+                right_keys = [col for col in other.columns if any(k in col for k in join_keys)]
+                
+                if not left_keys or not right_keys:
+                    logger.warning(f"⚠️ Could not find join keys {join_keys} in tables {i} and {i+1}; performing cross join.")
+                    df = df.join(other, how="cross")
+                else:
+                    logger.info(f"   Using fallback join keys: {left_keys[0]} -> {right_keys[0]}")
+                    df = df.join(other, left_on=left_keys[0], right_on=right_keys[0], how="left")
+            else:
+                # Use the first matching join key pair
+                df = df.join(other, left_on=left_keys[0], right_on=right_keys[0], how="left")
+
+        logger.info(f"✅ Joined {len(sources)} sources from different schemas → {df.height} rows, {df.width} cols")
+        
     elif base_table:
+        # Handle single table with schema support
+        if isinstance(base_table, list):
+            # Legacy list format - take first table
+            table_ref = base_table[0]
+        else:
+            table_ref = base_table
+            
+        # Parse table reference
+        parts = table_ref.split('.')
+        if len(parts) == 1:
+            table_schema, table_name = "public", parts[0]
+        else:
+            table_schema, table_name = parts[-2], parts[-1]
+            
         with engine.connect() as conn:
-            df = pl.read_database(f'SELECT * FROM "{base_table}"', conn)
-        logger.info(f"📄 Loaded single source table '{base_table}' ({df.height} rows)")
+            query = f'SELECT * FROM "{table_schema}"."{table_name}"'
+            logger.info(f"🔍 Executing query: {query}")
+            df = pl.read_database(query, conn)
+        logger.info(f"📄 Loaded single source table '{table_schema}.{table_name}' ({df.height} rows)")
     else:
         raise ValueError(f"Neither 'table' nor 'sources' provided for section '{section}'")
 

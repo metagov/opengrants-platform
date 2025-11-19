@@ -25,8 +25,10 @@ schemas_block:
 # PROJECT SCHEMA
 # ============================================================
 project_schema:
-  table: str()
+  table: any(str(), list(str()), required=False)
+  sources: list(include('table_source_schema'), required=False)
   target_table: str()
+  schema: str(required=False)
   fields:
     id: include('id_field_schema')
     name: include('name_field_schema')
@@ -41,14 +43,17 @@ project_schema:
     relevantTo: include('optional_json_array_field_schema')
     licenseURI: include('optional_uri_field_schema')
   extensions: map(include('project_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  join_keys: list(str(), required=False)
 ---
 
 # ============================================================
 # GRANT APPLICATION SCHEMA
 # ============================================================
 grant_application_schema:
-  table: str()
+  table: any(str(), list(str()), required=False)
+  sources: list(include('table_source_schema'), required=False)
   target_table: str()
+  schema: str(required=False)
   fields:
     id: include('id_field_schema')
     name: include('name_field_schema')
@@ -71,14 +76,17 @@ grant_application_schema:
     status: include('application_status_field_schema')
     socials: include('application_socials_field_schema')
   extensions: map(include('grant_application_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  join_keys: list(str(), required=False)
 ---
 
 # ============================================================
 # GRANT POOL SCHEMA
 # ============================================================
 grant_pool_schema:
-  table: str()
+  table: any(str(), list(str()), required=False)
+  sources: list(include('table_source_schema'), required=False)
   target_table: str()
+  schema: str(required=False)
   fields:
     id: include('id_field_schema')
     name: include('name_field_schema')
@@ -96,6 +104,18 @@ grant_pool_schema:
     requiredCredentials: include('optional_json_array_field_schema')
     totalGrantPoolSize: include('optional_grant_pool_size_field_schema')
   extensions: map(include('grant_pool_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  join_keys: list(str(), required=False)
+---
+
+# ============================================================
+# TABLE SOURCE SCHEMA
+# ============================================================
+table_source_schema:
+  name: str()
+  schema: str(required=False)
+  alias: str(required=False)
+  join_type: enum('inner', 'left', 'right', 'full', 'cross', required=False)
+  join_condition: str(required=False)
 ---
 
 # ============================================================
@@ -395,3 +415,7 @@ validation_rules_schema:
   id_format: str(required=False)
   enum_enforced: bool(required=False)
   required_fields: list(str(), required=False)
+  cross_schema_joins: bool(required=False)
+  schema_aware_validation: bool(required=False)
+  date_format: str(required=False)
+  token_names: bool(required=False)

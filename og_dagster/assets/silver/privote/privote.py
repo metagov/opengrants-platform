@@ -13,10 +13,12 @@ logger = get_dagster_logger()
     group_name="silver",
     deps=[
         "bronze_privote_recipients",
-        "bronze_privote_claims_enriched",
-        "bronze_privote_registries",
+        "bronze_privote_registries", 
         "bronze_privote_claims",
         "bronze_privote_deposits",
+        "bronze_privote_metadata_urls",  # ADDED - used for projects
+        "bronze_privote_system",         # ADDED - used for grant pools
+        "ui_allocations",                # ADDED - used for grant applications
     ],
 )
 def silver_privote_transform(context):
@@ -39,12 +41,13 @@ def silver_privote_transform(context):
             df_silver = sanitize_for_sql(df_silver)
 
             target_table = f"silver_privote_{section}"
+            
+            # Write to database
             with engine.begin() as conn:
-                df_silver.to_pandas().to_sql(
-                    target_table,
-                    conn,
-                    if_exists="replace",
-                    index=False
+                df_silver.write_database(
+                    table_name=target_table,
+                    connection=conn,
+                    if_table_exists="replace"
                 )
 
             context.log.info(
