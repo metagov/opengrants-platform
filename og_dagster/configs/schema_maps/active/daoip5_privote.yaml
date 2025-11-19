@@ -15,7 +15,7 @@ schemas:
   # PROJECTS
   # ------------------------------------------------------------
   projects:
-    table: bronze_privote_metadata_urls
+    table: "privote.bronze_privote_metadata_urls"
     target_table: silver_privote_projects
     fields:
       id:
@@ -86,7 +86,7 @@ schemas:
   # GRANT POOLS
   # ------------------------------------------------------------
   grant_pools:
-    table: bronze_privote_registries
+    table: "privote.bronze_privote_registries"
     target_table: silver_privote_grant_pools
     fields:
       id:
