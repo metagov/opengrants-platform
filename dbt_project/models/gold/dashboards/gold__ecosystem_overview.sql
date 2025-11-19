@@ -1,35 +1,48 @@
 {{ config(materialized='table') }}
 
--- ============================================================
--- Cross-ecosystem Funding Overview (DAOIP-5 unified)
--- ============================================================
-
-WITH funding AS (
-    SELECT
-        source,
-        SUM(COALESCE("totalGrantPoolSizeInUSD", 0)) AS total_pool_size_usd,
-        AVG(NULLIF("totalGrantPoolSizeInUSD", 0)) AS avg_pool_size_usd
-    FROM {{ ref('gold__all_grant_pools') }}
-    GROUP BY source
-),
-
-donations AS (
-    SELECT
-        source,
-        SUM(COALESCE(total_donations_usd, 0)) AS total_donations_usd,
-        SUM(COALESCE(total_projects, 0)) AS total_projects,
-        SUM(COALESCE(total_unique_donors, 0)) AS total_unique_donors
-    FROM {{ ref('gold__donation_metrics') }}
-    GROUP BY source
+WITH platform_metrics AS (
+    -- Giveth
+    SELECT 
+        'giveth' as platform,
+        COUNT(*) as total_projects,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_giveth_grant_pools') }}) as total_grant_pools,
+        0 as total_applications,
+        SUM("io.giveth.totalDonations") as total_funding_usd,
+        'Direct Donations' as primary_mechanism
+    FROM {{ source('silver', 'silver_giveth_projects') }}
+    
+    UNION ALL
+    
+    -- SCF
+    SELECT 
+        'scf' as platform,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_scf_projects') }}) as total_projects,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_scf_grant_pools') }}) as total_grant_pools,
+        COUNT(*) as total_applications,
+        SUM("fundsApprovedInUSD"::numeric) as total_funding_usd,
+        'Community Voting' as primary_mechanism
+    FROM {{ source('silver', 'silver_scf_grant_applications') }}
+    
+    UNION ALL
+    
+    -- Privote
+    SELECT 
+        'privote' as platform,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_privote_projects') }}) as total_projects,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_privote_grant_pools') }}) as total_grant_pools,
+        COUNT(*) as total_applications,
+        SUM("fundsApprovedInUSD") as total_funding_usd,
+        'Quadratic Funding' as primary_mechanism
+    FROM {{ source('silver', 'silver_privote_grant_applications') }}
 )
 
-SELECT
-    f.source,
-    f.total_pool_size_usd,
-    f.avg_pool_size_usd,
-    COALESCE(d.total_donations_usd, 0) AS total_donations_usd,
-    COALESCE(d.total_projects, 0) AS total_projects,
-    COALESCE(d.total_unique_donors, 0) AS total_unique_donors
-FROM funding f
-LEFT JOIN donations d ON f.source = d.source
-ORDER BY f.total_pool_size_usd DESC;
+SELECT 
+    platform,
+    total_projects,
+    total_grant_pools,
+    total_applications,
+    COALESCE(total_funding_usd, 0) as total_funding_usd,
+    primary_mechanism,
+    ROUND((COALESCE(total_funding_usd, 0) * 100.0 / NULLIF(SUM(COALESCE(total_funding_usd, 0)) OVER(), 0))::numeric, 2) as funding_share_pct
+FROM platform_metrics
+ORDER BY total_funding_usd DESC NULLS LAST

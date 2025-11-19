@@ -11,13 +11,11 @@
     
 
 SELECT
-    source,
-    "io.giveth.verificationStatus" AS verification_status,
-    COUNT(*) AS project_count,
-    AVG("io.giveth.totalDonations") AS avg_donations,
-    AVG("io.giveth.qualityScore") AS avg_quality_score
-FROM "opengrants"."public"."gold__all_projects"
-GROUP BY 1, 2
-ORDER BY project_count DESC
+    'giveth' as platform,
+    COUNT(*) AS total_projects,
+    COUNT(CASE WHEN "io.giveth.verified" = true THEN 1 END) AS verified_projects,
+    COUNT(CASE WHEN "io.giveth.verified" = false THEN 1 END) AS unverified_projects,
+    ROUND(COUNT(CASE WHEN "io.giveth.verified" = true THEN 1 END) * 100.0 / COUNT(*), 2) AS verification_rate_pct
+FROM "opengrants"."public"."silver_giveth_projects"
   );
   

@@ -1,11 +1,11 @@
 
 
 SELECT
-    source,
-    "grantFundingMechanism" AS funding_mechanism,
+    platform as source,
+    COALESCE(funding_mechanism, 'Unknown') AS funding_mechanism,
     COUNT(*) AS rounds_count,
-    SUM("totalGrantPoolSizeInUSD") AS total_pool_size_usd,
-    AVG("totalGrantPoolSizeInUSD") AS avg_pool_size_usd
+    SUM(COALESCE(total_pool_size_usd, 0)) AS total_pool_size_usd,
+    AVG(NULLIF(total_pool_size_usd, 0)) AS avg_pool_size_usd
 FROM "opengrants"."public"."gold__all_grant_pools"
-GROUP BY 1, 2
+GROUP BY platform, funding_mechanism
 ORDER BY total_pool_size_usd DESC

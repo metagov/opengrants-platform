@@ -1,43 +1,41 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
 
--- ============================================================
--- Unified DAOIP-5 Grant Pools across ecosystems
--- ============================================================
-
-SELECT
-  'Giveth' AS source,
-  id,
-  name,
-  description,
-  "totalGrantPoolSizeInUSD",
-  "isOpen",
-  "closeDate",
-  "image",
-  "coverImage",
-  "email",
-  "grantFundingMechanism",
-  "governanceURI",
-  "attestationIssuersURI",
-  "requiredCredentials",
-  "totalGrantPoolSize"
+-- Giveth Grant Pools
+SELECT 
+    'giveth' as platform,
+    id,
+    name,
+    description,
+    "grantFundingMechanism" as funding_mechanism,
+    "isOpen" as is_open,
+    "closeDate" as close_date,
+    "totalGrantPoolSizeInUSD" as total_pool_size_usd
 FROM {{ source('silver', 'silver_giveth_grant_pools') }}
 
 UNION ALL
 
-SELECT
-  'SCF' AS source,
-  id,
-  name,
-  description,
-  "totalGrantPoolSizeInUSD",
-  "isOpen",
-  "closeDate",
-  "image",
-  "coverImage",
-  "email",
-  "grantFundingMechanism",
-  "governanceURI",
-  "attestationIssuersURI",
-  "requiredCredentials",
-  "totalGrantPoolSize"
+-- SCF Grant Pools
+SELECT 
+    'scf' as platform,
+    id,
+    name,
+    description,
+    "grantFundingMechanism" as funding_mechanism,
+    "isOpen"::boolean as is_open,
+    "closeDate" as close_date,
+    "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
 FROM {{ source('silver', 'silver_scf_grant_pools') }}
+
+UNION ALL
+
+-- Privote Grant Pools
+SELECT 
+    'privote' as platform,
+    id,
+    name,
+    description,
+    "grantFundingMechanism" as funding_mechanism,
+    "isOpen"::boolean as is_open,
+    "closeDate" as close_date,
+    "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
+FROM {{ source('silver', 'silver_privote_grant_pools') }}

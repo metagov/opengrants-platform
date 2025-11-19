@@ -1,27 +1,11 @@
---dbt_project/models/gold/dashboards/gold__system_profile.sql
 {{ config(materialized='table') }}
 
--- Giveth-only system profile combining verification and engagement insights.
-
-SELECT
-    p.source,
-    v.verification_status,
-    v.project_count,
-    v.avg_quality_score,
-    e.engagement_tier,
-    e.avg_donations,
-    e.avg_donors
-FROM {{ ref('gold__verification_metrics') }} v
-LEFT JOIN {{ ref('gold__engagement_metrics') }} e
-  ON v.source = e.source
-LEFT JOIN {{ ref('gold__all_projects') }} p
-  ON v.source = p.source
-WHERE p.source = 'Giveth'
-GROUP BY
-    p.source,
-    v.verification_status,
-    v.project_count,
-    v.avg_quality_score,
-    e.engagement_tier,
-    e.avg_donations,
-    e.avg_donors
+SELECT 
+    'giveth' as platform,
+    COUNT(*) as total_projects,
+    SUM("io.giveth.totalDonations") as total_donations_usd,
+    AVG("io.giveth.totalDonations") as avg_donations_per_project,
+    SUM("io.giveth.countUniqueDonors") as total_unique_donors,
+    COUNT(CASE WHEN "io.giveth.verified" = true THEN 1 END) as verified_projects,
+    (SELECT COUNT(*) FROM {{ source('silver', 'silver_giveth_grant_pools') }}) as total_grant_pools
+FROM {{ source('silver', 'silver_giveth_projects') }}

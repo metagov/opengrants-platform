@@ -1,18 +1,14 @@
 version: 2
 
 sources:
-- name: silver
-  description: "Postgres schema containing Silver-layer normalized grant data"
-  database: opengrants
-  schema: public
-  tables:
-  - name: silver_giveth_projects
-    description: "DAOIP-5-compliant Giveth project data (Silver layer)"
-  - name: silver_giveth_grant_pools
-    description: "DAOIP-5-compliant Giveth grant pool data (Silver layer)"
-  - name: silver_scf_projects
-    description: "DAOIP-5-compliant Stellar Community Fund project data (Silver layer)"
-  - name: silver_scf_grant_pools
-    description: "DAOIP-5-compliant Stellar Community Fund grant pool data (Silver layer)"
-  - name: silver_scf_grant_applications
-    description: "DAOIP-5-compliant Stellar Community Fund grant application data (Silver layer)"
+  - name: silver
+    schema: public
+    tables:
+      - name: silver_giveth_projects
+      - name: silver_giveth_grant_pools
+      - name: silver_scf_projects
+      - name: silver_scf_grant_pools
+      - name: silver_scf_grant_applications
+      - name: silver_privote_projects
+      - name: silver_privote_grant_pools
+      - name: silver_privote_grant_applications
