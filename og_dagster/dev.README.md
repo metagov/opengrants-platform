@@ -89,3 +89,30 @@ Applications → claims (funded) + requests (all applications)
 Funding → deposits + claims.amount
 
 Voting → tallyResults + votes
+
+
+### Dump Tables
+
+# Dump both tables together
+`docker exec -it postgres pg_dump -U postgres -d opengrants -t privote.ui_allocations -t privote.bronze_privote_ccqf_results > privote_tables.sql`
+
+# Or dump them separately if you prefer:
+`docker exec -it postgres pg_dump -U postgres -d opengrants -t privote.ui_allocations > ui_allocations.sql`
+`docker exec -it postgres pg_dump -U postgres -d opengrants -t privote.bronze_privote_ccqf_results > ccqf_results.sql`
+
+### Transfer to DO
+#### Copy the dump file to your Digital Ocean server
+`scp privote_tables.sql user@your_droplet_ip:/tmp/`
+
+# Check if the file exists on the host
+`ls -la /tmp/privote_tables.sql`
+# Check if PostgreSQL container can access the file
+`docker exec -it postgres ls -la /tmp/privote_tables.sql`
+
+# 3. Copy the file from host to container
+`docker cp /tmp/privote_tables.sql postgres:/tmp/privote_tables.sql`
+# 4. Verify file is in container
+`sudo docker exec -it postgres ls -la /tmp/privote_tables.sql`
+
+# 5. Restore the tables
+`docker exec -i postgres psql -U postgres -d opengrants -f /tmp/privote_tables.sql`
