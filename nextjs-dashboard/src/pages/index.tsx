@@ -88,7 +88,7 @@ export default function Index() {
           <BarSegment data={chartData} />
         </Box>
 
-      <Link href="/overview">
+      <Link href="/ecosystem">
         <Button
           mt={8}
           variant="outline"
