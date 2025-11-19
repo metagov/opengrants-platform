@@ -16,8 +16,8 @@ WITH platform_metrics AS (
         'giveth' as platform,
         COUNT(*) as total_projects,
         (SELECT COUNT(*) FROM "opengrants"."public"."silver_giveth_grant_pools") as total_grant_pools,
-        0 as total_applications,
-        SUM("io.giveth.totalDonations") as total_funding_usd,
+        COUNT(*) as total_applications,  -- Fixed: Giveth projects = applications
+        SUM(COALESCE("io.giveth.totalDonations", 0)) as total_funding_usd,
         'Direct Donations' as primary_mechanism
     FROM "opengrants"."public"."silver_giveth_projects"
     
@@ -29,7 +29,7 @@ WITH platform_metrics AS (
         (SELECT COUNT(*) FROM "opengrants"."public"."silver_scf_projects") as total_projects,
         (SELECT COUNT(*) FROM "opengrants"."public"."silver_scf_grant_pools") as total_grant_pools,
         COUNT(*) as total_applications,
-        SUM("fundsApprovedInUSD"::numeric) as total_funding_usd,
+        SUM(COALESCE("fundsApprovedInUSD"::numeric, 0)) as total_funding_usd,  -- Fixed: Handle NULL values
         'Community Voting' as primary_mechanism
     FROM "opengrants"."public"."silver_scf_grant_applications"
     
@@ -41,7 +41,7 @@ WITH platform_metrics AS (
         (SELECT COUNT(*) FROM "opengrants"."public"."silver_privote_projects") as total_projects,
         (SELECT COUNT(*) FROM "opengrants"."public"."silver_privote_grant_pools") as total_grant_pools,
         COUNT(*) as total_applications,
-        SUM("fundsApprovedInUSD") as total_funding_usd,
+        SUM(COALESCE("fundsApprovedInUSD", 0)) as total_funding_usd,
         'Quadratic Funding' as primary_mechanism
     FROM "opengrants"."public"."silver_privote_grant_applications"
 )
@@ -51,9 +51,13 @@ SELECT
     total_projects,
     total_grant_pools,
     total_applications,
-    COALESCE(total_funding_usd, 0) as total_funding_usd,
+    total_funding_usd,
+    CASE 
+        WHEN total_funding_usd = 0 THEN 'N/A'
+        ELSE '$' || ROUND(total_funding_usd / 1000) || 'K'
+    END as total_funding_display,
     primary_mechanism,
-    ROUND((COALESCE(total_funding_usd, 0) * 100.0 / NULLIF(SUM(COALESCE(total_funding_usd, 0)) OVER(), 0))::numeric, 2) as funding_share_pct
+    ROUND((total_funding_usd * 100.0 / NULLIF(SUM(total_funding_usd) OVER(), 0))::numeric, 2) as funding_share_pct
 FROM platform_metrics
 ORDER BY total_funding_usd DESC NULLS LAST
   );

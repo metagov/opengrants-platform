@@ -1,136 +1,214 @@
 # ============================================================
 # DAOIP-5 Unified Schema Map — Stellar Community Fund (SCF)
+# Version: 1.0.10 — Exact bronze mappings, funding mapped + XLM preserved
+# Generated: 2025-11-20
 # ============================================================
 
 manifest:
   schema_name: daoip5_scf
-  version: 1.0.0
+  version: "1.0.10"
   source_system: "Stellar Community Fund (Airtable CSV)"
-  last_updated: "2025-11-03T00:00:00Z"
-  description: DAOIP-5 compliant mapping for Stellar Community Fund data (Projects, Grant Applications, and Grant Pools). All extra fields are preserved under extensions to avoid data loss.
+  last_updated: "2025-11-20T00:00:00Z"
+  description: >
+    DAOIP-5 compliant mapping for SCF grants. Exact bronze column names used. Awarded amounts (USD) are canonical for DAOIP fields; XLM payment amounts are kept in extensions for auditing / separate conversion later.
 
 schemas:
 
-  # ----------------------------------------------------------
-  # DAOIP-5: Project Schema
-  # ----------------------------------------------------------
+  # ------------------------------------------------------------
+  # PROJECTS (bronze_scf_projects)
+  # ------------------------------------------------------------
   projects:
     table: bronze_scf_projects
     target_table: silver_scf_projects
+
     fields:
       id:
-        source: Title
+        source: "Title"
         type: string
-        transform: "lambda v: f'daoip-5:scf:project:{v.lower().replace(' ', '_')}' if v else None"
         required: true
+        transform: |
+          lambda v: f"daoip-5:scf:project:{v.strip().lower().replace(' ', '_')}" if v and str(v).strip() else None
+
       name:
-        source: Title
+        source: "Title"
         type: string
         required: true
+
       description:
-        source: Description
+        source: "Description"
         type: string
+        required: true
+        transform: |
+          lambda v: v.strip() if v and str(v).strip() else "No description provided."
+
       contentURI:
-        source: Website
+        source: "Website"
         type: string
+
       image:
-        source: Thumbnail
+        source: "Thumbnail"
         type: string
+
       coverImage:
         source: null
         type: string
-        required: false
+        required: true
+        transform: "lambda _: ''"
+
       email:
-        source: Email
+        source: null
         type: string
-        required: false
+        required: true
+        transform: "lambda _: ''"
+
       socials:
         source:
-        - Github
-        - Discord
-        - X
-        - LinkedIn
-        - Website
+        - "Github"
+        - "Discord"
+        - "X"
+        - "LinkedIn"
+        - "Website"
         type: json
+        required: true
         transform: |
           lambda Github, Discord, X, LinkedIn, Website: [
-            {"name": "GitHub", "value": Github} if Github else None,
-            {"name": "Discord", "value": Discord} if Discord else None,
-            {"name": "X", "value": X} if X else None,
-            {"name": "LinkedIn", "value": LinkedIn} if LinkedIn else None,
-            {"name": "Website", "value": Website} if Website else None,
+            {"platform":"GitHub","url":Github} if Github and str(Github).strip() else None,
+            {"platform":"Discord","url":Discord} if Discord and str(Discord).strip() else None,
+            {"platform":"X","url":X} if X and str(X).strip() else None,
+            {"platform":"LinkedIn","url":LinkedIn} if LinkedIn and str(LinkedIn).strip() else None,
+            {"platform":"Website","url":Website} if Website and str(Website).strip() else None
           ]
+
       membersURI:
-        source: Team
+        source: null
         type: string
-        required: false
+        required: true
+        transform: "lambda _: ''"
+
       attestationIssuersURI:
         source: null
         type: json
+        required: true
         transform: "lambda _: []"
-        required: false
+
       relevantTo:
         source: null
         type: json
+        required: true
         transform: "lambda _: []"
-        required: false
+
       licenseURI:
         source: null
         type: string
-        required: false
+        required: true
+        transform: "lambda _: ''"
 
     extensions:
       io.scf:
-        impactLocation:
-          source: "Regions of Operation"
+        integrationStatus:
+          source: "Integration Status"
           type: string
-        openSource:
-          source: "Open-Source?"
-          type: boolean
-        relatedGrantPool:
-          source: "Round (from Awarded Submissions)"
+
+        category:
+          source: "Category"
           type: string
-          transform: "lambda v: f'daoip-5:scf:grantPool:{v.lower().replace(' ', '_')}' if v else None"
+
+        website:
+          source: "Website"
+          type: string
+
         totalAwardedUSD:
           source: "Total Awarded"
           type: float
+          transform: |
+            lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
+
         totalPaidUSD:
           source: "Total Paid"
           type: float
-        category:
-          source: Category
+          transform: |
+            lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
+
+        totalPaidXLM:
+          source: null
+          type: float
+          transform: "lambda _: 0.0"
+
+        regionsOfOperation:
+          source: "Regions of Operation"
           type: string
-        auditReportURI:
-          source: "Public Audit Report (from Audits) (from Audit Bank)"
-          type: string
-        analytics:
-          source: Analytics
-          type: string
-        teamDescription:
-          source: "Team Description"
-          type: string
+
         submissionsCount:
-          source: Submissions
+          source: "Submissions"
           type: integer
+          transform: "lambda v: int(v) if v and str(v).strip().isdigit() else 0"
+
         awardedSubmissionsCount:
           source: "Awarded Submissions"
           type: integer
-        sorobanUsed:
-          source: Soroban?
-          type: boolean
-        integrationStatus:
-          source: Integration Status
-          type: string
+          transform: "lambda v: int(v) if v and str(v).strip().isdigit() else 0"
+
         submissionURLAll:
           source: "Submission URL (from All Submissions)"
           type: string
+
         submissionURLAwarded:
           source: "Submission URL (from Awarded Submissions)"
           type: string
 
-  # ----------------------------------------------------------
-  # DAOIP-5: GrantApplication Schema
-  # ----------------------------------------------------------
+        roundFromSubmissions:
+          source: "Round (from Submissions)"
+          type: string
+
+        roundFromAwardedSubmissions:
+          source: "Round (from Awarded Submissions)"
+          type: string
+
+        openSource:
+          source: "Open-Source?"
+          type: boolean
+          transform: "lambda v: str(v).lower() in ['yes','true','1'] if v else False"
+
+        github:
+          source: "Github"
+          type: string
+
+        discord:
+          source: "Discord"
+          type: string
+
+        x:
+          source: "X"
+          type: string
+
+        linkedin:
+          source: "LinkedIn"
+          type: string
+
+        analytics:
+          source: "Analytics"
+          type: string
+
+        auditReportURI:
+          source: "Public Audit Report (from Audits) (from Audit Bank)"
+          type: string
+
+        teamDescription:
+          source: "Team Description"
+          type: string
+
+        sorobanUsed:
+          source: "Soroban?"
+          type: boolean
+          transform: "lambda v: str(v).lower() in ['yes','true','1'] if v else False"
+
+        thumbnail:
+          source: "Thumbnail"
+          type: string
+
+  # ------------------------------------------------------------
+  # GRANT APPLICATIONS (bronze_scf_submissions)
+  # ------------------------------------------------------------
   grant_applications:
     table: bronze_scf_submissions
     target_table: silver_scf_grant_applications
@@ -139,317 +217,477 @@ schemas:
       id:
         source: "Submission / Project"
         type: string
-        transform: "lambda v: f'daoip-5:scf:application:{v.lower().replace(' ', '_')}' if v else None"
         required: true
+        transform: |
+          lambda v: f"daoip-5:scf:application:{v.strip().lower().replace(' ', '_')}" if v and str(v).strip() else None
+
       name:
         source: "Submission Title"
         type: string
         required: true
+
       grantPoolName:
-        source: Round
+        source: "Round"
         type: string
+        required: true
+
       createdAt:
-        source: "Submission Created At"
+        source: null
         type: datetime
-      discussionTo:
-        source: "Discussion To"
-        type: string
-        required: false
-      licenseURI:
-        source: null
-        type: string
-        required: false
-      isInactive:
-        source: null
-        type: boolean
-        transform: "lambda _: False"
-      applicationCompletionRate:
-        source: null
-        type: float
-        required: false
+        transform: "lambda _: '2025-01-01T00:00:00Z'"
+
       description:
         source: "One-Sentence-Description"
         type: string
+        required: true
+        transform: |
+          lambda v: v.strip() if v and str(v).strip() else "No description provided."
+
       contentURI:
         source: "Submission URL"
         type: string
+
       projectId:
-        source: Project
+        source: "Project"
         type: string
-        transform: "lambda v: f'daoip-5:scf:project:{v.lower().replace(' ', '_')}' if v else None"
+        transform: |
+          lambda v: f"daoip-5:scf:project:{v.strip().lower().replace(' ', '_')}" if v and str(v).strip() else None
+
       grantPoolId:
-        source: Round
+        source: "Round"
         type: string
-        transform: "lambda v: f'daoip-5:scf:grantPool:{v.lower().replace(' ', '_')}' if v else None"
-      fundsAskedInUSD:
-        source: "Funding Asked (USD)"
+        required: true
+        transform: |
+          lambda v: f"daoip-5:scf:grantPool:{v.strip().lower().replace(' ', '_')}" if v and str(v).strip() else None
+
+      discussionTo:
+        source: null
+        type: string
+        required: true
+        transform: "lambda _: ''"
+
+      licenseURI:
+        source: null
+        type: string
+        required: true
+        transform: "lambda _: ''"
+
+      isInactive:
+        source: null
+        type: boolean
+        required: true
+        transform: "lambda _: False"
+
+      applicationCompletionRate:
+        source: null
         type: float
-        required: false
+        required: true
+        transform: "lambda _: 0.0"
+
+      fundsAskedInUSD:
+        source: "Total Awarded (USD)"
+        type: float
+        required: true
+        transform: |
+          lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
+
       fundsAsked:
-        source:
-        - "Funding Asked (Amount)"
-        - "Funding Asked (Denomination)"
+        source: "Total Awarded (USD)"
         type: json
+        required: true
         transform: |
-          lambda amount, denomination: [
-            {"amount": float(amount) if amount not in (None, "") else None, "denomination": denomination}
-          ] if amount or denomination else []
-        required: false
+          lambda v: [{"amount": float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0, "token":"USD"}]
+
       fundsApproved:
-        source:
-        - "Total Awarded"
-        - "Total Awarded (Denomination)"
+        source: "Total Awarded (USD)"
         type: json
+        required: true
         transform: |
-          lambda amount, denomination: [
-            {"amount": float(amount) if amount not in (None, "") else None, "denomination": denomination}
-          ] if amount or denomination else []
-        required: false
-      payoutAddress:
-        source:
-        - "Payout Address Type"
-        - "Payout Address"
-        type: json
-        transform: |
-          lambda addr_type, addr_value: {"type": addr_type, "value": addr_value} if addr_type or addr_value else None
-        required: false
-      payouts:
-        source:
-        - "Payouts Type"
-        - "Payouts Details"
-        - "Payouts Proof"
-        type: json
-        transform: |
-          lambda p_type, p_details, p_proof: [{
-            "type": p_type,
-            "value": p_details,
-            "proof": p_proof
-          }] if p_type or p_details or p_proof else []
-        required: false
+          lambda v: [{"amount": float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0, "token":"USD"}]
+
       fundsApprovedInUSD:
         source: "Total Awarded (USD)"
         type: float
-      status:
+        required: true
+        transform: |
+          lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
+
+      payoutAddress:
         source: null
+        type: json
+        required: true
+        transform: "lambda _: {}"
+
+      payouts:
+        source: null
+        type: json
+        required: true
+        transform: "lambda _: []"
+
+      socials:
+        source: null
+        type: json
+        required: true
+        transform: "lambda _: []"
+
+      status:
+        source: "Total Awarded (USD)"
         type: enum
         allowed:
-        - "pending"
-        - "in_review"
-        - "approved"
-        - "funded"
-        - "rejected"
-        - "completed"
+        - pending
+        - approved
         transform: |
-          lambda row: "approved" if row.get("Total Awarded (USD)") and float(row.get("Total Awarded (USD)", 0)) > 0 else "pending"
-      socials:
-        source:
-        - "LinkedIn (from Project)"
-        - "X (from Project)"
-        - "Discord (from Project)"
-        - Github
-        type: json
-        transform: |
-          lambda LinkedIn, X, Discord, Github: [
-            {"platform": "LinkedIn", "url": LinkedIn} if LinkedIn else None,
-            {"platform": "Twitter", "url": X} if X else None,
-            {"platform": "Discord", "url": Discord} if Discord else None,
-            {"platform": "GitHub", "url": Github} if Github else None,
-          ]
+          lambda v: "approved" if v and str(v).strip() and v.strip() not in ["0","$0",""] else "pending"
 
     extensions:
       io.scf:
-        fundingAmountUSD:
-          source: "Total Awarded (USD)"
-          type: float
-        grantType:
-          source: "Award Type"
+        submissionProject:
+          source: "Submission / Project"
           type: string
+
+        submissionTitle:
+          source: "Submission Title"
+          type: string
+
+        round:
+          source: "Round"
+          type: string
+
+        project:
+          source: "Project"
+          type: string
+
+        category:
+          source: "Category (from Project)"
+          type: string
+
+        submissionURL:
+          source: "Submission URL"
+          type: string
+
         trancheCompletionPercent:
           source: "Tranche Completion %"
           type: float
+          transform: "lambda v: float(v) if v is not None else 0.0"
+
+        totalAwardedUSD:
+          source: "Total Awarded (USD)"
+          type: float
+          transform: |
+            lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
+
         totalPaidUSD:
           source: "Total Paid (USD)"
           type: float
+          transform: |
+            lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
+
         totalPaidXLM:
           source: "Total Paid (XLM)"
           type: float
+          transform: "lambda v: float(v) if v is not None else 0.0"
+
         mostRecentPaymentDate:
           source: "Most Recent Payment Date"
-          type: datetime
-        useSoroban:
-          source: "Use Soroban?"
-          type: boolean
-        trancheDetails:
-          source:
-          - "Tranche 1 - Deliverables"
-          - "Tranche 2 - Testnet"
-          - "Tranche 3 - Mainnet"
-          type: json
-          transform: |
-            lambda t1, t2, t3: {"Tranche 1": t1, "Tranche 2": t2, "Tranche 3": t3}
-        goToMarketPlan:
-          source: "Go-To-Market Plan"
           type: string
-        tractionEvidence:
-          source: "Traction Evidence"
+
+        awardType:
+          source: "Award Type"
           type: string
-        technicalArchitecture:
-          source: "Technical Architecture"
+
+        oneSentenceDescription:
+          source: "One-Sentence-Description"
           type: string
-        successCriteria:
-          source: "Success Criteria"
-          type: string
+
         productsAndServices:
           source: "Products & Services"
           type: string
+
+        technicalArchitecture:
+          source: "Technical Architecture"
+          type: string
+
+        successCriteria:
+          source: "Success Criteria"
+          type: string
+
+        website:
+          source: "Website"
+          type: string
+
+        code:
+          source: "Code"
+          type: string
+
+        video:
+          source: "Video"
+          type: string
+
+        useSoroban:
+          source: "Use Soroban?"
+          type: boolean
+          transform: "lambda v: str(v).lower() in ['yes','true','1'] if v else False"
+
+        goToMarketPlan:
+          source: "Go-To-Market Plan"
+          type: string
+
+        tractionEvidence:
+          source: "Traction Evidence"
+          type: string
+
+        tranche1Deliverables:
+          source: "Tranche 1 - Deliverables"
+          type: string
+
+        tranche2Testnet:
+          source: "Tranche 2 - Testnet"
+          type: string
+
+        tranche3Mainnet:
+          source: "Tranche 3 - Mainnet"
+          type: string
+
         teamMembers:
           source: "Team Members"
           type: string
-        codeURI:
-          source: Code
+
+        thumbnail:
+          source: "Thumbnail"
           type: string
-        videoURI:
-          source: Video
+
+        linkedin:
+          source: "LinkedIn (from Project)"
           type: string
-        websiteURI:
-          source: Website
+
+        x:
+          source: "X (from Project)"
           type: string
-        pitchDeckURI:
+
+        discord:
+          source: "Discord (from Project)"
+          type: string
+
+        pitchDeck:
           source: "Pitch Deck (from Project)"
           type: string
+
         awardCompletionDurationWeeks:
-          source: "\"Award Completion Duration (if Mainnet in Weeks)\""
-          type: float
+          source: "Award Completion Duration (if Mainnet, in Weeks)"
+          type: integer
+          transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else 0"
+
         trancheCompletion:
           source: "Tranche Completion"
           type: string
 
-  # ----------------------------------------------------------
-  # DAOIP-5: GrantPool Schema
-  # ----------------------------------------------------------
+  # ------------------------------------------------------------
+  # GRANT POOLS (bronze_scf_rounds)
+  # ------------------------------------------------------------
   grant_pools:
     table: bronze_scf_rounds
     target_table: silver_scf_grant_pools
 
     fields:
       id:
-        source: Name
+        source: "Name"
         type: string
-        transform: "lambda v: f'daoip-5:scf:grantPool:{v.lower().replace(' ', '_')}' if v else None"
         required: true
+        transform: |
+          lambda v: f"daoip-5:scf:grantPool:{v.strip().lower().replace(' ', '_')}" if v and str(v).strip() else None
+
       name:
-        source: Name
+        source: "Name"
         type: string
         required: true
+
       description:
-        source: Description
+        source: "Description"
         type: string
+        required: true
+        transform: |
+          lambda v: v.strip() if v and str(v).strip() else "No description provided."
+
       applicationsURI:
         source: "Round URL"
         type: string
+
       totalGrantPoolSizeInUSD:
         source: "Total Awarded (USD)"
         type: float
+        required: true
+        transform: |
+          lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
+
       isOpen:
         source: null
         type: boolean
-        transform: "lambda row: True if row.get('Submission Close Date') and row.get('Submission Close Date') > '2025-11-03T00:00:00Z' else False"
+        transform: "lambda _: False"
+
       closeDate:
         source: "Submission Close Date"
         type: datetime
+
       image:
-        source: Image
+        source: "Image"
         type: string
+
       coverImage:
         source: null
         type: string
-        required: false
+        required: true
+        transform: "lambda _: ''"
+
       email:
         source: null
         type: string
-        required: false
+        required: true
+        transform: "lambda _: ''"
+
       grantFundingMechanism:
-        source: null
+        source: "Type"
         type: enum
         allowed:
-        - "Quadratic Funding"
-        - "Direct Grants"
-        - "Retro Funding"
-        - "Streaming Quadratic Funding"
-        - "Bounties"
-        - "Delegated Domain Allocation"
-        - "Impact Attestations"
-        transform: "lambda _: 'Direct Grants'"
+        - quadratic_funding
+        - direct_grants
+        - retroactive_funding
+        - rfp
+        - other
+        transform: |
+          lambda v: "direct_grants" if v and "direct" in str(v).lower() else "other"
+
       governanceURI:
         source: null
         type: string
-        required: false
-        transform: "lambda row: row.get('Governance URL')"
+        required: true
+        transform: "lambda _: ''"
+
       attestationIssuersURI:
         source: null
         type: string
-        required: false
+        required: true
+        transform: "lambda _: ''"
+
       requiredCredentials:
         source: null
         type: json
-        required: false
+        required: true
         transform: "lambda _: []"
+
       totalGrantPoolSize:
-        source: null
+        source: "Total Awarded (USD)"
         type: json
-        required: false
-        transform: "lambda _: [{'amount': 0, 'denomination': 'XLM'}]"
+        required: true
+        transform: |
+          lambda v: [{"amount": float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0, "token":"USD"}]
 
     extensions:
       org.stellar.communityfund:
-        openDate:
-          source: "Submission Open Date"
-          type: datetime
-        phase:
-          source: Phase
+        quarterYear:
+          source: "Quarter, Year"
           type: string
+
+        phase:
+          source: "Phase"
+          type: string
+
+        appliedProjectAbstracts:
+          source: "Applied Project Abstracts"
+          type: integer
+          transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else 0"
+
+        appliedSubmissions:
+          source: "Applied Submissions"
+          type: integer
+          transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else 0"
+
+        awardedSubmissions:
+          source: "Awarded Submissions"
+          type: integer
+          transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else 0"
+
         percentAwarded:
           source: "% Awarded"
           type: float
+          transform: "lambda v: float(v.replace('%','').strip()) if v and str(v).strip() else 0.0"
+
+        totalAwardedUSD:
+          source: "Total Awarded (USD)"
+          type: float
+          transform: |
+            lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
+
         totalPaidUSD:
           source: "Total Paid (USD)"
           type: float
+          transform: |
+            lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
+
         totalPaidXLM:
           source: "Total Paid (XLM)"
-          type: float
+          type: integer
+          transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else 0"
+
         averageAwardedUSD:
           source: "Average Awarded in USD"
           type: float
+          transform: "lambda v: float(v.replace('$','').replace(',','').strip()) if v and str(v).strip() else 0.0"
+
         votersNumber:
           source: "Voters Number"
-          type: integer
-        projectPitches:
-          source: "Project Pitches"
+          type: float
+
+        roundURL:
+          source: "Round URL"
           type: string
+
+        submissions:
+          source: "Submissions"
+          type: string
+
+        projectFromSubmissions:
+          source: "Project (from Submissions)"
+          type: string
+
+        type:
+          source: "Type"
+          type: string
+
+        submissionOpenDate:
+          source: "Submission Open Date"
+          type: string
+
+        submissionCloseDate:
+          source: "Submission Close Date"
+          type: string
+
+        image:
+          source: "Image"
+          type: string
+
         scfVersion:
           source: "SCF Version"
           type: string
+
         roundRecap:
           source: "Round Recap"
           type: string
+
         year:
-          source: Year
+          source: "Year"
           type: integer
-        quarterYear:
-          source: "\"Quarter Year\""
-          type: string
-        type:
-          source: Type
-          type: string
+          transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else 2025"
 
 meta:
   daoip_version: 5
   author: "Rashmi V. Abbigeri <rashmi@metagov.org>"
-  mapping_strategy: "DAOIP-5 compliant + io.scf extensions"
-  compatible_with: [ "opengrants-silver-pipeline>=0.3.0" ]
+  mapping_strategy: "DAOIP-5 compliant; exact bronze column mapping; USD canonical for awards"
   validation_rules:
     json_fields_must_parse: true
-    json_schema_enforced: true
     id_format: "daoip-5:scf"
-    enum_enforced: false
-    required_fields: [ "id", "name", "description", "totalGrantPoolSizeInUSD" ]
+    required_fields:
+    - id
+    - name
+    - projectId
+    - grantPoolId
+    - fundsApprovedInUSD
