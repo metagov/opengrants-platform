@@ -64,3 +64,8 @@ docker-compose.override.yml
 
 # --- Misc ---
 tree.txt
+
+dbt_project/target/
+dbt_project/dbt_modules/
+dbt_project/.dbt/
+logs/
