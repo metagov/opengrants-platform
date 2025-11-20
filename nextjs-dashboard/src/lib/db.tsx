@@ -1,17 +1,44 @@
-// --- nextjs-dashboard/src/lib/db.tsx
-import { Pool } from 'pg'
+import { Pool, PoolConfig } from "pg";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-})
+const connectionString = process.env.DATABASE_URL;
+const isLocalhost = connectionString?.includes("localhost");
 
+const config: PoolConfig = {
+  connectionString,
+  connectionTimeoutMillis: 30000,
+  idleTimeoutMillis: 60000,
+  max: 5,
+};
 
-export async function query(text: any, params: any) {
-  const client = await pool.connect()
+if (!isLocalhost && connectionString) {
+  config.ssl = {
+    rejectUnauthorized: false,
+  };
+}
+
+const pool = new Pool(config);
+
+export async function query(text: string, params: any[] = []) {
+  let client;
   try {
-    const result = await client.query(text, params)
-    return result.rows
+    client = await pool.connect();
+    const result = await client.query(text, params);
+    return result.rows;
+  } catch (error) {
+    console.error("Database query error:", error);
+    throw error;
   } finally {
-    client.release()
+    if (client) {
+      client.release();
+    }
+  }
+}
+
+export async function testConnection() {
+  try {
+    const result = await query("SELECT NOW() as current_time");
+    return { success: true, time: result[0]?.current_time };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }
