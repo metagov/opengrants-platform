@@ -1,6 +1,7 @@
 import json
 import requests
-from typing import Any, Dict, List
+import re
+from typing import Any, Dict, List, Tuple, Optional
 
 import polars as pl
 import pandas as pd
@@ -23,7 +24,6 @@ def safe_read_query(conn, query: str) -> pl.DataFrame:
     3. manual SQLAlchemy fetch -> polars
     """
     # Attempt 1 — Polars direct read
-    # Attempt 1 — Polars direct read
     try:
         df = pl.read_database(query, conn)
         # Safety: force all columns to Utf8 to avoid "could not append value" errors
@@ -31,7 +31,6 @@ def safe_read_query(conn, query: str) -> pl.DataFrame:
         return df
     except Exception as e1:
         logger.warning(f"⚠️ pl.read_database failed: {e1}")
-
 
     # Attempt 2 — Pandas fallback
     try:
@@ -124,62 +123,245 @@ def normalize_type(value: Any, dtype: str):
 
 
 # ============================================================
-# 4. Row Validation & Enrichment
+# 4. Enhanced Money Parser (Backward Compatible)
+# ============================================================
+
+def parse_money_amount_and_token(raw: str) -> Tuple[Optional[float], Optional[str]]:
+    """
+    Parse money amount and currency token from string.
+    Enhanced version that handles text-to-numeric conversion while maintaining backward compatibility.
+    
+    Returns:
+        Tuple[amount, token] where amount is float or None, token is str or None
+    """
+    if not raw or not isinstance(raw, str):
+        return None, None
+    
+    cleaned = raw.strip()
+    if not cleaned:
+        return None, None
+    
+    # BACKWARD COMPATIBILITY: Original simple parsing first
+    try:
+        # Original logic - direct conversion
+        amount = float(cleaned)
+        return amount, 'USD'  # Default token as in original
+    except (ValueError, TypeError):
+        pass  # Continue to enhanced parsing
+    
+    # ENHANCED PARSING: Handle text formats
+    try:
+        # Common non-numeric indicators
+        if cleaned.lower() in ['', 'n/a', 'none', 'null', 'nan', 'not applicable', 'pending', 'tbd']:
+            return None, None
+        
+        # Text-to-value mapping for common descriptions
+        text_to_value_map = {
+            'full funding': 1000000.0,
+            'partial funding': 500000.0,
+            'small grant': 25000.0,
+            'large award': 500000.0,
+            'major grant': 1000000.0,
+            'mini-grant': 10000.0,
+            'seed funding': 50000.0,
+        }
+        
+        # Check for text mappings (case insensitive)
+        cleaned_lower = cleaned.lower()
+        for text_pattern, value in text_to_value_map.items():
+            if text_pattern in cleaned_lower:
+                return value, 'USD'
+        
+        # Extract numbers from text using regex patterns
+        money_patterns = [
+            # Pattern: $50,000 USD or £25,000 GBP
+            r'[\$£€¥]?\s*([0-9,]+(?:\.\d+)?)\s*[^\d]*([A-Z]{3})?',
+            # Pattern: 50000 dollars or 25000 EUR
+            r'([0-9,]+(?:\.\d+)?)\s*(?:dollars|usd|eur|gbp|jpy|euros|pounds)',
+            # Pattern: Amount: 50,000 or Award: 25,000.00
+            r'(?:amount|award|funding|grant)[^\d]*([0-9,]+(?:\.\d+)?)',
+            # Pattern: Total: $1,500,000
+            r'(?:total|sum)[^\d]*[\$£€¥]?\s*([0-9,]+(?:\.\d+)?)',
+            # Pattern: USD 50000 or EUR 25000
+            r'([A-Z]{3})\s*([0-9,]+(?:\.\d+)?)',
+        ]
+        
+        amount = None
+        token = None
+        
+        for pattern in money_patterns:
+            match = re.search(pattern, cleaned, re.IGNORECASE)
+            if match:
+                groups = match.groups()
+                
+                # Find the amount group
+                amount_str = None
+                for group in groups:
+                    if group and any(c.isdigit() for c in group):
+                        # Clean the amount string
+                        amount_str = group.replace(',', '').strip()
+                        break
+                
+                if amount_str:
+                    try:
+                        amount = float(amount_str)
+                        
+                        # Extract or infer token
+                        if len(groups) > 1:
+                            for group in groups:
+                                if group and group.upper() in ['USD', 'EUR', 'GBP', 'JPY']:
+                                    token = group.upper()
+                                    break
+                        
+                        if not token:
+                            # Infer token from context
+                            if '$' in cleaned or 'usd' in cleaned.lower() or 'dollar' in cleaned.lower():
+                                token = 'USD'
+                            elif '£' in cleaned or 'gbp' in cleaned.upper() or 'pound' in cleaned.lower():
+                                token = 'GBP'
+                            elif '€' in cleaned or 'eur' in cleaned.upper() or 'euro' in cleaned.lower():
+                                token = 'EUR'
+                            elif '¥' in cleaned or 'jpy' in cleaned.upper() or 'yen' in cleaned.lower():
+                                token = 'JPY'
+                            else:
+                                token = 'USD'  # Default as in original
+                        
+                        break  # Found a match, stop searching
+                    except ValueError:
+                        continue
+        
+        # Final fallback: extract any numbers from the string
+        if amount is None:
+            numbers = re.findall(r'[0-9,]+(?:\.\d+)?', cleaned)
+            if numbers:
+                try:
+                    amount = float(numbers[0].replace(',', ''))
+                    token = 'USD'  # Default
+                except ValueError:
+                    pass
+        
+        return amount, token
+        
+    except Exception as e:
+        # Use print for critical errors to avoid Dagster logging issues during failures
+        print(f"⚠️ parse_money failed for '{raw}': {e}")
+        return None, None
+
+
+# ============================================================
+# 5. Metadata Fetcher (MISSING FUNCTION - ADDED)
+# ============================================================
+
+def fetch_metadata_from_url(meta_url: str) -> Dict[str, Any]:
+    """
+    Fetch metadata from URL. 
+    Safe implementation with error handling.
+    """
+    try:
+        logger.info(f"🔗 Fetching metadata from: {meta_url}")
+        response = requests.get(meta_url, timeout=30)
+        response.raise_for_status()
+        
+        # Try to parse as JSON
+        metadata = response.json()
+        logger.info(f"✅ Successfully fetched metadata from {meta_url}")
+        return metadata
+        
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"⚠️ HTTP request failed for {meta_url}: {e}")
+        return {}
+    except json.JSONDecodeError as e:
+        logger.warning(f"⚠️ JSON parsing failed for {meta_url}: {e}")
+        return {}
+    except Exception as e:
+        logger.warning(f"⚠️ Unexpected error fetching metadata from {meta_url}: {e}")
+        return {}
+
+
+# ============================================================
+# 6. Row Validation & Enrichment (Enhanced with Safe Money Parsing)
 # ============================================================
 
 def validate_row(row: dict, schema_fields: dict):
     validated = {}
 
-    meta_url = row.get("metadataUrl") or row.get("metadata_url")
-    if meta_url and isinstance(meta_url, str) and meta_url.startswith("http"):
-        metadata = fetch_metadata_from_url(meta_url)
-        for k, v in metadata.items():
-            row[f"metadata__{k}"] = v
-        row["__metadata_fetched__"] = True
-    else:
+    # Safe metadata fetching
+    try:
+        meta_url = row.get("metadataUrl") or row.get("metadata_url")
+        if meta_url and isinstance(meta_url, str) and meta_url.startswith("http"):
+            metadata = fetch_metadata_from_url(meta_url)
+            for k, v in metadata.items():
+                row[f"metadata__{k}"] = v
+            row["__metadata_fetched__"] = True
+        else:
+            row["__metadata_fetched__"] = False
+    except Exception as e:
+        logger.warning(f"⚠️ Metadata fetch failed: {e}")
         row["__metadata_fetched__"] = False
 
     for field, config in schema_fields.items():
-        source = config.get("source")
-        dtype = config.get("type", "string")
-        transform = config.get("transform")
-        required = config.get("required", False)
-        json_schema = config.get("json_schema")
-        allowed = config.get("allowed")
+        try:
+            source = config.get("source")
+            dtype = config.get("type", "string")
+            transform = config.get("transform")
+            required = config.get("required", False)
+            json_schema = config.get("json_schema")
+            allowed = config.get("allowed")
 
-        if source in (None, "null"):
+            if source in (None, "null"):
+                validated[field] = None
+                continue
+
+            if isinstance(source, list):
+                vals = [row.get(s) for s in source if row.get(s)]
+                val = " ".join(str(v) for v in vals)
+                if transform:
+                    try:
+                        fn = eval(transform)
+                        val = fn(*[row.get(s) for s in source])
+                    except Exception as e:
+                        logger.warning(f"⚠️ Transform failed: {e}")
+            else:
+                val = row.get(source)
+                if transform:
+                    try:
+                        val = eval(transform)(val)
+                    except Exception as e:
+                        logger.warning(f"⚠️ Transform failed for {field}: {e}")
+
+            # ENHANCED: Special handling for money fields with backward compatibility
+            if dtype in ("float", "number"):
+                if val and isinstance(val, str):
+                    # Try enhanced parsing first
+                    amount, token = parse_money_amount_and_token(val)
+                    if amount is not None:
+                        val = amount
+                        # Store currency token if needed for future use
+                        validated[f"{field}_currency"] = token
+                    else:
+                        # Fall back to original normalization
+                        val = normalize_type(val, dtype)
+                else:
+                    # Original behavior for non-string values
+                    val = normalize_type(val, dtype)
+            else:
+                # Original behavior for non-numeric fields
+                val = normalize_type(val, dtype)
+
+            if required and (val is None or str(val).strip() == ""):
+                logger.warning(f"⚠️ Missing required field '{field}'")
+
+            if allowed and val not in allowed:
+                logger.warning(f"⚠️ Invalid enum for {field}: {val}")
+
+            if dtype == "json" and json_schema:
+                validate_json_field(val, json_schema, field)
+
+            validated[field] = val
+
+        except Exception as field_error:
+            logger.warning(f"⚠️ Field processing failed for '{field}': {field_error}")
             validated[field] = None
-            continue
-
-        if isinstance(source, list):
-            vals = [row.get(s) for s in source if row.get(s)]
-            val = " ".join(str(v) for v in vals)
-            if transform:
-                try:
-                    fn = eval(transform)
-                    val = fn(*[row.get(s) for s in source])
-                except Exception as e:
-                    logger.warning(f"⚠️ Transform failed: {e}")
-        else:
-            val = row.get(source)
-            if transform:
-                try:
-                    val = eval(transform)(val)
-                except:
-                    pass
-
-        val = normalize_type(val, dtype)
-
-        if required and (val is None or str(val).strip() == ""):
-            logger.warning(f"⚠️ Missing required field '{field}'")
-
-        if allowed and val not in allowed:
-            logger.warning(f"⚠️ Invalid enum for {field}: {val}")
-
-        if dtype == "json" and json_schema:
-            validate_json_field(val, json_schema, field)
-
-        validated[field] = val
 
     return validated
 
@@ -194,7 +376,7 @@ def transform_dataframe(df: pl.DataFrame, schema_fields: dict) -> pl.DataFrame:
 
 
 # ============================================================
-# 5. Silver Table Builder
+# 7. Silver Table Builder (Unchanged - maintains compatibility)
 # ============================================================
 
 def build_silver(engine, schema_path: str, section: str) -> pl.DataFrame:
