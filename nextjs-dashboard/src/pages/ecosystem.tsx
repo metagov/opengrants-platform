@@ -1,114 +1,251 @@
-"use client";
-
+import { useState, useEffect } from 'react';
 import {
   Box,
+  Container,
+  SimpleGrid,
   VStack,
-  Heading,
-  Text,
-  Button,
   HStack,
+  Text,
   useColorModeValue,
-  Flex,
-  Link,
-} from "@chakra-ui/react";
-import { DarkModeSwitch } from "../components/DarkModeSwitch";
-import { useMemo } from "react";
+  Spinner,
+  Center,
+} from '@chakra-ui/react';
+import { Navigation } from '../components/Navigation';
+import { SystemHeader } from '../components/SystemHeader';
+import { MetricCard } from '../components/MetricCard';
 
-// Simple bar-segment component (no ColorSwatch)
-const BarSegment = ({ data }: { data: { name: string; value: number; color: string }[] }) => {
-  const max = Math.max(...data.map((d) => d.value));
+interface PlatformData {
+  platform: string;
+  total_projects: number;
+  total_grant_pools: number;
+  total_applications: number;
+  total_funding_usd: number;
+  total_funding_display: string;
+  primary_mechanism: string;
+}
+
+interface EcosystemData {
+  platforms: PlatformData[];
+  scf: {
+    total_awarded: number;
+    total_paid: number;
+    total_rounds: number;
+  };
+}
+
+export default function Ecosystem() {
+  const [data, setData] = useState<EcosystemData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
+
+  useEffect(() => {
+    fetch('/api/ecosystem')
+      .then(res => res.json())
+      .then(data => {
+        setData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching ecosystem data:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <>
+        <Navigation />
+        <Center h="80vh">
+          <Spinner size="xl" color="purple.500" />
+        </Center>
+      </>
+    );
+  }
+
+  const formatCurrency = (value: number) => {
+    if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(2)}M`;
+    }
+    return `$${(value / 1000).toFixed(0)}K`;
+  };
+
+  const totalFunding = (data?.platforms || []).reduce((sum, p) => sum + (p.total_funding_usd || 0), 0) + (data?.scf?.total_awarded || 0);
+  const totalProjects = (data?.platforms || []).reduce((sum, p) => sum + p.total_projects, 0);
+  const totalPools = (data?.platforms || []).reduce((sum, p) => sum + p.total_grant_pools, 0) + (data?.scf?.total_rounds || 0);
+
+  const platformColors: { [key: string]: string } = {
+    giveth: 'purple.500',
+    scf: 'orange.500',
+    privote: 'teal.500',
+  };
 
   return (
-    <VStack align="stretch" spacing={3} w="100%">
-      {data.map((d) => (
-        <HStack key={d.name} spacing={3}>
-          <Box flex="1">
-            <Flex align="center">
-              <Box
-                h="24px"
-                w={`${(d.value / max) * 100}%`}
-                bg={d.color}
-                borderRadius="md"
-                transition="width 0.3s ease"
-              />
-            </Flex>
-          </Box>
-          <Text fontWeight="bold" fontSize="sm" w="60px" textAlign="right">
-            {`${d.value / 1000}K`}
-          </Text>
-          <Text fontSize="sm" w="80px">
-            {d.name}
-          </Text>
-        </HStack>
-      ))}
-    </VStack>
-  );
-};
+    <>
+      <Navigation />
+      <Box minH="100vh" bg={bgColor}>
+        <Container maxW="7xl" py={12}>
+          <SystemHeader
+            title="Ecosystem Overview"
+            description="Unified insights across grant platforms, tracking funding flows and project success"
+          />
 
-export default function Index() {
-  const chartData = useMemo(
-    () => [
-      { name: "Gitcoin", value: 500000, color: "teal.400" },
-      { name: "Celo", value: 200000, color: "yellow.300" },
-      { name: "SCF", value: 100000, color: "orange.400" },
-      { name: "Giveth", value: 100000, color: "purple.400" },
-    ],
-    []
-  );
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={12}>
+            <MetricCard
+              label="Total Funding"
+              value={formatCurrency(totalFunding)}
+              subtitle="Across all platforms"
+              color="purple.600"
+            />
+            <MetricCard
+              label="Projects"
+              value={totalProjects.toLocaleString()}
+              subtitle="Unique projects tracked"
+            />
+            <MetricCard
+              label="Grant Rounds"
+              value={totalPools}
+              subtitle="Active and completed"
+            />
+          </SimpleGrid>
 
-  return (
-    <Box
-      h="100vh"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      flexDir="column"
-      bg={useColorModeValue("white", "gray.900")}
-      px={6}
-    >
-      <VStack spacing={8}>
-        <Heading
-          as="h1"
-          fontSize={["5xl", "6xl"]}
-          color="red.900"
-          fontWeight="extrabold"
-          letterSpacing="tight"
-        >
-          Ecosystem
-        </Heading>
-        <Text
-          fontSize="lg"
-          color={useColorModeValue("red.700", "red.300")}
-          textAlign="center"
-        >
-          Unified insights across ecosystems
-        </Text>
+          <VStack spacing={8} align="stretch">
+            <Box>
+              <Text
+                fontSize="sm"
+                fontWeight="medium"
+                letterSpacing="wide"
+                textTransform="uppercase"
+                color={useColorModeValue('gray.600', 'gray.400')}
+                mb={6}
+              >
+                Platform Breakdown
+              </Text>
 
-        <Box w={["90%", "75%", "60%"]} mt={6}>
-          <BarSegment data={chartData} />
-        </Box>
+              <VStack spacing={4} align="stretch">
+                {data?.platforms.map((platform) => (
+                  <Box
+                    key={platform.platform}
+                    p={6}
+                    bg={useColorModeValue('white', 'gray.800')}
+                    borderRadius="lg"
+                    borderWidth="1px"
+                    borderColor={useColorModeValue('gray.100', 'gray.700')}
+                  >
+                    <HStack justify="space-between" mb={4}>
+                      <VStack align="start" spacing={1}>
+                        <Text
+                          fontSize="xl"
+                          fontWeight="medium"
+                          textTransform="capitalize"
+                          color={platformColors[platform.platform] || 'gray.700'}
+                        >
+                          {platform.platform}
+                        </Text>
+                        <Text fontSize="sm" color={useColorModeValue('gray.600', 'gray.400')}>
+                          {platform.primary_mechanism}
+                        </Text>
+                      </VStack>
+                      <VStack align="end" spacing={0}>
+                        <Text fontSize="2xl" fontWeight="light">
+                          {platform.total_funding_display || formatCurrency(platform.total_funding_usd)}
+                        </Text>
+                        <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                          total funding
+                        </Text>
+                      </VStack>
+                    </HStack>
 
-      <Link href="/about">
-        <Button
-          mt={8}
-          variant="outline"
-          colorScheme="red"
-          borderRadius="full"
-          px={8}
-          py={6}
-          fontWeight="medium"
-          _hover={{
-            bg: useColorModeValue("red.50", "red.900"),
-            transform: "scale(1.05)",
-            transition: "0.2s ease",
-          }}
-        >
-          View Details
-        </Button>
-        </Link>
-      </VStack>
+                    <SimpleGrid columns={3} spacing={4}>
+                      <Box>
+                        <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                          Projects
+                        </Text>
+                        <Text fontSize="lg" fontWeight="medium">
+                          {platform.total_projects.toLocaleString()}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                          Grant Pools
+                        </Text>
+                        <Text fontSize="lg" fontWeight="medium">
+                          {platform.total_grant_pools}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                          Applications
+                        </Text>
+                        <Text fontSize="lg" fontWeight="medium">
+                          {platform.total_applications?.toLocaleString() || 'N/A'}
+                        </Text>
+                      </Box>
+                    </SimpleGrid>
+                  </Box>
+                ))}
 
-      <DarkModeSwitch />
-    </Box>
+                <Box
+                  p={6}
+                  bg={useColorModeValue('white', 'gray.800')}
+                  borderRadius="lg"
+                  borderWidth="1px"
+                  borderColor={useColorModeValue('gray.100', 'gray.700')}
+                >
+                  <HStack justify="space-between" mb={4}>
+                    <VStack align="start" spacing={1}>
+                      <Text
+                        fontSize="xl"
+                        fontWeight="medium"
+                        color="orange.500"
+                      >
+                        SCF (Stellar)
+                      </Text>
+                      <Text fontSize="sm" color={useColorModeValue('gray.600', 'gray.400')}>
+                        Build Awards
+                      </Text>
+                    </VStack>
+                    <VStack align="end" spacing={0}>
+                      <Text fontSize="2xl" fontWeight="light">
+                        {formatCurrency(data?.scf?.total_awarded || 0)}
+                      </Text>
+                      <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                        total awarded
+                      </Text>
+                    </VStack>
+                  </HStack>
+
+                  <SimpleGrid columns={3} spacing={4}>
+                    <Box>
+                      <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                        Total Rounds
+                        </Text>
+                      <Text fontSize="lg" fontWeight="medium">
+                        {data?.scf?.total_rounds || 0}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                        Paid Out
+                      </Text>
+                      <Text fontSize="lg" fontWeight="medium">
+                        {formatCurrency(data?.scf?.total_paid || 0)}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                        Avg per Round
+                      </Text>
+                      <Text fontSize="lg" fontWeight="medium">
+                        {formatCurrency((data?.scf?.total_awarded || 0) / (data?.scf?.total_rounds || 1))}
+                      </Text>
+                    </Box>
+                  </SimpleGrid>
+                </Box>
+              </VStack>
+            </Box>
+          </VStack>
+        </Container>
+      </Box>
+    </>
   );
 }
