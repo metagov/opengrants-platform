@@ -1,0 +1,95 @@
+Help me create comprahensive grant analytics pages for Giveth, ( Round by Round ) For SCF ( Round by Round )
+and Privote ( We only have data of one round )
+
+04:28:44  [WARNING]: Configuration paths exist in your dbt_project.yml file which do not apply to any resources.
+There are 1 unused configuration paths:
+- models.gold
+04:28:44  Found 1 seed, 16 models, 8 sources, 449 macros
+04:28:44  
+04:28:44  Concurrency: 4 threads (target='dev_postgres')
+04:28:44  
+04:28:45  1 of 16 START sql table model public.gold__all_grant_applications .............. [RUN]
+04:28:45  2 of 16 START sql table model public.gold__all_grant_pools ..................... [RUN]
+04:28:45  3 of 16 START sql table model public.gold__all_projects ........................ [RUN]
+04:28:45  4 of 16 START sql table model public.gold__cross_platform ...................... [RUN]
+04:28:45  4 of 16 OK created sql table model public.gold__cross_platform ................. [SELECT 6 in 0.34s]
+04:28:45  1 of 16 OK created sql table model public.gold__all_grant_applications ......... [SELECT 827 in 0.37s]
+04:28:45  2 of 16 OK created sql table model public.gold__all_grant_pools ................ [SELECT 58 in 0.37s]
+04:28:45  5 of 16 START sql table model public.gold__donation_metrics .................... [RUN]
+04:28:45  6 of 16 START sql table model public.gold__ecosystem_overview .................. [RUN]
+04:28:45  3 of 16 OK created sql table model public.gold__all_projects ................... [SELECT 1874 in 0.36s]
+04:28:45  7 of 16 START sql table model public.gold__engagement_metrics .................. [RUN]
+04:28:45  8 of 16 START sql table model public.gold__giveth_system_profile ............... [RUN]
+04:28:45  5 of 16 OK created sql table model public.gold__donation_metrics ............... [SELECT 1 in 0.26s]
+04:28:45  9 of 16 START sql table model public.gold__new_vs_repeat_funded ................ [RUN]
+04:28:45  7 of 16 OK created sql table model public.gold__engagement_metrics ............. [SELECT 1 in 0.30s]
+04:28:45  8 of 16 OK created sql table model public.gold__giveth_system_profile .......... [SELECT 1 in 0.23s]
+04:28:45  6 of 16 OK created sql table model public.gold__ecosystem_overview ............. [SELECT 3 in 0.32s]
+04:28:45  10 of 16 START sql table model public.gold__scf_system_profile ................. [RUN]
+04:28:45  12 of 16 START sql table model public.gold__verification_metrics ............... [RUN]
+04:28:45  11 of 16 START sql table model public.gold__system_profile ..................... [RUN]
+04:28:46  10 of 16 OK created sql table model public.gold__scf_system_profile ............ [SELECT 1 in 0.18s]
+04:28:46  13 of 16 START sql table model public.gold_temporal_funding .................... [RUN]
+04:28:46  9 of 16 OK created sql table model public.gold__new_vs_repeat_funded ........... [SELECT 1 in 0.23s]
+04:28:46  14 of 16 START sql table model public.gold__funding_mechanisms ................. [RUN]
+04:28:46  11 of 16 OK created sql table model public.gold__system_profile ................ [SELECT 1 in 0.22s]
+04:28:46  12 of 16 OK created sql table model public.gold__verification_metrics .......... [SELECT 1 in 0.25s]
+04:28:46  15 of 16 START sql table model public.gold__funding_metrics .................... [RUN]
+04:28:46  16 of 16 START sql table model public.gold__temporal_metrics ................... [RUN]
+04:28:46  14 of 16 OK created sql table model public.gold__funding_mechanisms ............ [SELECT 3 in 0.19s]
+04:28:46  13 of 16 OK created sql table model public.gold_temporal_funding ............... [SELECT 16 in 0.23s]
+04:28:46  16 of 16 OK created sql table model public.gold__temporal_metrics .............. [SELECT 24 in 0.20s]
+04:28:46  15 of 16 OK created sql table model public.gold__funding_metrics ............... [SELECT 3 in 0.21s]
+04:28:46  
+04:28:46  Finished running 16 table models in 0 hours 0 minutes and 1.63 seconds (1.63s).
+04:28:46  
+04:28:46  Completed successfully
+04:28:46  
+04:28:46  Done. PASS=16 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=16
+(.venv) torch@Torch-Ablazed:~/opengrants-platform$ 
+
+these are the metrics we have whihc are above listed
+
+package.json
+├── pnpm-lock.yaml
+├── src
+│   ├── components
+│   │   ├── CTA.tsx
+│   │   ├── Container.tsx
+│   │   ├── DarkModeSwitch.tsx
+│   │   ├── Footer.tsx
+│   │   ├── HealthCheck.tsx
+│   │   ├── Hero.tsx
+│   │   ├── Main.tsx
+│   │   └── charts
+│   │       ├── BarChart.tsx
+│   │       ├── FundingAreaChart.tsx
+│   │       └── PlatformBarList.tsx
+│   ├── hooks
+│   │   └── useTestData.tsx
+│   ├── lib
+│   │   ├── chartData.tsx
+│   │   └── db.tsx
+│   ├── pages
+│   │   ├── _app.tsx
+│   │   ├── _document.tsx
+│   │   ├── api
+│   │   │   ├── health.tsx
+│   │   │   └── test-data.tsx
+│   │   ├── ecosystem.tsx
+│   │   ├── index.tsx
+│   │   ├── system
+│   │   │   ├── gitcoin.tsx
+│   │   │   ├── giveth.tsx
+│   │   │   └── scf.tsx
+│   │   └── test.tsx
+│   └── theme.tsx
+└── tsconfig.json
+
+this is the file structure, 
+We are using Chakra UI and recharts and chakra UI charts for UI 
+please design the pages in a minimalistic, classy, chic aesthetic
+
+I want, one overview page which is analysis of total data and then pages for both giveth and SCF and Privote
+
+And then 2 rounds from Giveth and ONe round privote actuallly are for GG24, so I want to display the analysis of them 3 rounds in GG24 and, leets struture so that, in evry grant profile page, we have one tab where we render markdown file, which is for Grant Process info 
