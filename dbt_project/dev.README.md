@@ -104,3 +104,96 @@ Bronze (Postgres) → Silver (Postgres) → Gold (Postgres) → DuckDB cache
 2. Define Silver schema for SCF
 3. Add SCF Gold Metrics in dbt
 4. Build Dashboard with Next.js + Postgres/DuckDB
+
+
+### NGROK
+
+Perfect! Your ngrok tunnel is back up with a new URL. Here's what you need to do:
+
+## New ngrok URL:
+```
+tcp://0.tcp.eu.ngrok.io:16940
+```
+
+## Update Your Connection String
+
+### 1. Update `.env.local` file:
+```bash
+DATABASE_URL="postgresql://postgres:postgres@0.tcp.eu.ngrok.io:16940/opengrants"
+```
+
+### 2. Or update `db.tsx` directly:
+```typescript
+// nextjs-dashboard/src/lib/db.tsx
+import { Pool } from 'pg'
+
+const pool = new Pool({
+  connectionString: 'postgresql://postgres:postgres@0.tcp.eu.ngrok.io:16940/opengrants',
+})
+
+export async function query(text: any, params: any) {
+  const client = await pool.connect()
+  try {
+    const result = await client.query(text, params)
+    return result.rows
+  } finally {
+    client.release()
+  }
+}
+```
+
+## Quick Test Command
+
+Test the connection from your terminal:
+```bash
+psql -h 0.tcp.eu.ngrok.io -p 16940 -U postgres -d opengrants
+```
+
+## If You're Using Environment Variables
+
+Make sure to restart your Next.js dev server after updating the environment variable:
+```bash
+# In your Next.js project directory
+npm run dev
+# or
+yarn dev
+```
+
+## To Avoid Manual Updates Every Time
+
+Create a dynamic configuration:
+
+### Option A: Use an environment variable that you update
+```typescript
+// nextjs-dashboard/src/lib/db.tsx
+import { Pool } from 'pg'
+
+// Read from environment, fallback to local
+const getConnectionString = () => {
+  if (process.env.NGROK_URL) {
+    return `postgresql://postgres:postgres@${process.env.NGROK_URL}/opengrants`
+  }
+  return 'postgresql://postgres:postgres@localhost:5433/opengrants'
+}
+
+const pool = new Pool({
+  connectionString: getConnectionString(),
+})
+```
+
+### Option B: Script to auto-update .env
+Create a script `update-ngrok.sh`:
+```bash
+#!/bin/bash
+# Extract ngrok URL from output
+NGROK_URL=$(ngrok tcp 5433 2>&1 | grep -o "tcp://[^ ]*" | sed 's/tcp:\/\///')
+
+# Update .env.local
+sed -i "s|DATABASE_URL=.*|DATABASE_URL=\"postgresql://postgres:postgres@$NGROK_URL/opengrants\"|" .env.local
+
+echo "Updated DATABASE_URL with: $NGROK_URL"
+```
+
+Your remote app should now connect using the new URL `0.tcp.eu.ngrok.io:16940`!
+
+**Remember:** Keep the ngrok terminal window open while you need the connection.
