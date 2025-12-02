@@ -1,25 +1,21 @@
-import { Box, HStack, Link as ChakraLink, useColorModeValue } from '@chakra-ui/react';
+import { Box, HStack, Link as ChakraLink } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { DarkModeSwitch } from './DarkModeSwitch';
 
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
   const router = useRouter();
   const isActive = router.pathname === href || router.pathname.startsWith(href + '/');
-  const activeColor = useColorModeValue('purple.600', 'purple.300');
-  const inactiveColor = useColorModeValue('gray.600', 'gray.400');
-  const hoverColor = useColorModeValue('purple.700', 'purple.200');
 
   return (
     <Link href={href} passHref legacyBehavior>
       <ChakraLink
         fontSize="sm"
         fontWeight={isActive ? 'semibold' : 'medium'}
-        color={isActive ? activeColor : inactiveColor}
+        color={isActive ? '#800020' : 'gray.600'}
         letterSpacing="wide"
         textTransform="uppercase"
         _hover={{
-          color: hoverColor,
+          color: '#600018',
           textDecoration: 'none',
         }}
         transition="color 0.2s"
@@ -31,42 +27,38 @@ const NavLink = ({ href, children }: { href: string; children: React.ReactNode }
 };
 
 export const Navigation = () => {
-  const bgColor = useColorModeValue('white', 'gray.900');
-  const borderColor = useColorModeValue('gray.100', 'gray.800');
-
   return (
     <Box
       as="nav"
       position="sticky"
       top={0}
       zIndex={10}
-      bg={bgColor}
+      bg="white"
       borderBottomWidth="1px"
-      borderColor={borderColor}
+      borderColor="gray.100"
       px={8}
       py={4}
     >
       <HStack justify="space-between">
-        <HStack spacing={8}>
+        <HStack gap={8}>
           <Link href="/" passHref legacyBehavior>
             <ChakraLink
               fontSize="lg"
               fontWeight="thin"
               letterSpacing="tight"
+              color="#800020"
               _hover={{ textDecoration: 'none' }}
             >
               OpenGrants
             </ChakraLink>
           </Link>
-          <HStack spacing={6}>
+          <HStack gap={6}>
             <NavLink href="/ecosystem">Ecosystem</NavLink>
             <NavLink href="/system/giveth">Giveth</NavLink>
             <NavLink href="/system/scf">SCF</NavLink>
             <NavLink href="/system/privote">Privote</NavLink>
-            <NavLink href="/gg24">GG24</NavLink>
           </HStack>
         </HStack>
-        <DarkModeSwitch />
       </HStack>
     </Box>
   );

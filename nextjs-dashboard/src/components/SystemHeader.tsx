@@ -1,4 +1,4 @@
-import { Box, Heading, Text, VStack, useColorModeValue } from '@chakra-ui/react';
+import { Box, Heading, Text, VStack } from '@chakra-ui/react';
 
 interface SystemHeaderProps {
   title: string;
@@ -6,12 +6,10 @@ interface SystemHeaderProps {
   color?: string;
 }
 
-export const SystemHeader = ({ title, description, color = 'gray.900' }: SystemHeaderProps) => {
-  const descColor = useColorModeValue('gray.600', 'gray.400');
-
+export const SystemHeader = ({ title, description, color = '#800020' }: SystemHeaderProps) => {
   return (
     <Box mb={12}>
-      <VStack align="start" spacing={3}>
+      <VStack align="start" gap={3}>
         <Heading
           as="h1"
           fontSize={['4xl', '5xl', '6xl']}
@@ -24,7 +22,7 @@ export const SystemHeader = ({ title, description, color = 'gray.900' }: SystemH
         {description && (
           <Text
             fontSize="lg"
-            color={descColor}
+            color="gray.600"
             maxW="2xl"
           >
             {description}

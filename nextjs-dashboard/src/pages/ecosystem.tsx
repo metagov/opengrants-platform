@@ -6,7 +6,6 @@ import {
   VStack,
   HStack,
   Text,
-  useColorModeValue,
   Spinner,
   Center,
 } from '@chakra-ui/react';
@@ -36,7 +35,6 @@ interface EcosystemData {
 export default function Ecosystem() {
   const [data, setData] = useState<EcosystemData | null>(null);
   const [loading, setLoading] = useState(true);
-  const bgColor = useColorModeValue('gray.50', 'gray.900');
 
   useEffect(() => {
     fetch('/api/ecosystem')
@@ -56,7 +54,7 @@ export default function Ecosystem() {
       <>
         <Navigation />
         <Center h="80vh">
-          <Spinner size="xl" color="purple.500" />
+          <Spinner size="xl" color="#800020" />
         </Center>
       </>
     );
@@ -82,19 +80,19 @@ export default function Ecosystem() {
   return (
     <>
       <Navigation />
-      <Box minH="100vh" bg={bgColor}>
+      <Box minH="100vh" bg="gray.50">
         <Container maxW="7xl" py={12}>
           <SystemHeader
             title="Ecosystem Overview"
             description="Unified insights across grant platforms, tracking funding flows and project success"
           />
 
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={12}>
+          <SimpleGrid columns={{ base: 1, md: 3 }} gap={6} mb={12}>
             <MetricCard
               label="Total Funding"
               value={formatCurrency(totalFunding)}
               subtitle="Across all platforms"
-              color="purple.600"
+              color="#800020"
             />
             <MetricCard
               label="Projects"
@@ -108,31 +106,31 @@ export default function Ecosystem() {
             />
           </SimpleGrid>
 
-          <VStack spacing={8} align="stretch">
+          <VStack gap={8} align="stretch">
             <Box>
               <Text
                 fontSize="sm"
                 fontWeight="medium"
                 letterSpacing="wide"
                 textTransform="uppercase"
-                color={useColorModeValue('gray.600', 'gray.400')}
+                color="gray.600"
                 mb={6}
               >
                 Platform Breakdown
               </Text>
 
-              <VStack spacing={4} align="stretch">
+              <VStack gap={4} align="stretch">
                 {data?.platforms.map((platform) => (
                   <Box
                     key={platform.platform}
                     p={6}
-                    bg={useColorModeValue('white', 'gray.800')}
+                    bg="white"
                     borderRadius="lg"
                     borderWidth="1px"
-                    borderColor={useColorModeValue('gray.100', 'gray.700')}
+                    borderColor="gray.100"
                   >
                     <HStack justify="space-between" mb={4}>
-                      <VStack align="start" spacing={1}>
+                      <VStack align="start" gap={1}>
                         <Text
                           fontSize="xl"
                           fontWeight="medium"
@@ -141,23 +139,23 @@ export default function Ecosystem() {
                         >
                           {platform.platform}
                         </Text>
-                        <Text fontSize="sm" color={useColorModeValue('gray.600', 'gray.400')}>
+                        <Text fontSize="sm" color="gray.600">
                           {platform.primary_mechanism}
                         </Text>
                       </VStack>
-                      <VStack align="end" spacing={0}>
+                      <VStack align="end" gap={0}>
                         <Text fontSize="2xl" fontWeight="light">
                           {platform.total_funding_display || formatCurrency(platform.total_funding_usd)}
                         </Text>
-                        <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                        <Text fontSize="xs" color="gray.500">
                           total funding
                         </Text>
                       </VStack>
                     </HStack>
 
-                    <SimpleGrid columns={3} spacing={4}>
+                    <SimpleGrid columns={3} gap={4}>
                       <Box>
-                        <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                        <Text fontSize="xs" color="gray.500">
                           Projects
                         </Text>
                         <Text fontSize="lg" fontWeight="medium">
@@ -165,7 +163,7 @@ export default function Ecosystem() {
                         </Text>
                       </Box>
                       <Box>
-                        <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                        <Text fontSize="xs" color="gray.500">
                           Grant Pools
                         </Text>
                         <Text fontSize="lg" fontWeight="medium">
@@ -173,7 +171,7 @@ export default function Ecosystem() {
                         </Text>
                       </Box>
                       <Box>
-                        <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                        <Text fontSize="xs" color="gray.500">
                           Applications
                         </Text>
                         <Text fontSize="lg" fontWeight="medium">
@@ -186,13 +184,13 @@ export default function Ecosystem() {
 
                 <Box
                   p={6}
-                  bg={useColorModeValue('white', 'gray.800')}
+                  bg="white"
                   borderRadius="lg"
                   borderWidth="1px"
-                  borderColor={useColorModeValue('gray.100', 'gray.700')}
+                  borderColor="gray.100"
                 >
                   <HStack justify="space-between" mb={4}>
-                    <VStack align="start" spacing={1}>
+                    <VStack align="start" gap={1}>
                       <Text
                         fontSize="xl"
                         fontWeight="medium"
@@ -200,31 +198,31 @@ export default function Ecosystem() {
                       >
                         SCF (Stellar)
                       </Text>
-                      <Text fontSize="sm" color={useColorModeValue('gray.600', 'gray.400')}>
+                      <Text fontSize="sm" color="gray.600">
                         Build Awards
                       </Text>
                     </VStack>
-                    <VStack align="end" spacing={0}>
+                    <VStack align="end" gap={0}>
                       <Text fontSize="2xl" fontWeight="light">
                         {formatCurrency(data?.scf?.total_awarded || 0)}
                       </Text>
-                      <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                      <Text fontSize="xs" color="gray.500">
                         total awarded
                       </Text>
                     </VStack>
                   </HStack>
 
-                  <SimpleGrid columns={3} spacing={4}>
+                  <SimpleGrid columns={3} gap={4}>
                     <Box>
-                      <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                      <Text fontSize="xs" color="gray.500">
                         Total Rounds
-                        </Text>
+                      </Text>
                       <Text fontSize="lg" fontWeight="medium">
                         {data?.scf?.total_rounds || 0}
                       </Text>
                     </Box>
                     <Box>
-                      <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                      <Text fontSize="xs" color="gray.500">
                         Paid Out
                       </Text>
                       <Text fontSize="lg" fontWeight="medium">
@@ -232,7 +230,7 @@ export default function Ecosystem() {
                       </Text>
                     </Box>
                     <Box>
-                      <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                      <Text fontSize="xs" color="gray.500">
                         Avg per Round
                       </Text>
                       <Text fontSize="lg" fontWeight="medium">
