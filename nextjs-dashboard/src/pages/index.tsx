@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Box,
   VStack,
@@ -7,21 +5,18 @@ import {
   Text,
   Button,
   HStack,
-  useColorModeValue,
   Flex,
-  Link,
 } from "@chakra-ui/react";
-import { DarkModeSwitch } from "../components/DarkModeSwitch";
+import Link from "next/link";
 import { useMemo } from "react";
 
-// Simple bar-segment component (no ColorSwatch)
 const BarSegment = ({ data }: { data: { name: string; value: number; color: string }[] }) => {
   const max = Math.max(...data.map((d) => d.value));
 
   return (
-    <VStack align="stretch" spacing={3} w="100%">
+    <VStack align="stretch" gap={3} w="100%">
       {data.map((d) => (
-        <HStack key={d.name} spacing={3}>
+        <HStack key={d.name} gap={3}>
           <Box flex="1">
             <Flex align="center">
               <Box
@@ -34,7 +29,7 @@ const BarSegment = ({ data }: { data: { name: string; value: number; color: stri
             </Flex>
           </Box>
           <Text fontWeight="bold" fontSize="sm" w="60px" textAlign="right">
-            {`${d.value / 1000}K`}
+            {`${(d.value / 1000000).toFixed(1)}M`}
           </Text>
           <Text fontSize="sm" w="80px">
             {d.name}
@@ -48,10 +43,9 @@ const BarSegment = ({ data }: { data: { name: string; value: number; color: stri
 export default function Index() {
   const chartData = useMemo(
     () => [
-      { name: "Gitcoin", value: 500000, color: "teal.400" },
-      { name: "Celo", value: 200000, color: "yellow.300" },
       { name: "SCF", value: 49864415.82, color: "orange.400" },
-      { name: "Giveth", value: 1025000, color: "purple.400" },
+      { name: "Giveth", value: 9655304.52, color: "purple.400" },
+      { name: "Privote", value: 123924.85, color: "teal.400" },
     ],
     []
   );
@@ -63,14 +57,14 @@ export default function Index() {
       alignItems="center"
       justifyContent="center"
       flexDir="column"
-      bg={useColorModeValue("white", "gray.900")}
+      bg="white"
       px={6}
     >
-      <VStack spacing={4}>
+      <VStack gap={4}>
         <Heading
           as="h1"
           fontSize={["5xl", "6xl"]}
-          color="red.900"
+          color="#800020"
           fontWeight="thin"
           letterSpacing="tight"
         >
@@ -78,37 +72,35 @@ export default function Index() {
         </Heading>
         <Text
           fontSize="lg"
-          color={useColorModeValue("red.700", "red.300")}
+          color="gray.600"
           textAlign="center"
         >
-          Unified insights across ecosystems
+          Unified insights across grant ecosystems
         </Text>
 
         <Box w={["90%", "75%", "60%"]} mt={6}>
           <BarSegment data={chartData} />
         </Box>
 
-      <Link href="/ecosystem">
-        <Button
-          mt={8}
-          variant="outline"
-          colorScheme="red"
-          borderRadius="full"
-          px={8}
-          py={6}
-          fontWeight="medium"
-          _hover={{
-            bg: useColorModeValue("red.50", "red.900"),
-            transform: "scale(1.05)",
-            transition: "0.2s ease",
-          }}
-        >
-          View Details
-        </Button>
+        <Link href="/ecosystem">
+          <Button
+            mt={8}
+            variant="outline"
+            borderColor="#800020"
+            color="#800020"
+            borderRadius="full"
+            px={8}
+            py={6}
+            fontWeight="medium"
+            _hover={{
+              bg: "#800020",
+              color: "white",
+            }}
+          >
+            Explore Analytics
+          </Button>
         </Link>
       </VStack>
-
-      <DarkModeSwitch />
     </Box>
   );
 }

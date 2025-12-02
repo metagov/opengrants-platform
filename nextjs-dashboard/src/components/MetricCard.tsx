@@ -1,4 +1,4 @@
-import { Box, Text, VStack, useColorModeValue } from '@chakra-ui/react';
+import { Box, Text, VStack } from '@chakra-ui/react';
 
 interface MetricCardProps {
   label: string;
@@ -8,30 +8,26 @@ interface MetricCardProps {
 }
 
 export const MetricCard = ({ label, value, subtitle, color = 'gray.600' }: MetricCardProps) => {
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.100', 'gray.700');
-  const labelColor = useColorModeValue('gray.600', 'gray.400');
-
   return (
     <Box
       p={6}
-      bg={bgColor}
+      bg="white"
       borderRadius="lg"
       borderWidth="1px"
-      borderColor={borderColor}
+      borderColor="gray.100"
       transition="all 0.2s"
       _hover={{
         transform: 'translateY(-2px)',
         shadow: 'sm',
       }}
     >
-      <VStack align="start" spacing={2}>
+      <VStack align="start" gap={2}>
         <Text
           fontSize="xs"
           fontWeight="medium"
           letterSpacing="wide"
           textTransform="uppercase"
-          color={labelColor}
+          color="gray.600"
         >
           {label}
         </Text>
@@ -44,7 +40,7 @@ export const MetricCard = ({ label, value, subtitle, color = 'gray.600' }: Metri
           {value}
         </Text>
         {subtitle && (
-          <Text fontSize="sm" color={labelColor}>
+          <Text fontSize="sm" color="gray.600">
             {subtitle}
           </Text>
         )}
