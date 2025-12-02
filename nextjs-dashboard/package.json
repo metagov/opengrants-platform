@@ -6,6 +6,7 @@
     "start": "next start -p 5000 -H 0.0.0.0"
   },
   "dependencies": {
+    "@chakra-ui/charts": "^3.30.0",
     "@chakra-ui/react": "^3.4.0",
     "@emotion/react": "^11.14.0",
     "framer-motion": "^11.18.0",
