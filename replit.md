@@ -62,16 +62,26 @@ The platform uses a three-tier medallion architecture for progressive data refin
 ## Frontend Architecture
 
 ### Technology Stack
-- **Next.js** (Pages Router) for server-side rendering and API routes
-- **Chakra UI** for component library and theming
-- **SWR** for client-side data fetching with automatic revalidation
-- **Recharts** for data visualization (wrapped in Chakra Chart components)
+- **Next.js 16** (Pages Router) for server-side rendering and API routes
+- **Chakra UI v3** (@chakra-ui/react ^3.30.0) for component library (CLI-generated snippets)
+- **React 19** with latest hooks and concurrent features
+- **Framer Motion 11** for animations
+- **next-themes 0.4.6** for theme management (light mode only)
+- **Emotion 11.14.0** for CSS-in-JS styling
 
 ### Design Decisions
-- TypeScript for type safety with lenient `strict: false` configuration (pragmatic choice for rapid development)
-- Custom theme extending Chakra defaults with brand colors (maroon primary, accent palette)
+- Light mode only (no dark mode support) with forcedTheme="light"
+- Burgundy (#800020) primary brand color for "OpenGrants" identity
+- TypeScript for type safety with lenient `strict: false` configuration
+- CLI-generated Chakra UI provider components in `src/components/ui/`
 - API routes as database abstraction layer (prevents direct DB access from client)
-- Component-based architecture with reusable MetricCard, SystemHeader, RoundTabs
+- Component-based architecture with reusable MetricCard, SystemHeader, Navigation
+
+### Chakra UI v3 Migration Notes
+- Uses CLI-generated snippets: `npx @chakra-ui/cli@latest snippet add provider color-mode`
+- No useColorModeValue (removed in v3) - use hard-coded light mode colors
+- Updated spacing prop to gap (v3 syntax)
+- suppressHydrationWarning in _document.tsx prevents Next.js/next-themes conflicts
 
 ### Page Structure
 - `/` - Landing page with ecosystem overview
