@@ -50,8 +50,8 @@ services:
   dlt:
     container_name: dlt
     build:
-      context: .
-      dockerfile: dlt_pipelines/Dockerfile
+      context: ./dlt_pipelines
+      dockerfile: Dockerfile
     restart: on-failure
     depends_on:
       - postgres
@@ -67,8 +67,8 @@ services:
   dbt:
     container_name: dbt
     build:
-      context: .
-      dockerfile: dbt_project/Dockerfile
+      context: ./dbt_project
+      dockerfile: Dockerfile
     restart: on-failure
     depends_on:
       - postgres

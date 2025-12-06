@@ -1,25 +1,4 @@
-# FROM python:3.12-slim
-# WORKDIR /app
-
-# # Copy shared requirements
-
-# COPY requirements.txt .
-# RUN pip install --no-cache-dir -r requirements.txt
-
-# # Copy dagster project files
-# COPY . /app
-
-# # Expose Dagster webserver port
-# EXPOSE 3000
-# ENV PYTHONPATH=/app
-
-# # Start Dagster UI + daemon
-# CMD ["dagster", "dev", "-w", "workspace.yaml", "-h", "0.0.0.0", "-p", "3000"]
-
-
-# ===========================
 #   Stage 1 — Base builder
-# ===========================
 FROM python:3.12-slim AS base
 WORKDIR /app
 
@@ -34,9 +13,7 @@ RUN apt-get update && apt-get install -y git build-essential --no-install-recomm
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# ===========================
 #   Stage 2 — Final runtime
-# ===========================
 FROM python:3.12-slim AS final
 WORKDIR /app
 ENV PYTHONPATH=/app
