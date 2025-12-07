@@ -23,6 +23,6 @@ pandas
 requests
 
 # DBT Specific
-dbt-core
-dbt-postgres
-dbt-duckdb
+dbt-core==1.10.*
+dbt-postgres==1.*
+dbt-duckdb==1.10.*

@@ -6,5 +6,5 @@ SELECT
     SUM("io.giveth.totalReactions") AS total_reactions,
     AVG("io.giveth.totalReactions") AS avg_reactions_per_project,
     COUNT(CASE WHEN "io.giveth.listed" = true THEN 1 END) AS listed_projects
-FROM "opengrants"."public"."silver_giveth_projects"
+FROM "defaultdb"."public"."silver_giveth_projects"
 WHERE "io.giveth.qualityScore" IS NOT NULL

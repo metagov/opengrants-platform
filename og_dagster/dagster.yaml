@@ -13,5 +13,3 @@ schedule_storage:
   class: SqliteScheduleStorage
   config:
     base_dir: /app/storage/schedules
-    
-    
