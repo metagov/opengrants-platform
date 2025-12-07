@@ -27,6 +27,7 @@ dagster_logs/
 *.log
 tree.txt
 .env
+.env.*
 .env.local
 .env.*.local
 .envrc
