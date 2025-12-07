@@ -1,0 +1,87 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:16
+    restart: always
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: opengrants
+
+  dagster:
+    container_name: dagster
+    build:
+      context: .
+      dockerfile: og_dagster/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./og_dagster:/app
+      - ./duckdb:/data/duckdb
+      - ./raw_data:/app/raw_data
+    environment:
+      - DAGSTER_HOME=/app
+      - DUCKDB_CACHE_PATH=/app/duckdb/data/local.duckdb
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-opengrants}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-opengrants}
+    env_file:
+      - .env
+    command:
+      - dagster
+      - dev
+      - '-h'
+      - 0.0.0.0
+      - '-p'
+      - '3000'
+      - '-w'
+      - workspace.yaml
+
+  dlt:
+    container_name: dlt
+    build:
+      context: ./dlt_pipelines
+      dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      - postgres
+    volumes:
+      - ./dlt_pipelines:/app
+      - ./duckdb:/data/duckdb
+    env_file:
+      - .env
+    command:
+      - python
+      - loaders/privote_loader.py
+
+  dbt:
+    container_name: dbt
+    build:
+      context: ./dbt_project
+      dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      - postgres
+    volumes:
+      - ./dbt_project:/app
+      - ./duckdb:/data/duckdb
+    env_file:
+      - .env
+    entrypoint:
+      - dbt
+    working_dir: /app
+
+volumes:
+  postgres_data: null
+  duckdb:
+    driver: local
