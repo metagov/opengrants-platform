@@ -2,7 +2,7 @@
   
     
 
-  create  table "opengrants"."public"."gold__ecosystem_overview__dbt_tmp"
+  create  table "defaultdb"."public"."gold__ecosystem_overview__dbt_tmp"
   
   
     as
@@ -15,35 +15,35 @@ WITH platform_metrics AS (
     SELECT 
         'giveth' as platform,
         COUNT(*) as total_projects,
-        (SELECT COUNT(*) FROM "opengrants"."public"."silver_giveth_grant_pools") as total_grant_pools,
+        (SELECT COUNT(*) FROM "defaultdb"."public"."silver_giveth_grant_pools") as total_grant_pools,
         COUNT(*) as total_applications,  -- Fixed: Giveth projects = applications
         SUM(COALESCE("io.giveth.totalDonations", 0)) as total_funding_usd,
         'Direct Donations' as primary_mechanism
-    FROM "opengrants"."public"."silver_giveth_projects"
+    FROM "defaultdb"."public"."silver_giveth_projects"
     
     UNION ALL
     
     -- SCF
     SELECT 
         'scf' as platform,
-        (SELECT COUNT(*) FROM "opengrants"."public"."silver_scf_projects") as total_projects,
-        (SELECT COUNT(*) FROM "opengrants"."public"."silver_scf_grant_pools") as total_grant_pools,
+        (SELECT COUNT(*) FROM "defaultdb"."public"."silver_scf_projects") as total_projects,
+        (SELECT COUNT(*) FROM "defaultdb"."public"."silver_scf_grant_pools") as total_grant_pools,
         COUNT(*) as total_applications,
         SUM(COALESCE("fundsApprovedInUSD"::numeric, 0)) as total_funding_usd,  -- Fixed: Handle NULL values
         'Community Voting' as primary_mechanism
-    FROM "opengrants"."public"."silver_scf_grant_applications"
+    FROM "defaultdb"."public"."silver_scf_grant_applications"
     
     UNION ALL
     
     -- Privote
     SELECT 
         'privote' as platform,
-        (SELECT COUNT(*) FROM "opengrants"."public"."silver_privote_projects") as total_projects,
-        (SELECT COUNT(*) FROM "opengrants"."public"."silver_privote_grant_pools") as total_grant_pools,
+        (SELECT COUNT(*) FROM "defaultdb"."public"."silver_privote_projects") as total_projects,
+        (SELECT COUNT(*) FROM "defaultdb"."public"."silver_privote_grant_pools") as total_grant_pools,
         COUNT(*) as total_applications,
         SUM(COALESCE("fundsApprovedInUSD", 0)) as total_funding_usd,
         'Quadratic Funding' as primary_mechanism
-    FROM "opengrants"."public"."silver_privote_grant_applications"
+    FROM "defaultdb"."public"."silver_privote_grant_applications"
 )
 
 SELECT 

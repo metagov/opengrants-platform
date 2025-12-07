@@ -10,7 +10,7 @@ SELECT
     "isOpen" as is_open,
     "closeDate" as close_date,
     "totalGrantPoolSizeInUSD" as total_pool_size_usd
-FROM "opengrants"."public"."silver_giveth_grant_pools"
+FROM "defaultdb"."public"."silver_giveth_grant_pools"
 
 UNION ALL
 
@@ -24,7 +24,7 @@ SELECT
     "isOpen"::boolean as is_open,
     "closeDate" as close_date,
     "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
-FROM "opengrants"."public"."silver_scf_grant_pools"
+FROM "defaultdb"."public"."silver_scf_grant_pools"
 
 UNION ALL
 
@@ -38,4 +38,4 @@ SELECT
     "isOpen"::boolean as is_open,
     "closeDate" as close_date,
     "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
-FROM "opengrants"."public"."silver_privote_grant_pools"
+FROM "defaultdb"."public"."silver_privote_grant_pools"

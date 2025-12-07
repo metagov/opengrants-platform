@@ -2,7 +2,7 @@
   
     
 
-  create  table "opengrants"."public"."gold__all_grant_pools__dbt_tmp"
+  create  table "defaultdb"."public"."gold__all_grant_pools__dbt_tmp"
   
   
     as
@@ -20,7 +20,7 @@ SELECT
     "isOpen" as is_open,
     "closeDate" as close_date,
     "totalGrantPoolSizeInUSD" as total_pool_size_usd
-FROM "opengrants"."public"."silver_giveth_grant_pools"
+FROM "defaultdb"."public"."silver_giveth_grant_pools"
 
 UNION ALL
 
@@ -34,7 +34,7 @@ SELECT
     "isOpen"::boolean as is_open,
     "closeDate" as close_date,
     "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
-FROM "opengrants"."public"."silver_scf_grant_pools"
+FROM "defaultdb"."public"."silver_scf_grant_pools"
 
 UNION ALL
 
@@ -48,6 +48,6 @@ SELECT
     "isOpen"::boolean as is_open,
     "closeDate" as close_date,
     "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
-FROM "opengrants"."public"."silver_privote_grant_pools"
+FROM "defaultdb"."public"."silver_privote_grant_pools"
   );
   

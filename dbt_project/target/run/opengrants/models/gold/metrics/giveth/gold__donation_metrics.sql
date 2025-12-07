@@ -2,7 +2,7 @@
   
     
 
-  create  table "opengrants"."public"."gold__donation_metrics__dbt_tmp"
+  create  table "defaultdb"."public"."gold__donation_metrics__dbt_tmp"
   
   
     as
@@ -18,6 +18,6 @@ SELECT
     COUNT(*) AS total_projects,
     SUM(CASE WHEN "io.giveth.totalDonations" > 0 THEN 1 ELSE 0 END) AS projects_with_donations,
     SUM(CASE WHEN "io.giveth.totalTraceDonations" > 0 THEN 1 ELSE 0 END) AS projects_with_trace_donations
-FROM "opengrants"."public"."silver_giveth_projects"
+FROM "defaultdb"."public"."silver_giveth_projects"
   );
   
