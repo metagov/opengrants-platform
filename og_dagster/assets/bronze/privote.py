@@ -1,25 +1,29 @@
 # maci_grant_assets.py
-import time
 import json
-import requests
-from typing import List, Dict, Any, Optional
+import os
+import time
+from typing import Any, Dict, List, Optional
 
-from sqlalchemy import create_engine, text
 import polars as pl
-
+import requests
 from dagster import AssetOut, Output, multi_asset
+from sqlalchemy import create_engine, text
 from utils.graphql_helpers import (
-    logger,
-    POSTGRES_USER,
-    POSTGRES_PASSWORD,
     POSTGRES_DB,
     POSTGRES_HOST,
+    POSTGRES_PASSWORD,
     POSTGRES_PORT,
-    run_query,
-    flatten_dict,
+    POSTGRES_USER,
     align_columns,
+    flatten_dict,
+    logger,
+    run_query,
     sanitize_for_sql,
 )
+
+MACI_GRAPHQL_ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT")
+if not MACI_GRAPHQL_ENDPOINT:
+    raise ValueError("MACI_GRAPHQL_ENDPOINT environment variable not set!")
 
 # ======================
 # DATABASE CONFIG
@@ -30,7 +34,7 @@ engine = create_engine(DB_URL)
 # ======================
 # GRAPHQL ENDPOINT
 # ======================
-import os
+
 MACI_GRAPHQL_ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT")
 if not MACI_GRAPHQL_ENDPOINT:
     raise ValueError("MACI_GRAPHQL_ENDPOINT environment variable not set!")
@@ -151,45 +155,51 @@ query GetSupportingData {
 }
 """
 
+
 # ======================
 # PAGINATION
 # ======================
-def get_paginated_data(query_template: str, base_variables: dict, entity_name: str) -> List[dict]:
+def get_paginated_data(
+    query_template: str, base_variables: dict, entity_name: str
+) -> List[dict]:
     """Fetch paginated data from GraphQL endpoint."""
     all_results = []
     skip = 0
     total_fetched = 0
-    
+
     for page in range(MAX_PAGES):
         try:
             variables = dict(base_variables)
             variables["skip"] = skip
             variables["first"] = PAGE_SIZE
-            
+
             logger.info(f"🔍 Fetching {entity_name} - skip={skip} first={PAGE_SIZE}")
-            res = run_query(query_template, variables)
+            res = run_query(query_template, variables, endpoint=MACI_GRAPHQL_ENDPOINT)
             items = res.get(entity_name, [])
-            
+
             if not items:
                 logger.info(f"✅ No more {entity_name}")
                 break
-                
+
             all_results.extend(items)
             total_fetched += len(items)
-            logger.info(f"📄 {entity_name} page {page+1}: {len(items)} (total {total_fetched})")
-            
+            logger.info(
+                f"📄 {entity_name} page {page+1}: {len(items)} (total {total_fetched})"
+            )
+
             if len(items) < PAGE_SIZE:
                 break
-                
+
             skip += PAGE_SIZE
             time.sleep(REQUEST_DELAY)
-            
+
         except Exception as e:
             logger.error(f"❌ Error fetching {entity_name} page {page}: {e}")
             break
-            
+
     logger.info(f"🎯 Fetched total {len(all_results)} {entity_name}")
     return all_results
+
 
 # ======================
 # METADATA FETCH / FLATTEN
@@ -198,7 +208,7 @@ def fetch_json(url: Optional[str]) -> Optional[dict]:
     """Fetch JSON from URL with timeout."""
     if not url:
         return None
-        
+
     try:
         r = requests.get(url, timeout=METADATA_FETCH_TIMEOUT)
         if r.status_code != 200:
@@ -209,47 +219,62 @@ def fetch_json(url: Optional[str]) -> Optional[dict]:
         logger.warning(f"⚠️ Metadata request error for {url}: {e}")
         return None
 
+
 def flatten_metadata_json(md: dict) -> Dict[str, Any]:
     """Take a metadata JSON object and flatten basic fields; keep full JSON as string."""
     if not md:
         return {}
-    
+
     out = {}
     # Common top-level fields only
     simple_fields = [
-        "name", "shortBio", "bio", "profileImageUrl", "bannerImageUrl", 
-        "websiteUrl", "github", "twitter", "contributionDescription", 
-        "impactDescription", "submittedAt", "creator", "payoutAddress", "payout"
+        "name",
+        "shortBio",
+        "bio",
+        "profileImageUrl",
+        "bannerImageUrl",
+        "websiteUrl",
+        "github",
+        "twitter",
+        "contributionDescription",
+        "impactDescription",
+        "submittedAt",
+        "creator",
+        "payoutAddress",
+        "payout",
     ]
-    
+
     for field in simple_fields:
         out[f"metadata_{field}"] = md.get(field)
-    
+
     # Store complex fields as JSON strings
     complex_fields = ["impactCategory", "contributionLinks", "fundingSources"]
     for field in complex_fields:
         value = md.get(field)
         out[f"metadata_{field}_json"] = json.dumps(value) if value is not None else None
-    
+
     # Raw JSON
     out["metadata_raw_json"] = json.dumps(md)
-    
+
     return out
+
 
 def parse_and_store_metadata_urls(recipients_df: pl.DataFrame) -> pl.DataFrame:
     """Parse metadata URLs, fetch JSON remotely, flatten and create metadata table."""
     if recipients_df.is_empty():
         logger.warning("⚠️ No recipients to parse metadata urls from")
         return pl.DataFrame()
-    
+
     records = []
     logger.info(f"🔍 Parsing metadata URLs for {len(recipients_df)} recipients")
-    
+
     for row in recipients_df.iter_rows(named=True):
         rec = {
             "recipient_id": str(row.get("id")),
             "recipient_index": try_int(row.get("index")),
-            "metadata_url": str(row.get("metadataUrl")) if row.get("metadataUrl") else None,
+            "metadata_url": (
+                str(row.get("metadataUrl")) if row.get("metadataUrl") else None
+            ),
             "payout": str(row.get("payout")) if row.get("payout") else None,
             "deleted": bool(row.get("deleted")),
             "initialized": bool(row.get("initialized")),
@@ -258,23 +283,31 @@ def parse_and_store_metadata_urls(recipients_df: pl.DataFrame) -> pl.DataFrame:
             "registry_poll_id": None,
             "registry_poll_pollId": None,
         }
-        
+
         # Extract registry info
         registry = row.get("registry")
         if isinstance(registry, dict):
             rec["registry_id"] = str(registry.get("id")) if registry.get("id") else None
-            rec["registry_metadata_url"] = str(registry.get("metadataUrl")) if registry.get("metadataUrl") else None
+            rec["registry_metadata_url"] = (
+                str(registry.get("metadataUrl"))
+                if registry.get("metadataUrl")
+                else None
+            )
             poll = registry.get("poll")
             if isinstance(poll, dict):
-                rec["registry_poll_id"] = str(poll.get("id")) if poll.get("id") else None
-                rec["registry_poll_pollId"] = str(poll.get("pollId")) if poll.get("pollId") else None
-        
+                rec["registry_poll_id"] = (
+                    str(poll.get("id")) if poll.get("id") else None
+                )
+                rec["registry_poll_pollId"] = (
+                    str(poll.get("pollId")) if poll.get("pollId") else None
+                )
+
         # Fetch and flatten metadata
         md = fetch_json(rec["metadata_url"])
         flat = flatten_metadata_json(md) if md else {}
         rec.update(flat)
         records.append(rec)
-    
+
     # Convert all values to strings to ensure schema consistency
     string_records = []
     for record in records:
@@ -287,21 +320,28 @@ def parse_and_store_metadata_urls(recipients_df: pl.DataFrame) -> pl.DataFrame:
             else:
                 string_record[key] = str(value)
         string_records.append(string_record)
-    
+
     metadata_df = pl.DataFrame(string_records)
-    
+
     # Add derived flags
-    metadata_df = metadata_df.with_columns([
-        pl.col("metadata_url").is_not_null().alias("has_metadata_url"),
-        pl.col("registry_metadata_url").is_not_null().alias("has_registry_metadata"),
-        pl.col("payout").is_not_null().alias("has_payout"),
-        (pl.col("deleted") == "False").alias("is_not_deleted"),
-        (pl.col("initialized") == "True").alias("is_initialized"),
-        ((pl.col("deleted") == "False") & (pl.col("initialized") == "True")).alias("is_approved_applicant"),
-    ])
-    
+    metadata_df = metadata_df.with_columns(
+        [
+            pl.col("metadata_url").is_not_null().alias("has_metadata_url"),
+            pl.col("registry_metadata_url")
+            .is_not_null()
+            .alias("has_registry_metadata"),
+            pl.col("payout").is_not_null().alias("has_payout"),
+            (pl.col("deleted") == "False").alias("is_not_deleted"),
+            (pl.col("initialized") == "True").alias("is_initialized"),
+            ((pl.col("deleted") == "False") & (pl.col("initialized") == "True")).alias(
+                "is_approved_applicant"
+            ),
+        ]
+    )
+
     logger.info(f"✅ Parsed metadata for {metadata_df.height} recipients")
     return metadata_df
+
 
 # ======================
 # UTILS
@@ -318,6 +358,7 @@ def try_int(v):
         except Exception:
             return None
 
+
 def create_privote_schema():
     """Create the privote schema if it doesn't exist."""
     try:
@@ -328,6 +369,7 @@ def create_privote_schema():
     except Exception as e:
         logger.error(f"❌ Error creating privote schema: {e}")
 
+
 # ======================
 # DATABASE WRITING
 # ======================
@@ -336,49 +378,74 @@ def safe_write_to_database(df: pl.DataFrame, table_name: str):
     if df.is_empty():
         logger.warning(f"⚠️ Table {table_name} empty — skipping")
         return
-    
+
     try:
         # Convert large numbers to strings to avoid '_pli128' error
         df_sanitized = df.clone()
-        
+
         for col in df_sanitized.columns:
             if df_sanitized[col].dtype in [pl.Int64, pl.UInt64]:
-                df_sanitized = df_sanitized.with_columns([
-                    pl.when(pl.col(col).abs() > 2**63)
-                    .then(pl.col(col).cast(pl.Utf8))
-                    .otherwise(pl.col(col))
-                    .alias(col)
-                ])
-        
+                df_sanitized = df_sanitized.with_columns(
+                    [
+                        pl.when(pl.col(col).abs() > 2**63)
+                        .then(pl.col(col).cast(pl.Utf8))
+                        .otherwise(pl.col(col))
+                        .alias(col)
+                    ]
+                )
+
         df_sanitized = sanitize_for_sql(df_sanitized)
-        df_sanitized.write_database(table_name=table_name, connection=engine, if_table_exists="replace")
+        df_sanitized.write_database(
+            table_name=table_name, connection=engine, if_table_exists="replace"
+        )
         logger.info(f"✅ Wrote {table_name} ({df_sanitized.height} rows)")
-        
+
     except Exception as e:
         logger.error(f"❌ Error writing {table_name}: {e}")
         # Fallback
         try:
             logger.info("🔄 Attempting fallback write method...")
-            df_string = df.with_columns([pl.col(col).cast(pl.Utf8) for col in df.columns])
-            df_string.write_database(table_name=table_name, connection=engine, if_table_exists="replace")
+            df_string = df.with_columns(
+                [pl.col(col).cast(pl.Utf8) for col in df.columns]
+            )
+            df_string.write_database(
+                table_name=table_name, connection=engine, if_table_exists="replace"
+            )
             logger.info(f"✅ Fallback write successful for {table_name}")
         except Exception as e2:
             logger.error(f"❌ Fallback also failed for {table_name}: {e2}")
+
 
 # ======================
 # MAIN DAGSTER ASSET
 # ======================
 @multi_asset(
     outs={
-        "bronze_privote_recipients": AssetOut(metadata={"description": "Raw Privote Recipients (Projects)"}),
-        "bronze_privote_claims": AssetOut(metadata={"description": "Raw Privote Claims (Tally Results)"}),
-        "bronze_privote_registries": AssetOut(metadata={"description": "Raw Privote Registries (Grant Pools)"}),
-        "bronze_privote_metadata_urls": AssetOut(metadata={"description": "Parsed Metadata URLs & flattened metadata"}),
+        "bronze_privote_recipients": AssetOut(
+            metadata={"description": "Raw Privote Recipients (Projects)"}
+        ),
+        "bronze_privote_claims": AssetOut(
+            metadata={"description": "Raw Privote Claims (Tally Results)"}
+        ),
+        "bronze_privote_registries": AssetOut(
+            metadata={"description": "Raw Privote Registries (Grant Pools)"}
+        ),
+        "bronze_privote_metadata_urls": AssetOut(
+            metadata={"description": "Parsed Metadata URLs & flattened metadata"}
+        ),
         "bronze_privote_users": AssetOut(metadata={"description": "Privote Users"}),
-        "bronze_privote_requests": AssetOut(metadata={"description": "Privote Application Requests"}),
-        "bronze_privote_tally_results": AssetOut(metadata={"description": "Privote Tally Results (Vote Counts)"}),
-        "bronze_privote_deposits": AssetOut(metadata={"description": "Privote Funding Deposits"}),
-        "bronze_privote_system": AssetOut(metadata={"description": "MACI System Overview"}),
+        "bronze_privote_requests": AssetOut(
+            metadata={"description": "Privote Application Requests"}
+        ),
+        "bronze_privote_tally_results": AssetOut(
+            metadata={"description": "Privote Tally Results (Vote Counts)"}
+        ),
+        "bronze_privote_deposits": AssetOut(
+            metadata={"description": "Privote Funding Deposits"}
+        ),
+        "bronze_privote_system": AssetOut(
+            metadata={"description": "MACI System Overview"}
+        ),
     }
 )
 def fetch_privote_data():
@@ -404,7 +471,7 @@ def fetch_privote_data():
 
     # 4) Registries + macis
     logger.info("🏛️ Step 4: Fetching registries + macis...")
-    regs_data = run_query(REGISTRIES_QUERY, {})
+    regs_data = run_query(REGISTRIES_QUERY, {}, endpoint=MACI_GRAPHQL_ENDPOINT)
     registries = regs_data.get("registries", [])
     macis = regs_data.get("macis", [])
     registries_df = align_columns([flatten_dict(r) for r in registries])
@@ -412,7 +479,7 @@ def fetch_privote_data():
 
     # 5) Supporting data
     logger.info("📋 Step 5: Fetching supporting data...")
-    supporting = run_query(SUPPORTING_QUERY, {})
+    supporting = run_query(SUPPORTING_QUERY, {}, endpoint=MACI_GRAPHQL_ENDPOINT)
     users = supporting.get("users", [])
     requests = supporting.get("requests", [])
     deposits = supporting.get("deposits", [])
@@ -423,7 +490,9 @@ def fetch_privote_data():
     deposits_df = align_columns([flatten_dict(d) for d in deposits])
     tally_results_df = align_columns([flatten_dict(tr) for tr in tally_results])
 
-    logger.info(f"✅ Supporting data - users: {users_df.height}, requests: {requests_df.height}, deposits: {deposits_df.height}, tallyResults: {tally_results_df.height}")
+    logger.info(
+        f"✅ Supporting data - users: {users_df.height}, requests: {requests_df.height}, deposits: {deposits_df.height}, tallyResults: {tally_results_df.height}"
+    )
 
     # 6) Write all tables to Postgres
     logger.info("💾 Step 6: Writing Bronze tables to Postgres...")

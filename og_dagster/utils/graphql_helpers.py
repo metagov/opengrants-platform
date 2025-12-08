@@ -20,7 +20,12 @@ POSTGRES_DB = os.getenv("POSTGRES_DB", "opengrants")
 POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgres")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 
-ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT") or "https://mainnet.serve.giveth.io/graphql"
+# ======================
+# DEFAULT ENDPOINTS
+# ======================
+GIVETH_ENDPOINT = os.getenv(
+    "GIVETH_GRAPHQL_ENDPOINT", "https://mainnet.serve.giveth.io/graphql"
+)
 
 
 # ======================
@@ -50,26 +55,57 @@ def sanitize_for_sql(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
-def run_query(query, variables, retries=3, delay=5):
+# graphql_helpers.py
+def run_query(query, variables=None, endpoint=GIVETH_ENDPOINT, retries=3, delay=5):
+    """
+    Run GraphQL query against specified endpoint
+    """
     for attempt in range(retries):
         try:
-            resp = requests.post(
-                ENDPOINT, json={"query": query, "variables": variables}
-            )
+            logger.info(f"🔍 Making GraphQL request to: {endpoint}")
+            logger.info(f"🔍 Query: {query[:200]}...")  # Log first 200 chars
+
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            }
+
+            payload = {"query": query, "variables": variables or {}}
+
+            logger.info(f"🔍 Payload keys: {list(payload.keys())}")
+
+            resp = requests.post(endpoint, json=payload, headers=headers, timeout=30)
+
+            # Log the raw response
+            logger.info(f"🔍 Response status: {resp.status_code}")
+            logger.info(f"🔍 Response headers: {dict(resp.headers)}")
+            logger.info(f"🔍 Response text (first 500 chars): {resp.text[:500]}")
+
             resp.raise_for_status()
+
             data = resp.json()
+
+            if "errors" in data:
+                logger.error(f"❌ GraphQL Errors: {data['errors']}")
+
             if "data" not in data or data["data"] is None:
-                raise ValueError(f"No 'data' field in response: {data}")
+                error_msg = f"No 'data' field in response from {endpoint}: {data}"
+                logger.error(f"❌ {error_msg}")
+                raise ValueError(error_msg)
+
             return data["data"]
-        except Exception as e:
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"❌ Request failed: {e}")
             if attempt < retries - 1:
-                logger.warning(
-                    f"[Retry {attempt+1}] Giveth API error: {e}. Retrying in {delay}s..."
-                )
+                logger.warning(f"[Retry {attempt+1}] Retrying in {delay}s...")
                 time.sleep(delay)
                 delay *= 2
             else:
                 raise
+        except Exception as e:
+            logger.error(f"❌ Unexpected error: {e}")
+            raise
 
 
 def flatten_dict(

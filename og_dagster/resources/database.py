@@ -1,6 +1,7 @@
 from dagster import resource
 from utils.db import get_pg_engine
 
+
 @resource
 def database_engine_resource(_):
     """

@@ -1,7 +1,9 @@
 import os
+
 from dagster import asset
-from utils.translate_to_silver import build_silver
 from utils.graphql_helpers import sanitize_for_sql
+from utils.translate_to_silver import build_silver
+
 
 @asset(
     name="silver_privote_transform",
@@ -20,8 +22,7 @@ from utils.graphql_helpers import sanitize_for_sql
 )
 def silver_privote_transform(context):
     schema_path = os.getenv(
-        "PRIVOTE_SCHEMA_PATH",
-        "/app/configs/schema_maps/active/daoip5_privote.yaml"
+        "PRIVOTE_SCHEMA_PATH", "/app/configs/schema_maps/active/daoip5_privote.yaml"
     )
 
     engine = context.resources.database_engine

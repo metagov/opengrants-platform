@@ -1,20 +1,18 @@
-from dagster import AssetSelection, Definitions, define_asset_job
-from resources.database import database_engine_resource
-
 # --- Giveth Silver Assets ---
 from assets.silver.giveth.projects import silver_giveth_projects
 from assets.silver.giveth.rounds import silver_giveth_grant_pools
 
-# --- SCF Silver Assets ---
-from assets.silver.scf.scf import (
-    silver_scf_projects,
-    silver_scf_grant_applications,
-    silver_scf_grant_pools,
-)
-
 # --- Privote Silver Assets ---
 from assets.silver.privote.privote import silver_privote_transform
 
+# --- SCF Silver Assets ---
+from assets.silver.scf.scf import (
+    silver_scf_grant_applications,
+    silver_scf_grant_pools,
+    silver_scf_projects,
+)
+from dagster import AssetSelection, Definitions, define_asset_job
+from resources.database import database_engine_resource
 
 # -----------------------------
 # Jobs
@@ -58,13 +56,10 @@ defs = Definitions(
         silver_scf_grant_applications,
         silver_scf_grant_pools,
     ],
-    resources={
-        "database_engine": database_engine_resource
-    },
+    resources={"database_engine": database_engine_resource},
     jobs=[
         silver_giveth_etl_job,
         silver_scf_etl_job,
         silver_privote_etl_job,
     ],
 )
-

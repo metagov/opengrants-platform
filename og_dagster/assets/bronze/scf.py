@@ -1,13 +1,13 @@
 # og_dagster/assets/bronze/scf.py
 import os
-import pandas as pd
+
 import polars as pl
 from dagster import asset, get_dagster_logger
-
 from utils.db import get_pg_engine
-from utils.graphql_helpers import sanitize_for_sql, align_columns
+from utils.graphql_helpers import sanitize_for_sql
 
 logger = get_dagster_logger()
+
 
 @asset(
     name="bronze_scf_csv_ingest",
@@ -28,7 +28,9 @@ def bronze_scf_csv_ingest(context):
     for table_name, filename in csv_files.items():
         file_path = os.path.join(base_dir, filename)
         # ✅ Normalize and escape path for Polars
-        safe_path = file_path.replace("[", "\\[").replace("]", "\\]").replace(" ", "\\ ")
+        safe_path = (
+            file_path.replace("[", "\\[").replace("]", "\\]").replace(" ", "\\ ")
+        )
         context.log.info(f"🔍 Attempting to read: {safe_path}")
 
         if not os.path.exists(file_path):
