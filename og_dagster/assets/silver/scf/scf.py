@@ -1,31 +1,59 @@
 from dagster import asset
 from utils.translate_to_silver import build_silver
+from utils.graphql_helpers import sanitize_for_sql
 
 SCHEMA_PATH = "/app/configs/schema_maps/active/daoip5_scf.yaml"
 
 
 @asset(required_resource_keys={"database_engine"})
 def silver_scf_projects(context):
-    return build_silver(
+    df_silver = build_silver(
         engine=context.resources.database_engine,
         schema_path=SCHEMA_PATH,
         section="projects",
     )
+    
+    df_silver = sanitize_for_sql(df_silver)
+    df_silver.write_database(
+        table_name="silver_scf_projects",
+        connection=context.resources.database_engine,
+        if_table_exists="replace",
+    )
+    
+    return df_silver
 
 
 @asset(required_resource_keys={"database_engine"})
 def silver_scf_grant_applications(context):
-    return build_silver(
+    df_silver = build_silver(
         engine=context.resources.database_engine,
         schema_path=SCHEMA_PATH,
         section="grant_applications",
     )
+    
+    df_silver = sanitize_for_sql(df_silver)
+    df_silver.write_database(
+        table_name="silver_scf_grant_applications",
+        connection=context.resources.database_engine,
+        if_table_exists="replace",
+    )
+    
+    return df_silver
 
 
 @asset(required_resource_keys={"database_engine"})
 def silver_scf_grant_pools(context):
-    return build_silver(
+    df_silver = build_silver(
         engine=context.resources.database_engine,
         schema_path=SCHEMA_PATH,
         section="grant_pools",
     )
+    
+    df_silver = sanitize_for_sql(df_silver)
+    df_silver.write_database(
+        table_name="silver_scf_grant_pools",
+        connection=context.resources.database_engine,
+        if_table_exists="replace",
+    )
+    
+    return df_silver
