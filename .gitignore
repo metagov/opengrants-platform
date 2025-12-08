@@ -69,4 +69,5 @@ tree.txt
 dbt_project/target/
 dbt_project/dbt_modules/
 dbt_project/.dbt/
-logs/
+logs/dbt_project/target/
+dbt_project/dbt_packages/
