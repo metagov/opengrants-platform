@@ -1,6 +1,6 @@
 # og_dagster/jobs/etl_scf_job.py
-from dagster import define_asset_job, AssetSelection, Definitions
 from assets.bronze.scf import bronze_scf_csv_ingest
+from dagster import AssetSelection, Definitions, define_asset_job
 
 # This job will run all assets under bronze_scf*
 etl_scf_job = define_asset_job(

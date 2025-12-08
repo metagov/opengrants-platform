@@ -1,6 +1,7 @@
 from dagster import Output, asset
-from utils.translate_to_silver import build_silver
 from utils.db import drop_dependent_views
+from utils.translate_to_silver import build_silver
+
 
 @asset(
     name="silver__giveth_projects",

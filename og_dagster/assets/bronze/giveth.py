@@ -1,27 +1,50 @@
 # giveth_assets.py
+import os
 import time
-from sqlalchemy import create_engine
+from datetime import datetime, timezone
 
 from dagster import AssetOut, Output, multi_asset
+from sqlalchemy import create_engine
+
 from utils.graphql_helpers import (
-    logger,
-    POSTGRES_USER,
-    POSTGRES_PASSWORD,
     POSTGRES_DB,
     POSTGRES_HOST,
+    POSTGRES_PASSWORD,
     POSTGRES_PORT,
-    run_query,
-    flatten_dict,
+    POSTGRES_USER,
     align_columns,
+    flatten_dict,
+    logger,
+    run_query,
     sanitize_for_sql,
 )
 
+GIVETH_ENDPOINT = os.getenv(
+    "GIVETH_GRAPHQL_ENDPOINT", "https://mainnet.serve.giveth.io/graphql"
+)
 
 # ======================
 # DATABASE CONFIG
 # ======================
-DB_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+DB_URL = (
+    f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}"
+    f"@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+)
 engine = create_engine(DB_URL)
+
+
+def _parse_iso_dt(value: str | None) -> datetime | None:
+    """Best-effort ISO-8601 datetime parser that tolerates Z suffix."""
+    if not value:
+        return None
+    try:
+        v = value.strip()
+        if v.endswith("Z"):
+            v = v[:-1] + "+00:00"
+        return datetime.fromisoformat(v)
+    except Exception:
+        return None
+
 
 # ======================
 # MAIN DAGSTER ASSET
@@ -29,41 +52,111 @@ engine = create_engine(DB_URL)
 @multi_asset(
     outs={
         "bronze__giveth_qf_rounds": AssetOut(
-            metadata={"description": "Raw Giveth QF Rounds with Stats"},
+            metadata={"description": "Raw Giveth Inactive Rounds (ENDED) with Stats + History"},
             tags={"layer": "bronze", "source": "giveth", "domain": "grants"},
         ),
         "bronze__giveth_projects": AssetOut(
-            metadata={"description": "Raw Giveth Projects"},
+            metadata={"description": "Raw Giveth Projects for Inactive Rounds"},
             tags={"layer": "bronze", "source": "giveth", "domain": "grants"},
         ),
     },
 )
 def fetch_giveth_data():
-    """Fetch Giveth QF Rounds Stats and Projects with enforced 10-item pagination limit."""
-    logger.info("🚀 Fetching Giveth data...")
+    """
+    Fetch inactive (ENDED) Giveth QF Rounds + Projects.
 
-    # ------------------------------
-    # 1. FIRST GET ALL QF ROUND SLUGS (inactive only)
-    # ------------------------------
-    qf_rounds_slugs_query = """
-    query GetRoundsSlugs {
+    NOTE:
+    - Giveth no longer exposes `qfArchivedRounds`.
+    - We use `qfRounds(activeOnly: false)` and derive inactivity from:
+        * isActive == false, OR
+        * endDate < now (fallback if isActive is null/missing).
+    - For each inactive round we also fetch:
+        * qfRoundStats(slug)
+        * getQfRoundHistory(qfRoundId)
+      and merge them into a single bronze row per round.
+    """
+
+    logger.info("🚀 Fetching QF rounds (including inactive)...")
+
+    # =============================
+    # 1. GET ALL ROUNDS VIA qfRounds
+    # =============================
+    qf_rounds_query = """
+    query GetAllRounds {
       qfRounds(activeOnly: false) {
         id
         slug
+        name
+        title
+        description
+        beginDate
+        endDate
+        allocatedFund
+        allocatedFundUSD
+        allocatedTokenSymbol
+        eligibleNetworks
         isActive
+        isDataAnalysisDone
+        bannerBgImage
+        bannerFull
+        bannerMobile
       }
     }
     """
-    qf_rounds_slugs_data = run_query(qf_rounds_slugs_query, {})
-    qf_rounds_slugs = qf_rounds_slugs_data.get("qfRounds", [])
-    
-    # Filter only inactive rounds
-    inactive_rounds = [r for r in qf_rounds_slugs if not r.get("isActive", True)]
-    logger.info(f"📦 Found {len(inactive_rounds)} inactive QF rounds to fetch stats for")
 
-    # ------------------------------
-    # 2. FETCH DETAILED STATS FOR EACH ROUND USING QFRoundStats
-    # ------------------------------
+    try:
+        round_data = run_query(qf_rounds_query, {}, endpoint=GIVETH_ENDPOINT)
+        all_rounds = round_data.get("qfRounds", []) or []
+        logger.info(f"📦 Found {len(all_rounds)} total QF rounds (all states)")
+    except Exception as e:
+        logger.error(f"❌ Error fetching qfRounds: {e}")
+        # Fallback: introspect Query root to help debug schema issues
+        test_query = """
+        query IntrospectQueryRoot {
+          __type(name: "Query") {
+            name
+            fields { name }
+          }
+        }
+        """
+        try:
+            test_result = run_query(test_query, {}, endpoint=GIVETH_ENDPOINT)
+            logger.info(f"Available Query fields: {test_result}")
+        except Exception as e2:
+            logger.error(f"❌ Error introspecting Query type: {e2}")
+        raise
+
+    # =============================
+    # 2. FILTER INACTIVE / ENDED ROUNDS
+    # =============================
+    logger.info("🧮 Deriving inactive (ENDED) rounds from qfRounds...")
+    inactive_rounds: list[dict] = []
+
+    now_utc = datetime.now(timezone.utc)
+
+    for r in all_rounds:
+        is_active = r.get("isActive")
+        end_dt = _parse_iso_dt(r.get("endDate"))
+
+        # Primary rule: explicitly inactive
+        if is_active is False:
+            inactive_rounds.append(r)
+            continue
+
+        # Fallback rule: no isActive flag, but endDate is in the past
+        if is_active is None and end_dt and end_dt < now_utc:
+            inactive_rounds.append(r)
+
+    logger.info(
+        f"📦 Inactive / ended rounds derived from qfRounds: {len(inactive_rounds)}"
+    )
+
+    if not inactive_rounds:
+        logger.warning("⚠️ No inactive rounds detected. Continuing with empty results.")
+
+    # =============================
+    # 3. FETCH STATS + HISTORY FOR INACTIVE ROUNDS
+    # =============================
     qf_round_stats_query = """
     query QFRoundStats($slug: String!) {
       qfRoundStats(slug: $slug) {
@@ -77,7 +170,6 @@ def fetch_giveth_data():
           title
           description
           slug
-          isActive
           allocatedFund
           allocatedFundUSD
           allocatedFundUSDPreferred
@@ -104,51 +196,100 @@ def fetch_giveth_data():
     }
     """
 
-    all_qf_rounds_stats = []
-    
-    for round_slug in inactive_rounds:
-        slug = round_slug["slug"]
-        logger.info(f"📊 Fetching stats for round: {slug}")
-        
+    qf_round_history_query = """
+    query GetRoundHistory($qfRoundId: Int) {
+      getQfRoundHistory(qfRoundId: $qfRoundId) {
+        id
+        qfRoundId
+        projectId
+        uniqueDonors
+        donationsCount
+        raisedFundInUsd
+        matchingFund
+        matchingFundAmount
+        matchingFundPriceUsd
+        matchingFundCurrency
+        distributedFundTxHash
+        distributedFundNetwork
+        distributedFundTxDate
+        estimatedMatching {
+          projectDonationsSqrtRootSum
+          allProjectsSum
+          matchingPool
+          matching
+        }
+      }
+    }
+    """
+
+    all_rounds_flat: list[dict] = []
+
+    for r in inactive_rounds:
+        slug = r.get("slug")
+        rid_raw = r.get("id")
         try:
-            stats_data = run_query(qf_round_stats_query, {"slug": slug})
-            qf_round_stats = stats_data.get("qfRoundStats", {})
-            
-            if qf_round_stats:
-                # Combine the stats with the round data
-                combined_data = {
-                    **qf_round_stats,
-                    "qfRound": qf_round_stats.get("qfRound", {})
-                }
-                all_qf_rounds_stats.append(combined_data)
-                logger.info(f"✅ Successfully fetched stats for {slug}")
-            else:
-                logger.warning(f"⚠️ No stats data returned for {slug}")
-                
-            time.sleep(0.5)  # Small delay between requests
-            
+            rid = int(rid_raw)
+        except Exception:
+            logger.warning(f"⚠️ Could not cast round id '{rid_raw}' to int for history query")
+            rid = None
+
+        logger.info(f"📊 Fetching stats + history for INACTIVE round {slug} ({rid_raw})")
+
+        # 1 — Stats
+        stats = {}
+        try:
+            resp_stats = run_query(
+                qf_round_stats_query, {"slug": slug}, endpoint=GIVETH_ENDPOINT
+            )
+            stats = resp_stats.get("qfRoundStats") or {}
         except Exception as e:
-            logger.error(f"❌ Failed to fetch stats for {slug}: {e}")
-            continue
+            logger.error(f"❌ Error fetching stats for round {slug}: {e}")
 
-    # Flatten the nested structure
-    qf_rounds_flat = []
-    for stats in all_qf_rounds_stats:
-        flat_stats = flatten_dict(stats)
-        qf_rounds_flat.append(flat_stats)
-    
-    qf_rounds_df = align_columns(qf_rounds_flat)
-    logger.info(f"📦 QF Rounds with stats fetched: {len(qf_rounds_df)}")
+        # 2 — History
+        history = {}
+        if rid is not None:
+            try:
+                resp_hist = run_query(
+                    qf_round_history_query, {"qfRoundId": rid}, endpoint=GIVETH_ENDPOINT
+                )
+                history = resp_hist.get("getQfRoundHistory") or {}
+            except Exception as e:
+                logger.error(f"❌ Error fetching history for round {slug}: {e}")
+        else:
+            logger.warning(f"⚠️ Skipping history for round {slug} due to invalid id")
 
-    # ------------------------------
-    # 3. PROJECTS BY ROUND (10-item enforced pagination) - using IDs from stats
-    # ------------------------------
+        # Merge base round metadata + stats + history.
+        # Keep qfRound and history nested so flatten_dict yields qfRound_* and history_* fields.
+        combined_round = {
+            **r,
+            **{k: v for k, v in stats.items() if k != "qfRound"},
+            "qfRound": stats.get("qfRound") or {},
+            "history": history,
+        }
+
+        all_rounds_flat.append(flatten_dict(combined_round))
+        time.sleep(0.3)
+
+    if all_rounds_flat:
+        qf_rounds_df = align_columns(all_rounds_flat)
+        logger.info(
+            f"📦 Stats+history+metadata loaded for {len(qf_rounds_df)} inactive rounds"
+        )
+    else:
+        qf_rounds_df = align_columns([])
+        logger.warning("⚠️ No rounds to write for bronze_giveth_qf_rounds")
+
+    # =============================
+    # 4. FETCH PROJECTS FOR INACTIVE ROUNDS
+    # =============================
     projects_query = """
     query GetProjects($qfRoundId: Int!, $skip: Int!, $take: Int!) {
-      allProjects(qfRoundId: $qfRoundId, skip: $skip, take: $take, orderBy: {
-        field: CreationDate,
-        direction: DESC
-      }) {
+      allProjects(
+        qfRoundId: $qfRoundId,
+        skip: $skip,
+        take: $take,
+        orderBy: { field: CreationDate, direction: DESC }
+      ) {
         projects {
           id
           title
@@ -168,13 +309,8 @@ def fetch_giveth_data():
           coOrdinates
           image
           impactLocation
-          categories {
-            id
-          }
-          qfRounds {
-            id
-            title
-          }
+          categories { id }
+          qfRounds { id title }
           balance
           stripeAccountId
           walletAddress
@@ -182,39 +318,18 @@ def fetch_giveth_data():
           verificationStatus
           isImported
           giveBacks
-          donations {
-            id
-          }
+          donations { id }
           qualityScore
-          contacts {
-            url
-          }
-          reactions{
-            id
-          }
-          addresses {
-            id
-          }
-          socialMedia {
-            id
-          }
-          anchorContracts {
-            id
-          }
-          status{
-            id
-            name
-          }
+          contacts { url }
+          reactions { id }
+          addresses { id }
+          socialMedia { id }
+          anchorContracts { id }
+          status { id name }
           adminUserId
-          statusHistory {
-            id
-          }
-          projectVerificationForm {
-            id
-          }
-          featuredUpdate {
-            id
-          }
+          statusHistory { id }
+          projectVerificationForm { id }
+          featuredUpdate { id }
           verificationFormStatus
           socialProfiles { id name link socialNetwork isVerified }
           projectEstimatedMatchingView { projectId qfRoundId }
@@ -232,19 +347,19 @@ def fetch_giveth_data():
           prevStatusId
           adminJsBaseUrl
           campaigns {
-              id
-              slug
-              title
-              type
-              isActive
-              isNew
-              isFeatured
-              description
-              hashtags
-              relatedProjectsSlugs
-              landingLink
-              updatedAt
-              createdAt
+            id
+            slug
+            title
+            type
+            isActive
+            isNew
+            isFeatured
+            description
+            hashtags
+            relatedProjectsSlugs
+            landingLink
+            updatedAt
+            createdAt
           }
           estimatedMatching {
             projectDonationsSqrtRootSum
@@ -257,84 +372,96 @@ def fetch_giveth_data():
     }
     """
 
-    all_projects = []
-    PAGE_SIZE = 10  # enforced Giveth API cap
-    MAX_PAGES = 2000  # safety cap (20k projects max per round)
+    all_projects: list[dict] = []
+    PAGE_SIZE = 50
+    MAX_PAGES = 1500
 
-    # Use round IDs from the stats we fetched
-    for round_stats in all_qf_rounds_stats:
-        qf_round_data = round_stats.get("qfRound", {})
-        rid = int(qf_round_data.get("id", 0))
-        if rid == 0:
-            continue
-            
+    for r in inactive_rounds:
+        rid = int(r["id"])
+        slug = r.get("slug")
+        logger.info(f"📥 Fetching projects for inactive round {slug} ({rid})")
+
         skip = 0
+        seen_ids: set[str] = set()
         total_for_round = 0
-        seen_ids = set()
 
-        logger.info(f"🔍 Fetching projects for round {rid}...")
+        for _ in range(MAX_PAGES):
+            try:
+                resp = run_query(
+                    projects_query,
+                    {"qfRoundId": rid, "skip": skip, "take": PAGE_SIZE},
+                    endpoint=GIVETH_ENDPOINT,
+                )
+            except Exception as e:
+                logger.error(
+                    f"❌ Error fetching projects for round {slug} at skip={skip}: {e}"
+                )
+                break
 
-        for page in range(MAX_PAGES):
-            vars = {"qfRoundId": rid, "skip": skip, "take": PAGE_SIZE}
-            result = run_query(projects_query, vars)
-            projects = result.get("allProjects", {}).get("projects", [])
-            fetched = len(projects)
-
+            projects = resp.get("allProjects", {}).get("projects", []) or []
             if not projects:
-                logger.info(
-                    f"✅ Completed round {rid}: total {total_for_round} projects."
-                )
                 break
 
-            first_id = projects[0].get("id") if projects else None
-            if first_id in seen_ids:
-                logger.warning(
-                    f"⚠️ Pagination stuck for round {rid} at skip={skip}. Breaking."
-                )
-                break
-            seen_ids.add(first_id)
+            for p in projects:
+                pid = p.get("id")
+                if pid in seen_ids:
+                    # Already processed this project for this round
+                    continue
+                seen_ids.add(pid)
 
-            all_projects.extend([flatten_dict(p) for p in projects])
-            total_for_round += fetched
-            logger.info(f"Fetched {fetched} projects from round {rid} (skip={skip}).")
+                # Attach round context so downstream mapping can join to grant pool
+                enriched = {
+                    **p,
+                    "qfRoundId": rid,
+                    "qfRoundSlug": slug,
+                }
+                all_projects.append(flatten_dict(enriched))
+                total_for_round += 1
 
-            # Stop if fewer than PAGE_SIZE (last page)
-            if fetched < PAGE_SIZE:
-                logger.info(f"✅ Finished fetching all pages for round {rid}.")
+            if len(projects) < PAGE_SIZE:
+                # Last page for this round
                 break
 
             skip += PAGE_SIZE
-            time.sleep(1)  # small delay to avoid rate-limit
+            time.sleep(0.5)
 
-        logger.info(f"📊 Round {rid} — total projects fetched: {total_for_round}")
+        logger.info(
+            f"📦 Total unique projects fetched for round {slug}: {total_for_round}"
+        )
 
-    # ------------------------------
-    # 4. CREATE DATAFRAMES
-    # ------------------------------
-    projects_df = align_columns(all_projects)
-    logger.info(f"📦 Total projects fetched across rounds: {len(projects_df)}")
+    if all_projects:
+        projects_df = align_columns(all_projects)
+        logger.info(
+            f"📦 Total unique projects across all inactive rounds: {len(projects_df)}"
+        )
+    else:
+        projects_df = align_columns([])
+        logger.warning("⚠️ No projects fetched for inactive rounds")
 
-    # ------------------------------
-    # 5. SANITIZE & LOAD TO DB
-    # ------------------------------
+    # =============================
+    # 5. SANITIZE + WRITE TO DB
+    # =============================
+    logger.info("🧼 Sanitizing DataFrames for SQL compatibility...")
     qf_rounds_df = sanitize_for_sql(qf_rounds_df)
     projects_df = sanitize_for_sql(projects_df)
 
-    logger.info("🧱 Writing Bronze layer tables to Postgres...")
+    logger.info("💾 Writing Bronze tables to Postgres...")
+
     qf_rounds_df.write_database(
         table_name="bronze_giveth_qf_rounds",
         connection=engine,
         if_table_exists="replace",
     )
+
     projects_df.write_database(
         table_name="bronze_giveth_projects",
         connection=engine,
         if_table_exists="replace",
     )
 
-    logger.info(f"✅ Rows written -> bronze_giveth_qf_rounds: {len(qf_rounds_df)}")
-    logger.info(f"✅ Rows written -> bronze_giveth_projects: {len(projects_df)}")
-    logger.info("🏁 Giveth Bronze layer load complete.")
+    logger.info(
+        f"✨ Rows written: rounds={len(qf_rounds_df)}, projects={len(projects_df)}"
+    )
 
     yield Output(qf_rounds_df, "bronze__giveth_qf_rounds")
     yield Output(projects_df, "bronze__giveth_projects")

@@ -4,11 +4,11 @@
 
 manifest:
   schema_name: daoip5_giveth
-  version: 1.0.8
+  version: 1.1.0
   source_system: "Giveth Mainnet API"
-  last_updated: "2025-11-03T15:07:56Z"
+  last_updated: "2025-12-09T18:30:00Z"
   description: >
-    DAOIP-5-compliant schema mapping for Giveth grant rounds and projects. This schema preserves interoperability across DAOIP-based ecosystems while  allowing custom metadata through io.giveth extensions.
+    DAOIP-5-compliant schema mapping for Giveth grant rounds and projects. This schema preserves interoperability across DAOIP-based ecosystems while allowing custom metadata through io.giveth extensions. It merges qfRounds base metadata, qfRoundStats, and getQfRoundHistory into a unified grant pool representation, and indexes all projects participating in inactive (ENDED) rounds.
 
 schemas:
 
@@ -25,16 +25,21 @@ schemas:
         type: string
         required: true
         transform: "lambda v: f'daoip-5:giveth:grantPool:{v}' if v else None"
+
       name:
         source: qfRound_title
         type: string
         required: true
+
       description:
         source: qfRound_description
         type: string
+        required: false
+
       grantFundingMechanism:
         source: null
         type: enum
+        required: false
         allowed:
         - "Quadratic Funding"
         - "Direct Grants"
@@ -44,43 +49,60 @@ schemas:
         - "Delegated Domain Allocation"
         - "Impact Attestations"
         transform: "lambda _: 'Quadratic Funding'"
+
+      # isOpen = whether the round is active/open for funding
+      # NOTE: comes from base qfRounds.isActive (not nested qfRound)
       isOpen:
-        source: qfRound_isActive
+        source: isActive
         type: boolean
+        required: false
+
       closeDate:
         source: qfRound_endDate
         type: datetime
+        required: false
+
       totalGrantPoolSizeInUSD:
         source: qfRound_allocatedFundUSD
         type: float
         required: true
+
       image:
         source: qfRound_bannerBgImage
         type: string
+        required: false
+
       applicationsURI:
         source: null
         type: string
+        required: false
+
       coverImage:
         source: null
         type: string
         required: false
+
       email:
         source: null
         type: string
         required: false
+
       governanceURI:
         source: null
         type: string
         required: false
+
       attestationIssuersURI:
         source: null
         type: string
         required: false
+
       requiredCredentials:
         source: null
         type: json
         required: false
         transform: "lambda _: []"
+
       totalGrantPoolSize:
         source: null
         type: json
@@ -89,79 +111,185 @@ schemas:
 
     extensions:
       io.giveth:
+
+        # -------------------------
+        # ROUND STATS (qfRoundStats)
+        # -------------------------
         uniqueDonors:
           source: uniqueDonors
-          type: integer
+          type: float
+          required: false
         donationsCount:
           source: donationsCount
-          type: integer
+          type: float
+          required: false
         allDonationsUsdValue:
           source: allDonationsUsdValue
           type: float
+          required: false
         matchingPool:
           source: matchingPool
-          type: integer
+          type: float
+          required: false
+
+        # -------------------------
+        # ROUND METADATA (qfRound.*)
+        # -------------------------
         allocatedTokenSymbol:
           source: qfRound_allocatedTokenSymbol
           type: string
+          required: false
         allocatedTokenChainId:
           source: qfRound_allocatedTokenChainId
-          type: integer
+          type: float
+          required: false
         allocatedFundUSDPreferred:
           source: qfRound_allocatedFundUSDPreferred
           type: boolean
+          required: false
         minimumPassportScore:
           source: qfRound_minimumPassportScore
-          type: integer
+          type: float
+          required: false
         clusterMatchingSyncAt:
           source: qfRound_clusterMatchingSyncAt
           type: datetime
+          required: false
         isDataAnalysisDone:
           source: qfRound_isDataAnalysisDone
           type: boolean
+          required: false
         eligibleNetworks:
           source: qfRound_eligibleNetworks
           type: string
+          required: false
         allocatedFund:
           source: qfRound_allocatedFund
-          type: integer
+          type: float
+          required: false
         beginDate:
           source: qfRound_beginDate
           type: datetime
+          required: false
         minMBDScore:
           source: qfRound_minMBDScore
-          type: integer
+          type: float
+          required: false
         minimumValidUsdValue:
           source: qfRound_minimumValidUsdValue
           type: float
+          required: false
         slug:
           source: qfRound_slug
           type: string
+          required: false
         sponsorsImgs:
           source: qfRound_sponsorsImgs
           type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
+          required: false
         title:
           source: qfRound_title
           type: string
+          required: false
         displaySize:
           source: qfRound_displaySize
-          type: integer
+          type: float
+          required: false
         maximumReward:
           source: qfRound_maximumReward
           type: float
+          required: false
         qfStrategy:
           source: qfRound_qfStrategy
           type: string
+          required: false
         bannerFull:
           source: qfRound_bannerFull
           type: string
+          required: false
         bannerMobile:
           source: qfRound_bannerMobile
           type: string
+          required: false
         hubCardImage:
           source: qfRound_hubCardImage
           type: string
+          required: false
+
+        # -------------------------
+        # ROUND HISTORY (getQfRoundHistory, flattened)
+        # Option A1 naming
+        # -------------------------
+        history_id:
+          source: history_id
+          type: float
+          required: false
+        history_qfRoundId:
+          source: history_qfRoundId
+          type: float
+          required: false
+        history_projectId:
+          source: history_projectId
+          type: float
+          required: false
+        history_uniqueDonors:
+          source: history_uniqueDonors
+          type: float
+          required: false
+        history_donationsCount:
+          source: history_donationsCount
+          type: float
+          required: false
+        history_raisedFundInUsd:
+          source: history_raisedFundInUsd
+          type: float
+          required: false
+        history_matchingFund:
+          source: history_matchingFund
+          type: float
+          required: false
+        history_matchingFundAmount:
+          source: history_matchingFundAmount
+          type: float
+          required: false
+        history_matchingFundPriceUsd:
+          source: history_matchingFundPriceUsd
+          type: float
+          required: false
+        history_matchingFundCurrency:
+          source: history_matchingFundCurrency
+          type: string
+          required: false
+        history_distributedFundTxHash:
+          source: history_distributedFundTxHash
+          type: string
+          required: false
+        history_distributedFundNetwork:
+          source: history_distributedFundNetwork
+          type: float
+          required: false
+        history_distributedFundTxDate:
+          source: history_distributedFundTxDate
+          type: datetime
+          required: false
+
+        # # EstimatedMatching nested (flattened)
+        # history_estimatedMatching_projectDonationsSqrtRootSum:
+        #   source: history_estimatedMatching_projectDonationsSqrtRootSum
+        #   type: float
+        #   required: false
+        history_estimatedMatching_allProjectsSum:
+          source: history_estimatedMatching_allProjectsSum
+          type: float
+          required: false
+        history_estimatedMatching_matchingPool:
+          source: history_estimatedMatching_matchingPool
+          type: float
+          required: false
+        history_estimatedMatching_matching:
+          source: history_estimatedMatching_matching
+          type: float
+          required: false
 
   # ----------------------------------------------------------
   # DAOIP-5: Project Schema (Projects)
@@ -176,229 +304,330 @@ schemas:
         type: string
         required: true
         transform: "lambda v: f'daoip-5:giveth:project:{v}' if v else None"
+
       name:
         source: title
         type: string
         required: true
+
       description:
         source: description
         type: string
+        required: false
+
       contentURI:
         source: projectUrl
         type: string
+        required: false
+
+      # First contact URL as email-ish contact
       email:
         source: contacts
         type: string
         required: false
-        transform: "lambda v: json.loads(v)[0]['url'] if v and isinstance(v, str) and json.loads(v) else None"
+        transform: "lambda v: (json.loads(v)[0]['url'] if isinstance(v, str) and json.loads(v) else None)"
+
       membersURI:
         source: website
         type: string
         required: false
+
       attestationIssuersURI:
         source: null
         type: json
         required: false
         transform: "lambda _: []"
+
       image:
         source: image
         type: string
+        required: false
+
       coverImage:
         source: null
         type: string
         required: false
+
       licenseURI:
         source: null
         type: string
         required: false
+
       relevantTo:
         source: null
         type: json
         required: false
         transform: "lambda _: []"
+
       socials:
         source: socialProfiles
         type: json
+        required: false
         transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
 
     extensions:
       io.giveth:
+
+        # -------------------------
+        # BASIC FLAGS & STATUS
+        # -------------------------
         verified:
           source: verified
           type: boolean
+          required: false
         verificationStatus:
           source: verificationStatus
           type: string
-        totalDonations:
-          source: totalDonations
-          type: float
-        countUniqueDonors:
-          source: countUniqueDonors
-          type: integer
-        impactLocation:
-          source: impactLocation
-          type: string
-        walletAddress:
-          source: walletAddress
-          type: string
-        campaigns:
-          source: campaigns
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
+          required: false
         reviewStatus:
           source: reviewStatus
           type: string
+          required: false
         isGivbackEligible:
           source: isGivbackEligible
           type: boolean
-        traceCampaignId:
-          source: traceCampaignId
-          type: string
-        totalTraceDonations:
-          source: totalTraceDonations
-          type: float
-        adminUserId:
-          source: adminUserId
-          type: integer
-        addresses:
-          source: addresses
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        adminJsBaseUrl:
-          source: adminJsBaseUrl
-          type: string
-        anchorContracts:
-          source: anchorContracts
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        balance:
-          source: balance
-          type: integer
-        categories:
-          source: categories
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        changeId:
-          source: changeId
-          type: string
-        coOrdinates:
-          source: coOrdinates
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        countUniqueDonorsForActiveQfRound:
-          source: countUniqueDonorsForActiveQfRound
-          type: integer
-        creationDate:
-          source: creationDate
-          type: datetime
-        descriptionSummary:
-          source: descriptionSummary
-          type: string
-        donations:
-          source: donations
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        estimatedMatching:
-          source: estimatedMatching
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        featuredUpdate:
-          source: featuredUpdate
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        giveBacks:
-          source: giveBacks
-          type: boolean
-        givingBlocksId:
-          source: givingBlocksId
-          type: string
+          required: false
         isImported:
           source: isImported
           type: boolean
-        latestUpdateCreationDate:
-          source: latestUpdateCreationDate
-          type: datetime
+          required: false
         listed:
           source: listed
           type: boolean
-        organization:
-          source: organization
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        prevStatusId:
-          source: prevStatusId
-          type: string
-        projectEstimatedMatchingView:
-          source: projectEstimatedMatchingView
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        projectVerificationForm:
-          source: projectVerificationForm
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        qfRounds:
-          source: qfRounds
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        qualityScore:
-          source: qualityScore
-          type: integer
-        reactions:
-          source: reactions
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        slug:
-          source: slug
-          type: string
-        slugHistory:
-          source: slugHistory
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        socialMedia:
-          source: socialMedia
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        status:
-          source: status
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        statusHistory:
-          source: statusHistory
-          type: json
-          transform: "lambda v: json.loads(v) if v and isinstance(v, str) else v"
-        stripeAccountId:
-          source: stripeAccountId
-          type: string
+          required: false
+        giveBacks:
+          source: giveBacks
+          type: boolean
+          required: false
+
+        # -------------------------
+        # FUNDING / DONATIONS / METRICS
+        # -------------------------
+        totalDonations:
+          source: totalDonations
+          type: float
+          required: false
+        totalTraceDonations:
+          source: totalTraceDonations
+          type: float
+          required: false
+        countUniqueDonors:
+          source: countUniqueDonors
+          type: float
+          required: false
+        countUniqueDonorsForActiveQfRound:
+          source: countUniqueDonorsForActiveQfRound
+          type: float
+          required: false
         sumDonationValueUsdForActiveQfRound:
           source: sumDonationValueUsdForActiveQfRound
           type: float
-        totalProjectUpdates:
-          source: totalProjectUpdates
-          type: integer
+          required: false
         totalReactions:
           source: totalReactions
-          type: integer
-        updatedAt:
-          source: updatedAt
-          type: datetime
-        verificationFormStatus:
-          source: verificationFormStatus
+          type: float
+          required: false
+        totalProjectUpdates:
+          source: totalProjectUpdates
+          type: float
+          required: false
+        balance:
+          source: balance
+          type: float
+          required: false
+        qualityScore:
+          source: qualityScore
+          type: float
+          required: false
+
+        # -------------------------
+        # IDENTIFIERS & LINKS
+        # -------------------------
+        impactLocation:
+          source: impactLocation
           type: string
+          required: false
+        walletAddress:
+          source: walletAddress
+          type: string
+          required: false
+        traceCampaignId:
+          source: traceCampaignId
+          type: string
+          required: false
+        givingBlocksId:
+          source: givingBlocksId
+          type: string
+          required: false
+        adminUserId:
+          source: adminUserId
+          type: float
+          required: false
+        adminJsBaseUrl:
+          source: adminJsBaseUrl
+          type: string
+          required: false
+        stripeAccountId:
+          source: stripeAccountId
+          type: string
+          required: false
+        prevStatusId:
+          source: prevStatusId
+          type: string
+          required: false
         website:
           source: website
           type: string
+          required: false
         youtube:
           source: youtube
           type: string
+          required: false
+        slug:
+          source: slug
+          type: string
+          required: false
+
+        # Round context for joins
+        qfRoundId:
+          source: qfRoundId
+          type: float
+          required: false
+        qfRoundSlug:
+          source: qfRoundSlug
+          type: string
+          required: false
+
+        # -------------------------
+        # TEMPORAL FIELDS
+        # -------------------------
+        creationDate:
+          source: creationDate
+          type: datetime
+          required: false
+        updatedAt:
+          source: updatedAt
+          type: datetime
+          required: false
+        latestUpdateCreationDate:
+          source: latestUpdateCreationDate
+          type: datetime
+          required: false
+
+        # -------------------------
+        # TEXTUAL DERIVATIVES
+        # -------------------------
+        descriptionSummary:
+          source: descriptionSummary
+          type: string
+          required: false
+        verificationFormStatus:
+          source: verificationFormStatus
+          type: string
+          required: false
+
+        # -------------------------
+        # NESTED / JSON STRUCTURES
+        # (stored as JSON strings in bronze)
+        # -------------------------
+        campaigns:
+          source: campaigns
+          type: json
+          required: false
+        categories:
+          source: categories
+          type: json
+          required: false
+        coOrdinates:
+          source: coOrdinates
+          type: json
+          required: false
+        donations:
+          source: donations
+          type: json
+          required: false
+        estimatedMatching:
+          source: estimatedMatching
+          type: json
+          required: false
+        featuredUpdate:
+          source: featuredUpdate
+          type: json
+          required: false
+        organization:
+          source: organization
+          type: json
+          required: false
+        projectEstimatedMatchingView:
+          source: projectEstimatedMatchingView
+          type: json
+          required: false
+        projectVerificationForm:
+          source: projectVerificationForm
+          type: json
+          required: false
+        qfRounds:
+          source: qfRounds
+          type: json
+          required: false
+        reactions:
+          source: reactions
+          type: json
+          required: false
+        slugHistory:
+          source: slugHistory
+          type: json
+          required: false
+        socialMedia:
+          source: socialMedia
+          type: json
+          required: false
+        status:
+          source: status
+          type: json
+          required: false
+        statusHistory:
+          source: statusHistory
+          type: json
+          required: false
+        addresses:
+          source: addresses
+          type: json
+          required: false
+        anchorContracts:
+          source: anchorContracts
+          type: json
+          required: false
+        socialProfiles:
+          source: socialProfiles
+          type: json
+          required: false
+
+        # -------------------------
+        # MISC META
+        # -------------------------
+        changeId:
+          source: changeId
+          type: string
+          required: false
+        projectUrl:
+          source: projectUrl
+          type: string
+          required: false
 
 meta:
   daoip_version: 5
   author: "Rashmi V. Abbigeri <rashmi@metagov.org>"
-  mapping_strategy: "DAOIP-5 compliant + io.giveth extensions"
-  compatible_with: [ "opengrants-silver-pipeline>=0.3.0" ]
+  mapping_strategy: "DAOIP-5 compliant + io.giveth extensions + stats + history flattening"
+  compatible_with:
+  - "opengrants-silver-pipeline>=0.3.0"
   validation_rules:
     json_fields_must_parse: true
     json_schema_enforced: true
     id_format: "daoip-5:giveth"
     enum_enforced: true
-    required_fields: [ "id", "name", "description", "totalGrantPoolSizeInUSD" ]
+    required_fields:
+    - id
+    - name
+    - description
+    - totalGrantPoolSizeInUSD
