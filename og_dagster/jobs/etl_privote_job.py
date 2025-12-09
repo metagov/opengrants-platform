@@ -7,6 +7,8 @@ privote_etl_job = define_asset_job(
     selection=AssetSelection.assets(
         fetch_privote_data
     ),  # auto-detects both bronze assets
+    description="Ingest Privote Subgraph data into the Bronze layer.",
+
 )
 
 defs = Definitions(

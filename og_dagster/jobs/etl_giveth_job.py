@@ -7,6 +7,7 @@ giveth_etl_job = define_asset_job(
     selection=AssetSelection.assets(
         fetch_giveth_data
     ),  # auto-detects both bronze assets
+    description="Ingest Giveth API data into the Bronze layer.",
 )
 
 defs = Definitions(
