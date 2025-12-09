@@ -24,6 +24,8 @@ silver_giveth_etl_job = define_asset_job(
         silver_giveth_projects,
         silver_giveth_grant_pools,
     ),
+    description="Transform Giveth API Raw data into the Silver layer.",
+
 )
 
 silver_scf_etl_job = define_asset_job(
@@ -33,6 +35,7 @@ silver_scf_etl_job = define_asset_job(
         silver_scf_grant_applications,
         silver_scf_grant_pools,
     ),
+    description="Transform SCF Raw data into the Silver layer.",
 )
 
 silver_privote_etl_job = define_asset_job(
@@ -40,6 +43,7 @@ silver_privote_etl_job = define_asset_job(
     selection=AssetSelection.assets(
         silver_privote_transform,
     ),
+    description="Transform Privote Subgraph Raw data into the Silver layer.",
 )
 
 
