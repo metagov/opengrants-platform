@@ -12,6 +12,7 @@ const NavLink = ({ href, children }: { href: string; children: React.ReactNode }
       <ChakraLink
         fontSize="sm"
         fontWeight={isActive ? 'semibold' : 'medium'}
+        fontFamily="Inter"
         color={brandColors.textOnColor}
         letterSpacing="wide"
         textTransform="uppercase"
@@ -45,8 +46,8 @@ export const Navigation = () => {
             <ChakraLink
               fontSize="lg"
               fontWeight="normal"
-              fontStyle="italic"
               letterSpacing="tight"
+              fontFamily="Inter"
               color={brandColors.textOnColor}
               _hover={{ textDecoration: 'none' }}
             >
