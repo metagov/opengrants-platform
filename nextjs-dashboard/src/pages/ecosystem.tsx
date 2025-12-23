@@ -77,6 +77,14 @@ export default function Ecosystem() {
     privote: 'teal.500',
   };
 
+  const platformDisplayNames: { [key: string]: string } = {
+    scf: 'SCF (Stellar Community Fund)',
+    giveth: 'Giveth',
+    privote: 'Privote (GG24 Privacy Round)',
+  };
+
+  const getPlatformName = (key: string) => platformDisplayNames[key] || key;
+
   return (
     <>
       <Navigation />
@@ -134,10 +142,9 @@ export default function Ecosystem() {
                         <Text
                           fontSize="xl"
                           fontWeight="medium"
-                          textTransform="capitalize"
                           color={platformColors[platform.platform] || 'gray.700'}
                         >
-                          {platform.platform}
+                          {getPlatformName(platform.platform)}
                         </Text>
                         <Text fontSize="sm" color="gray.600">
                           {platform.primary_mechanism}
@@ -181,64 +188,6 @@ export default function Ecosystem() {
                     </SimpleGrid>
                   </Box>
                 ))}
-
-                <Box
-                  p={6}
-                  bg="white"
-                  borderRadius="lg"
-                  borderWidth="1px"
-                  borderColor="gray.100"
-                >
-                  <HStack justify="space-between" mb={4}>
-                    <VStack align="start" gap={1}>
-                      <Text
-                        fontSize="xl"
-                        fontWeight="medium"
-                        color="orange.500"
-                      >
-                        SCF (Stellar)
-                      </Text>
-                      <Text fontSize="sm" color="gray.600">
-                        Build Awards
-                      </Text>
-                    </VStack>
-                    <VStack align="end" gap={0}>
-                      <Text fontSize="2xl" fontWeight="light">
-                        {formatCurrency(data?.scf?.total_awarded || 0)}
-                      </Text>
-                      <Text fontSize="xs" color="gray.500">
-                        total awarded
-                      </Text>
-                    </VStack>
-                  </HStack>
-
-                  <SimpleGrid columns={3} gap={4}>
-                    <Box>
-                      <Text fontSize="xs" color="gray.500">
-                        Total Rounds
-                      </Text>
-                      <Text fontSize="lg" fontWeight="medium">
-                        {data?.scf?.total_rounds || 0}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text fontSize="xs" color="gray.500">
-                        Paid Out
-                      </Text>
-                      <Text fontSize="lg" fontWeight="medium">
-                        {formatCurrency(data?.scf?.total_paid || 0)}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text fontSize="xs" color="gray.500">
-                        Avg per Round
-                      </Text>
-                      <Text fontSize="lg" fontWeight="medium">
-                        {formatCurrency((data?.scf?.total_awarded || 0) / (data?.scf?.total_rounds || 1))}
-                      </Text>
-                    </Box>
-                  </SimpleGrid>
-                </Box>
               </VStack>
             </Box>
           </VStack>
