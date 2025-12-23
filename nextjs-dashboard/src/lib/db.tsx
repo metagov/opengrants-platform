@@ -5,9 +5,9 @@ const isLocalhost = connectionString?.includes("localhost");
 
 const config: PoolConfig = {
   connectionString,
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
-  max: 10,
+  connectionTimeoutMillis: 30000,
+  idleTimeoutMillis: 60000,
+  max: 5,
 };
 
 if (!isLocalhost && connectionString) {
