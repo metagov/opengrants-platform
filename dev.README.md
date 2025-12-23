@@ -39,3 +39,10 @@ df -h
 
 # 5. Check memory
 free -h
+
+### Production Stuff
+
+#### Connect to prod db.
+ ```psql "postgresql://doadmin:<instanceid>@<db_link>/defaultdb?sslmode=require" ```
+
+ 
