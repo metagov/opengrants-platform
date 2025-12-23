@@ -71,7 +71,13 @@ The platform uses a three-tier medallion architecture for progressive data refin
 
 ### Design Decisions
 - Light mode only (no dark mode support) with forcedTheme="light"
-- Burgundy (#800020) primary brand color for "OpenGrants" identity
+- Brand colors defined in `src/theme/colors.ts`:
+  - Burgundy (#800020) - Primary brand color, navigation bar, OpenGrants logo
+  - Olive (#8B9A46) - Secondary accent
+  - Teal (#006E7F) - Buttons, interactive elements
+  - Deep Purple (#2A0055) - Accent color
+  - Text on color (#EEEEEE) - Light text for dark backgrounds
+- Typography: Inter font family (weights: 300, 400, 500, 600, 700)
 - TypeScript for type safety with lenient `strict: false` configuration
 - CLI-generated Chakra UI provider components in `src/components/ui/`
 - API routes as database abstraction layer (prevents direct DB access from client)
