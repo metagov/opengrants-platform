@@ -67,9 +67,9 @@ export default function Ecosystem() {
     return `$${(value / 1000).toFixed(0)}K`;
   };
 
-  const totalFunding = (data?.platforms || []).reduce((sum, p) => sum + (p.total_funding_usd || 0), 0) + (data?.scf?.total_awarded || 0);
-  const totalProjects = (data?.platforms || []).reduce((sum, p) => sum + p.total_projects, 0);
-  const totalPools = (data?.platforms || []).reduce((sum, p) => sum + p.total_grant_pools, 0) + (data?.scf?.total_rounds || 0);
+  const totalFunding = (data?.platforms || []).reduce((sum, p) => sum + (parseFloat(String(p.total_funding_usd)) || 0), 0);
+  const totalProjects = (data?.platforms || []).reduce((sum, p) => sum + (parseInt(String(p.total_projects)) || 0), 0);
+  const totalPools = (data?.platforms || []).reduce((sum, p) => sum + (parseInt(String(p.total_grant_pools)) || 0), 0);
 
   const platformColors: { [key: string]: string } = {
     giveth: 'purple.500',
@@ -120,7 +120,7 @@ export default function Ecosystem() {
               </Text>
 
               <VStack gap={4} align="stretch">
-                {data?.platforms.map((platform) => (
+                {(data?.platforms || []).map((platform) => (
                   <Box
                     key={platform.platform}
                     p={6}
