@@ -1,6 +1,7 @@
 import { Box, HStack, Link as ChakraLink } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { brandColors } from '../theme/colors';
 
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
   const router = useRouter();
@@ -11,14 +12,15 @@ const NavLink = ({ href, children }: { href: string; children: React.ReactNode }
       <ChakraLink
         fontSize="sm"
         fontWeight={isActive ? 'semibold' : 'medium'}
-        color={isActive ? '#800020' : 'gray.600'}
+        color={brandColors.textOnColor}
         letterSpacing="wide"
         textTransform="uppercase"
+        opacity={isActive ? 1 : 0.85}
         _hover={{
-          color: '#600018',
+          opacity: 1,
           textDecoration: 'none',
         }}
-        transition="color 0.2s"
+        transition="opacity 0.2s"
       >
         {children}
       </ChakraLink>
@@ -33,9 +35,7 @@ export const Navigation = () => {
       position="sticky"
       top={0}
       zIndex={10}
-      bg="white"
-      borderBottomWidth="1px"
-      borderColor="gray.100"
+      bg={brandColors.burgundy}
       px={8}
       py={4}
     >
@@ -44,9 +44,10 @@ export const Navigation = () => {
           <Link href="/" passHref legacyBehavior>
             <ChakraLink
               fontSize="lg"
-              fontWeight="thin"
+              fontWeight="normal"
+              fontStyle="italic"
               letterSpacing="tight"
-              color="#800020"
+              color={brandColors.textOnColor}
               _hover={{ textDecoration: 'none' }}
             >
               OpenGrants
