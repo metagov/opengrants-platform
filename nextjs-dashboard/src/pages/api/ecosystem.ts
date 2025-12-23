@@ -22,7 +22,7 @@ export default async function handler(
         funding_share_pct
       FROM gold__ecosystem_overview
       ORDER BY total_funding_usd DESC NULLS LAST
-    `, []);
+    `);
 
     const crossPlatform = await query(`
       SELECT 
@@ -37,25 +37,31 @@ export default async function handler(
       WHERE platforms_present > 1
       ORDER BY total_funding_across_platforms DESC
       LIMIT 10
-    `, []);
+    `);
 
     const scfSummary = await query(`
       SELECT 
-        COUNT(*) as total_rounds,
-        SUM(total_awarded_usd) as total_awarded,
-        SUM(total_paid_usd) as total_paid,
-        AVG(total_awarded_usd) as avg_per_round
-      FROM gold_scf_rounds_parsed
-      WHERE total_awarded_usd > 0
-    `, []);
+        total_grant_pools as total_rounds,
+        total_funding_distributed_usd as total_awarded,
+        total_funding_distributed_usd as total_paid,
+        avg_funding_per_project as avg_per_round
+      FROM gold__scf_system_profile
+      LIMIT 1
+    `);
 
     res.status(200).json({
-      platforms: ecosystemData,
-      crossPlatform,
-      scf: scfSummary[0]
+      platforms: ecosystemData || [],
+      crossPlatform: crossPlatform || [],
+      scf: scfSummary?.[0] || null
     });
-  } catch (error) {
-    console.error('Database error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+  } catch (error: any) {
+    console.error('Database error:', error.message);
+    res.status(500).json({ 
+      message: 'Database connection failed',
+      error: error.message,
+      platforms: [],
+      crossPlatform: [],
+      scf: null
+    });
   }
 }

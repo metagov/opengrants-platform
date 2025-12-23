@@ -33,15 +33,12 @@ outputType = "webview"
 localPort = 5000
 externalPort = 80
 
-[[ports]]
-localPort = 33217
-externalPort = 3001
-
-[[ports]]
-localPort = 35717
-externalPort = 3000
-
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "-c", "cd nextjs-dashboard && npm run start"]
 build = ["bash", "-c", "cd nextjs-dashboard && npm install --legacy-peer-deps && npm run build"]
+
+[userenv]
+
+[userenv.shared]
+NODE_TLS_REJECT_UNAUTHORIZED = "0"
