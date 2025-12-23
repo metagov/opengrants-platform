@@ -6,19 +6,53 @@ import {
   Heading,
   Text,
   Button,
+  Spinner,
 } from "@chakra-ui/react";
 import { BarSegment, useChart } from "@chakra-ui/charts";
 import Link from "next/link";
+import useSWR from "swr";
 
-export default function Index() {
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+const platformColors: { [key: string]: string } = {
+  scf: "orange.solid",
+  giveth: "purple.solid",
+  privote: "blue.solid",
+};
+
+const platformDisplayNames: { [key: string]: string } = {
+  scf: "SCF",
+  giveth: "Giveth",
+  privote: "Privote",
+};
+
+function FundingChart({ platforms }: { platforms: any[] }) {
+  const chartData = platforms.map((p: any) => ({
+    name: platformDisplayNames[p.platform] || p.platform,
+    value: parseFloat(String(p.total_funding_usd)) || 0,
+    color: platformColors[p.platform] || "gray.solid",
+  }));
+
   const chart = useChart({
     sort: { by: "value", direction: "desc" },
-    data: [
-      { name: "SCF", value: 49864415.82, color: "orange.solid" },
-      { name: "Giveth", value: 9655304.52, color: "purple.solid" },
-      { name: "Privote", value: 123924.85, color: "blue.solid" },
-    ],
+    data: chartData,
   });
+
+  return (
+    <BarSegment.Root chart={chart}>
+      <BarSegment.Content>
+        <BarSegment.Value />
+        <BarSegment.Bar />
+        <BarSegment.Label />
+      </BarSegment.Content>
+    </BarSegment.Root>
+  );
+}
+
+export default function Index() {
+  const { data, isLoading } = useSWR("/api/ecosystem", fetcher);
+
+  const hasData = data?.platforms && data.platforms.length > 0;
 
   return (
     <Box
@@ -53,13 +87,13 @@ export default function Index() {
           <Text fontSize="sm" color="gray.600" textAlign="center" mb={4}>
             Total Funding Distribution
           </Text>
-          <BarSegment.Root chart={chart}>
-            <BarSegment.Content>
-              <BarSegment.Value />
-              <BarSegment.Bar />
-              <BarSegment.Label />
-            </BarSegment.Content>
-          </BarSegment.Root>
+          {isLoading || !hasData ? (
+            <Box display="flex" justifyContent="center" py={8}>
+              <Spinner size="lg" color="gray.500" />
+            </Box>
+          ) : (
+            <FundingChart platforms={data.platforms} />
+          )}
         </Box>
 
         <Link href="/ecosystem">
