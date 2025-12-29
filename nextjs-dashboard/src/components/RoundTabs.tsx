@@ -1,4 +1,5 @@
-import { Tabs, TabList, TabPanels, Tab, TabPanel, useColorModeValue } from '@chakra-ui/react';
+import { Tabs, Box } from '@chakra-ui/react';
+import { brandColors } from '../theme/colors';
 
 interface RoundTabsProps {
   tabs: Array<{
@@ -9,23 +10,23 @@ interface RoundTabsProps {
 }
 
 export const RoundTabs = ({ tabs, defaultIndex = 0 }: RoundTabsProps) => {
-  const selectedColor = useColorModeValue('purple.600', 'purple.300');
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const defaultValue = tabs[defaultIndex]?.label || tabs[0]?.label;
 
   return (
-    <Tabs defaultIndex={defaultIndex} variant="unstyled">
-      <TabList
+    <Tabs.Root defaultValue={defaultValue} variant="line">
+      <Tabs.List
         borderBottomWidth="1px"
-        borderColor={borderColor}
+        borderColor="gray.200"
         mb={8}
         gap={2}
       >
-        {tabs.map((tab, index) => (
-          <Tab
-            key={index}
+        {tabs.map((tab) => (
+          <Tabs.Trigger
+            key={tab.label}
+            value={tab.label}
             fontSize="sm"
             fontWeight="medium"
+            fontFamily="Inter"
             letterSpacing="wide"
             textTransform="uppercase"
             color="gray.500"
@@ -34,26 +35,24 @@ export const RoundTabs = ({ tabs, defaultIndex = 0 }: RoundTabsProps) => {
             borderBottomWidth="2px"
             borderColor="transparent"
             _selected={{
-              color: selectedColor,
-              borderColor: selectedColor,
+              color: brandColors.deepPurple,
+              borderColor: brandColors.deepPurple,
             }}
             _hover={{
-              color: selectedColor,
+              color: brandColors.deepPurple,
             }}
             transition="all 0.2s"
           >
             {tab.label}
-          </Tab>
+          </Tabs.Trigger>
         ))}
-      </TabList>
+      </Tabs.List>
 
-      <TabPanels>
-        {tabs.map((tab, index) => (
-          <TabPanel key={index} px={0}>
-            {tab.content}
-          </TabPanel>
-        ))}
-      </TabPanels>
-    </Tabs>
+      {tabs.map((tab) => (
+        <Tabs.Content key={tab.label} value={tab.label} px={0}>
+          {tab.content}
+        </Tabs.Content>
+      ))}
+    </Tabs.Root>
   );
 };
