@@ -8,6 +8,7 @@
   import { MetricCard } from "../../components/MetricCard";
   import { brandColors } from "../../theme/colors";
 
+<<<<<<< HEAD
   interface GivethData {
     profile?: {
       total_projects?: number;
