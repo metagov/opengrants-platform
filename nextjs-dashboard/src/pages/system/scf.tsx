@@ -5,20 +5,14 @@ import {
   SimpleGrid,
   VStack,
   Text,
-  useColorModeValue,
   Spinner,
   Center,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
 } from '@chakra-ui/react';
 import { Navigation } from '../../components/Navigation';
 import { SystemHeader } from '../../components/SystemHeader';
 import { MetricCard } from '../../components/MetricCard';
 import { RoundTabs } from '../../components/RoundTabs';
+import { brandColors } from '../../theme/colors';
 
 interface SCFData {
   summary: any;
@@ -29,7 +23,6 @@ interface SCFData {
 export default function SCFPage() {
   const [data, setData] = useState<SCFData | null>(null);
   const [loading, setLoading] = useState(true);
-  const bgColor = useColorModeValue('gray.50', 'gray.900');
 
   useEffect(() => {
     fetch('/api/systems/scf')
@@ -49,7 +42,7 @@ export default function SCFPage() {
       <>
         <Navigation />
         <Center h="80vh">
-          <Spinner size="xl" color="orange.500" />
+          <Spinner size="xl" color={brandColors.olive} />
         </Center>
       </>
     );
@@ -65,34 +58,34 @@ export default function SCFPage() {
   const infoContent = (
     <Box
       p={8}
-      bg={useColorModeValue('white', 'gray.800')}
+      bg="white"
       borderRadius="lg"
       borderWidth="1px"
-      borderColor={useColorModeValue('gray.100', 'gray.700')}
+      borderColor="gray.100"
     >
-      <VStack align="start" spacing={4}>
-        <Text fontSize="lg" fontWeight="medium">
+      <VStack align="start" gap={4}>
+        <Text fontSize="lg" fontWeight="medium" fontFamily="Inter">
           About Stellar Community Fund
         </Text>
-        <Text color={useColorModeValue('gray.600', 'gray.400')}>
+        <Text color="gray.600" fontFamily="Inter">
           The Stellar Community Fund (SCF) is a grant program designed to support projects building on the Stellar network.
           It provides funding for developers, entrepreneurs, and creators who want to build applications that improve
           financial access and inclusion.
         </Text>
-        <SimpleGrid columns={2} spacing={6} w="full" mt={4}>
+        <SimpleGrid columns={2} gap={6} w="full" mt={4}>
           <Box>
-            <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.500')} mb={1}>
+            <Text fontSize="sm" color="gray.500" mb={1} fontFamily="Inter">
               Primary Mechanism
             </Text>
-            <Text fontSize="lg" fontWeight="medium">
+            <Text fontSize="lg" fontWeight="medium" fontFamily="Inter">
               Build Awards
             </Text>
           </Box>
           <Box>
-            <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.500')} mb={1}>
+            <Text fontSize="sm" color="gray.500" mb={1} fontFamily="Inter">
               Total Rounds
             </Text>
-            <Text fontSize="lg" fontWeight="medium">
+            <Text fontSize="lg" fontWeight="medium" fontFamily="Inter">
               {data?.summary?.total_rounds || 35}
             </Text>
           </Box>
@@ -110,11 +103,11 @@ export default function SCFPage() {
       label: round.round_name,
       content: (
         <Box>
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
+          <SimpleGrid columns={{ base: 1, md: 3 }} gap={6} mb={8}>
             <MetricCard
               label="Total Awarded"
               value={formatCurrency(round.total_awarded_usd || 0)}
-              color="orange.600"
+              color={brandColors.olive}
             />
             <MetricCard
               label="Projects Funded"
@@ -126,41 +119,41 @@ export default function SCFPage() {
             />
           </SimpleGrid>
 
-          <VStack spacing={6} align="stretch">
+          <VStack gap={6} align="stretch">
             <Box
               p={6}
-              bg={useColorModeValue('white', 'gray.800')}
+              bg="white"
               borderRadius="lg"
               borderWidth="1px"
-              borderColor={useColorModeValue('gray.100', 'gray.700')}
+              borderColor="gray.100"
             >
-              <Text fontSize="sm" fontWeight="medium" mb={4}>
+              <Text fontSize="sm" fontWeight="medium" mb={4} fontFamily="Inter">
                 Round Details
               </Text>
-              <SimpleGrid columns={2} spacing={4}>
+              <SimpleGrid columns={2} gap={4}>
                 <Box>
-                  <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                  <Text fontSize="xs" color="gray.500" fontFamily="Inter">
                     Quarter
                   </Text>
-                  <Text>{round.quarter_year || 'N/A'}</Text>
+                  <Text fontFamily="Inter">{round.quarter_year || 'N/A'}</Text>
                 </Box>
                 <Box>
-                  <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                  <Text fontSize="xs" color="gray.500" fontFamily="Inter">
                     Phase
                   </Text>
-                  <Text>{round.phase || 'Completed'}</Text>
+                  <Text fontFamily="Inter">{round.phase || 'Completed'}</Text>
                 </Box>
                 <Box>
-                  <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                  <Text fontSize="xs" color="gray.500" fontFamily="Inter">
                     Total Paid
                   </Text>
-                  <Text>{formatCurrency(round.total_paid_usd || 0)}</Text>
+                  <Text fontFamily="Inter">{formatCurrency(round.total_paid_usd || 0)}</Text>
                 </Box>
                 <Box>
-                  <Text fontSize="xs" color={useColorModeValue('gray.500', 'gray.500')}>
+                  <Text fontSize="xs" color="gray.500" fontFamily="Inter">
                     Applications
                   </Text>
-                  <Text>{round.applied_submissions || 'N/A'}</Text>
+                  <Text fontFamily="Inter">{round.applied_submissions || 'N/A'}</Text>
                 </Box>
               </SimpleGrid>
             </Box>
@@ -173,19 +166,19 @@ export default function SCFPage() {
   return (
     <>
       <Navigation />
-      <Box minH="100vh" bg={bgColor}>
+      <Box minH="100vh" bg="gray.50">
         <Container maxW="7xl" py={12}>
           <SystemHeader
             title="Stellar Community Fund"
             description="Supporting innovation on the Stellar network through grants and funding"
-            color="orange.600"
+            color={brandColors.olive}
           />
 
-          <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6} mb={12}>
+          <SimpleGrid columns={{ base: 1, md: 4 }} gap={6} mb={12}>
             <MetricCard
               label="Total Awarded"
               value={formatCurrency(data?.summary?.total_awarded || 0)}
-              color="orange.600"
+              color={brandColors.olive}
             />
             <MetricCard
               label="Total Paid"

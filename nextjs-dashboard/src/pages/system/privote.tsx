@@ -6,21 +6,16 @@ import {
   VStack,
   HStack,
   Text,
-  useColorModeValue,
   Spinner,
   Center,
   Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
   Badge,
 } from '@chakra-ui/react';
 import { Navigation } from '../../components/Navigation';
 import { SystemHeader } from '../../components/SystemHeader';
 import { MetricCard } from '../../components/MetricCard';
 import { RoundTabs } from '../../components/RoundTabs';
+import { brandColors } from '../../theme/colors';
 
 interface PrivoteData {
   allocations: any[];
@@ -30,7 +25,6 @@ interface PrivoteData {
 export default function PrivotePage() {
   const [data, setData] = useState<PrivoteData | null>(null);
   const [loading, setLoading] = useState(true);
-  const bgColor = useColorModeValue('gray.50', 'gray.900');
 
   useEffect(() => {
     fetch('/api/systems/privote')
@@ -50,21 +44,22 @@ export default function PrivotePage() {
       <>
         <Navigation />
         <Center h="80vh">
-          <Spinner size="xl" color="teal.500" />
+          <Spinner size="xl" color={brandColors.teal} />
         </Center>
       </>
     );
   }
 
-  const formatCurrency = (value: number) => {
-    return `${value.toFixed(2)} ETH`;
+  const formatCurrency = (value: number | undefined | null) => {
+    const num = Number(value) || 0;
+    return `${num.toFixed(2)} ETH`;
   };
 
   const getMedalEmoji = (medal: string) => {
     const medals: { [key: string]: string } = {
-      'Gold': '🥇',
-      'Silver': '🥈',
-      'Bronze': '🥉'
+      'Gold': '1',
+      'Silver': '2',
+      'Bronze': '3'
     };
     return medals[medal] || '';
   };
@@ -72,33 +67,33 @@ export default function PrivotePage() {
   const infoContent = (
     <Box
       p={8}
-      bg={useColorModeValue('white', 'gray.800')}
+      bg="white"
       borderRadius="lg"
       borderWidth="1px"
-      borderColor={useColorModeValue('gray.100', 'gray.700')}
+      borderColor="gray.100"
     >
-      <VStack align="start" spacing={4}>
-        <Text fontSize="lg" fontWeight="medium">
+      <VStack align="start" gap={4}>
+        <Text fontSize="lg" fontWeight="medium" fontFamily="Inter">
           About Privote
         </Text>
-        <Text color={useColorModeValue('gray.600', 'gray.400')}>
+        <Text color="gray.600" fontFamily="Inter">
           Privote is a privacy-preserving quadratic funding platform that enables communities to democratically 
           allocate resources while maintaining voter privacy through zero-knowledge proofs.
         </Text>
-        <SimpleGrid columns={2} spacing={6} w="full" mt={4}>
+        <SimpleGrid columns={2} gap={6} w="full" mt={4}>
           <Box>
-            <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.500')} mb={1}>
+            <Text fontSize="sm" color="gray.500" mb={1} fontFamily="Inter">
               Primary Mechanism
             </Text>
-            <Text fontSize="lg" fontWeight="medium">
+            <Text fontSize="lg" fontWeight="medium" fontFamily="Inter">
               Private Quadratic Funding
             </Text>
           </Box>
           <Box>
-            <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.500')} mb={1}>
+            <Text fontSize="sm" color="gray.500" mb={1} fontFamily="Inter">
               Total Votes
             </Text>
-            <Text fontSize="lg" fontWeight="medium">
+            <Text fontSize="lg" fontWeight="medium" fontFamily="Inter">
               {data?.summary?.total_votes?.toLocaleString() || '0'}
             </Text>
           </Box>
@@ -109,11 +104,11 @@ export default function PrivotePage() {
 
   const roundContent = (
     <Box>
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
+      <SimpleGrid columns={{ base: 1, md: 3 }} gap={6} mb={8}>
         <MetricCard
           label="Total Allocated"
           value={formatCurrency(data?.summary?.total_allocated || 0)}
-          color="teal.600"
+          color={brandColors.teal}
         />
         <MetricCard
           label="Projects Funded"
@@ -126,53 +121,53 @@ export default function PrivotePage() {
       </SimpleGrid>
 
       <Box
-        bg={useColorModeValue('white', 'gray.800')}
+        bg="white"
         borderRadius="lg"
         borderWidth="1px"
-        borderColor={useColorModeValue('gray.100', 'gray.700')}
+        borderColor="gray.100"
         overflow="hidden"
       >
-        <Box p={6} borderBottomWidth="1px" borderColor={useColorModeValue('gray.100', 'gray.700')}>
-          <Text fontSize="sm" fontWeight="medium">
+        <Box p={6} borderBottomWidth="1px" borderColor="gray.100">
+          <Text fontSize="sm" fontWeight="medium" fontFamily="Inter">
             Top Funded Projects
           </Text>
         </Box>
         <Box overflowX="auto">
-          <Table variant="simple" size="sm">
-            <Thead>
-              <Tr>
-                <Th>Rank</Th>
-                <Th>Project</Th>
-                <Th isNumeric>Allocation</Th>
-                <Th isNumeric>Votes</Th>
-                <Th>Token</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
+          <Table.Root size="sm">
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeader fontFamily="Inter">Rank</Table.ColumnHeader>
+                <Table.ColumnHeader fontFamily="Inter">Project</Table.ColumnHeader>
+                <Table.ColumnHeader textAlign="end" fontFamily="Inter">Allocation</Table.ColumnHeader>
+                <Table.ColumnHeader textAlign="end" fontFamily="Inter">Votes</Table.ColumnHeader>
+                <Table.ColumnHeader fontFamily="Inter">Token</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {(data?.allocations || []).slice(0, 20).map((project: any) => (
-                <Tr key={project.rank}>
-                  <Td>
-                    <HStack spacing={2}>
-                      <Text fontWeight="bold">#{project.rank}</Text>
+                <Table.Row key={project.rank}>
+                  <Table.Cell>
+                    <HStack gap={2}>
+                      <Text fontWeight="bold" fontFamily="Inter">#{project.rank}</Text>
                       {project.medal && (
-                        <Text>{getMedalEmoji(project.medal)}</Text>
+                        <Text fontFamily="Inter">{getMedalEmoji(project.medal)}</Text>
                       )}
                     </HStack>
-                  </Td>
-                  <Td fontWeight="medium">{project.project_name}</Td>
-                  <Td isNumeric fontWeight="medium">
-                    {project.allocation_eth.toFixed(4)} ETH
-                  </Td>
-                  <Td isNumeric>{project.votes.toLocaleString()}</Td>
-                  <Td>
-                    <Badge colorScheme="teal" variant="subtle">
+                  </Table.Cell>
+                  <Table.Cell fontWeight="medium" fontFamily="Inter">{project.project_name}</Table.Cell>
+                  <Table.Cell textAlign="end" fontWeight="medium" fontFamily="Inter">
+                    {(Number(project.allocation_eth) || 0).toFixed(4)} ETH
+                  </Table.Cell>
+                  <Table.Cell textAlign="end" fontFamily="Inter">{(Number(project.votes) || 0).toLocaleString()}</Table.Cell>
+                  <Table.Cell>
+                    <Badge colorPalette="teal" variant="subtle" fontFamily="Inter">
                       {project.token}
                     </Badge>
-                  </Td>
-                </Tr>
+                  </Table.Cell>
+                </Table.Row>
               ))}
-            </Tbody>
-          </Table>
+            </Table.Body>
+          </Table.Root>
         </Box>
       </Box>
     </Box>
@@ -192,19 +187,19 @@ export default function PrivotePage() {
   return (
     <>
       <Navigation />
-      <Box minH="100vh" bg={bgColor}>
+      <Box minH="100vh" bg="gray.50">
         <Container maxW="7xl" py={12}>
           <SystemHeader
             title="Privote"
             description="Privacy-preserving quadratic funding with zero-knowledge proofs"
-            color="teal.600"
+            color={brandColors.teal}
           />
 
-          <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6} mb={12}>
+          <SimpleGrid columns={{ base: 1, md: 4 }} gap={6} mb={12}>
             <MetricCard
               label="Total Allocated"
               value={formatCurrency(data?.summary?.total_allocated || 0)}
-              color="teal.600"
+              color={brandColors.teal}
             />
             <MetricCard
               label="Total Projects"
