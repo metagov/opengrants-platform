@@ -9,6 +9,16 @@ import {
   Spinner,
   Center,
 } from '@chakra-ui/react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 import { Navigation } from '../components/Navigation';
 import { SystemHeader } from '../components/SystemHeader';
 import { MetricCard } from '../components/MetricCard';
@@ -78,12 +88,18 @@ export default function Ecosystem() {
   };
 
   const platformDisplayNames: { [key: string]: string } = {
-    scf: 'SCF (Stellar Community Fund)',
+    scf: 'Stellar Community Fund',
     giveth: 'Giveth',
-    privote: 'Privote (GG24 Privacy Round)',
+    privote: 'Privote',
   };
 
   const getPlatformName = (key: string) => platformDisplayNames[key] || key;
+
+  const chartData = (data?.platforms || []).map((platform) => ({
+    name: getPlatformName(platform.platform),
+    funding: parseFloat(String(platform.total_funding_usd)) || 0,
+    applications: parseInt(String(platform.total_applications)) || 0,
+  }));
 
   return (
     <>
@@ -113,6 +129,95 @@ export default function Ecosystem() {
               subtitle="Active and completed"
             />
           </SimpleGrid>
+
+          <Box mb={12} p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+            <HStack gap={2} mb={2}>
+              <Text fontSize="xl" fontWeight="medium" color="gray.800">
+                System Funding Comparison
+              </Text>
+            </HStack>
+            <Text fontSize="sm" color="gray.600" mb={6}>
+              Total funding and application metrics across grant systems
+            </Text>
+
+            <Box h="400px">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 20, right: 60, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fill: '#4A5568', fontSize: 12 }}
+                    angle={-25}
+                    textAnchor="end"
+                    height={80}
+                    interval={0}
+                  />
+                  <YAxis 
+                    yAxisId="left"
+                    tick={{ fill: '#4A5568', fontSize: 12 }}
+                    tickFormatter={(value) => {
+                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+                      return `$${value}`;
+                    }}
+                    label={{ 
+                      value: 'Total Funding', 
+                      angle: -90, 
+                      position: 'insideLeft',
+                      style: { textAnchor: 'middle', fill: '#4A5568', fontSize: 12 }
+                    }}
+                  />
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fill: '#4A5568', fontSize: 12 }}
+                    label={{ 
+                      value: 'Applications', 
+                      angle: 90, 
+                      position: 'insideRight',
+                      style: { textAnchor: 'middle', fill: '#4A5568', fontSize: 12 }
+                    }}
+                  />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => {
+                      if (name === 'Total Funding') {
+                        return [formatCurrency(value), name];
+                      }
+                      return [value.toLocaleString(), name];
+                    }}
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #E2E8F0',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ paddingTop: '20px' }}
+                  />
+                  <Bar 
+                    yAxisId="left"
+                    dataKey="funding" 
+                    name="Total Funding"
+                    fill="#800020" 
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={60}
+                  />
+                  <Bar 
+                    yAxisId="right"
+                    dataKey="applications" 
+                    name="Applications"
+                    fill="#006E7F" 
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={60}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
+          </Box>
 
           <VStack gap={8} align="stretch">
             <Box>
