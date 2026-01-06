@@ -9,7 +9,6 @@ import {
   Spinner,
   Center,
   Tabs,
-  Link,
   Badge,
 } from '@chakra-ui/react';
 import {
@@ -30,6 +29,7 @@ import {
 import { Navigation } from '../../components/Navigation';
 import { SystemHeader } from '../../components/SystemHeader';
 import { MetricCard } from '../../components/MetricCard';
+import { ProgramProfile } from '../../components/ProgramProfile';
 import { brandColors } from '../../theme/colors';
 
 interface SCFData {
@@ -258,60 +258,20 @@ export default function SCFPage() {
 
             <Tabs.Content value="overview">
               <VStack gap={8} align="stretch">
-                <Box p={8} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <VStack align="start" gap={4}>
-                    <Text fontSize="xl" fontWeight="semibold" color={brandColors.olive}>
-                      About Stellar Community Fund
-                    </Text>
-                    <Text color="gray.600" lineHeight="tall">
-                      The Stellar Community Fund (SCF) is a grant program designed to support projects building on the Stellar network.
-                      It provides funding for developers, entrepreneurs, and creators who want to build applications that improve
-                      financial access and inclusion. The program operates through Build Award Rounds that evaluate and fund innovative
-                      projects across multiple categories.
-                    </Text>
-                    
-                    <SimpleGrid columns={{ base: 1, md: 2 }} gap={8} w="full" mt={4}>
-                      <Box>
-                        <Text fontSize="sm" fontWeight="medium" color="gray.500" mb={2}>
-                          Program Description
-                        </Text>
-                        <Text color="gray.600" fontSize="sm" lineHeight="tall">
-                          SCF funds projects through a structured evaluation process with community voting. 
-                          Awards are distributed in tranches tied to milestone completion, ensuring accountability 
-                          and project progress. The fund supports various categories including developer tooling, 
-                          infrastructure, applications, and education.
-                        </Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="sm" fontWeight="medium" color="gray.500" mb={2}>
-                          Funding Mechanism
-                        </Text>
-                        <Text color="gray.600" fontSize="sm" lineHeight="tall">
-                          Projects receive funding in multiple tranches based on deliverable completion. 
-                          Typical structure includes pre-launch, testnet, and mainnet phases. Community 
-                          members vote on project proposals during award rounds.
-                        </Text>
-                      </Box>
-                    </SimpleGrid>
-
-                    <Box w="full" mt={4} pt={4} borderTopWidth="1px" borderColor="gray.100">
-                      <Text fontSize="sm" fontWeight="medium" color="gray.500" mb={3}>
-                        Links & Resources
-                      </Text>
-                      <HStack gap={4} flexWrap="wrap">
-                        <Link href="https://communityfund.stellar.org" color={brandColors.teal} fontSize="sm" fontWeight="medium">
-                          Official Website
-                        </Link>
-                        <Link href="https://stellar.org" color={brandColors.teal} fontSize="sm" fontWeight="medium">
-                          Stellar Foundation
-                        </Link>
-                        <Link href="https://discord.gg/stellardev" color={brandColors.teal} fontSize="sm" fontWeight="medium">
-                          Developer Discord
-                        </Link>
-                      </HStack>
-                    </Box>
-                  </VStack>
-                </Box>
+                <ProgramProfile
+                  name="Stellar Community Fund"
+                  description="The Stellar Community Fund (SCF) is a grant program designed to support projects building on the Stellar network. It provides funding for developers, entrepreneurs, and creators who want to build applications that improve financial access and inclusion. The program operates through Build Award Rounds that evaluate and fund innovative projects across multiple categories."
+                  programDescription="SCF funds projects through a structured evaluation process with community voting. Awards are distributed in tranches tied to milestone completion, ensuring accountability and project progress. The fund supports various categories including developer tooling, infrastructure, applications, and education."
+                  primaryMechanism="Build Awards"
+                  fundingMechanismDescription="Projects receive funding in multiple tranches based on deliverable completion. Typical structure includes pre-launch, testnet, and mainnet phases. Community members vote on project proposals during award rounds."
+                  links={[
+                    { label: 'Official Website', url: 'https://communityfund.stellar.org' },
+                    { label: 'Stellar Foundation', url: 'https://stellar.org' },
+                    { label: 'Developer Discord', url: 'https://discord.gg/stellardev' },
+                  ]}
+                  tags={['Web3', 'Stellar Network', 'Grants']}
+                  color={brandColors.olive}
+                />
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
                   <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
