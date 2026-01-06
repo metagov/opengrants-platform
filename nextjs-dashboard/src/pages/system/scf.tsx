@@ -158,7 +158,7 @@ export default function SCFPage() {
     .map(q => ({
       quarter: q.quarter_year,
       projects: Number(q.awarded_submissions) || 0,
-      funding: Number(q.total_awarded_usd) || 0,
+      funding: Number(q.total_paid_usd) || 0,
     }));
 
   const categoryChartData = (data?.categoryData || []).map(c => ({
@@ -168,13 +168,17 @@ export default function SCFPage() {
   }));
 
   const roundsChartData = (data?.rounds || [])
-    .slice(0, 12)
+    .slice(0, 15)
     .reverse()
-    .map(r => ({
-      name: r.round_name?.replace('SCF ', '').replace('Build Award Round ', 'BAR ') || '',
-      awarded: Number(r.awarded_submissions) || 0,
-      applied: Number(r.applied_submissions) || 0,
-    }));
+    .map(r => {
+      const roundNum = r.round_name?.match(/#(\d+)/)?.[1] || '';
+      return {
+        name: `#${roundNum}`,
+        fullName: r.round_name || '',
+        awarded: Number(r.awarded_submissions) || 0,
+        applied: Number(r.applied_submissions) || 0,
+      };
+    });
 
   const completionRate = data?.trancheMetrics?.total_paid_usd && data?.trancheMetrics?.total_awarded_usd
     ? ((data.trancheMetrics.total_paid_usd / data.trancheMetrics.total_awarded_usd) * 100).toFixed(1)
@@ -384,24 +388,24 @@ export default function SCFPage() {
                 </Box>
 
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={4}>Awarded Submissions by Round</Text>
+                  <Text fontSize="md" fontWeight="semibold" mb={4}>Awarded Submissions by Round (Last 15 Rounds)</Text>
                   <Box h="350px" minH="350px">
                     <ResponsiveContainer width="100%" height={350}>
-                      <BarChart data={roundsChartData} layout="vertical">
+                      <BarChart data={roundsChartData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis type="number" tick={{ fill: '#4A5568', fontSize: 11 }} />
-                        <YAxis 
-                          type="category" 
+                        <XAxis 
                           dataKey="name" 
-                          tick={{ fill: '#4A5568', fontSize: 10 }}
-                          width={100}
+                          tick={{ fill: '#4A5568', fontSize: 12, fontWeight: 500 }}
+                          interval={0}
                         />
+                        <YAxis tick={{ fill: '#4A5568', fontSize: 11 }} />
                         <Tooltip 
                           contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                          labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
                         />
                         <Legend />
-                        <Bar dataKey="awarded" name="Awarded" fill={brandColors.olive} radius={[0, 4, 4, 0]} />
-                        <Bar dataKey="applied" name="Applied" fill={brandColors.teal} radius={[0, 4, 4, 0]} />
+                        <Bar dataKey="awarded" name="Awarded" fill={brandColors.olive} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="applied" name="Applied" fill={brandColors.teal} radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </Box>
@@ -427,12 +431,12 @@ export default function SCFPage() {
                     <Text fontSize="md" fontWeight="semibold" mb={4}>Top Funded Projects</Text>
                     <VStack align="stretch" gap={2}>
                       {(data?.topProjects || []).slice(0, 5).map((project, idx) => (
-                        <HStack key={idx} justify="space-between" py={2} borderBottomWidth={idx < 4 ? "1px" : "0"} borderColor="gray.100">
-                          <VStack align="start" gap={0}>
+                        <HStack key={idx} justify="space-between" py={2} borderBottomWidth={idx < 4 ? "1px" : "0"} borderColor="gray.100" gap={4}>
+                          <Box flex="1" minW="0" overflow="hidden">
                             <Text fontSize="sm" fontWeight="medium" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{project.project_name}</Text>
                             <Text fontSize="xs" color="gray.500">{project.category}</Text>
-                          </VStack>
-                          <Text fontSize="sm" fontWeight="semibold" color={brandColors.olive}>
+                          </Box>
+                          <Text fontSize="sm" fontWeight="semibold" color={brandColors.olive} flexShrink={0}>
                             {formatCurrency(project.total_awarded_usd)}
                           </Text>
                         </HStack>
