@@ -10,7 +10,25 @@ export default async function handler(
   }
 
   try {
-    // Quarterly breakdown from silver_scf_grant_pools
+    // Platform metadata
+    const metadata = await query(`
+      SELECT platform, last_indexed_at, data_source, notes
+      FROM platform_metadata
+      WHERE platform = 'scf'
+    `, []);
+
+    // Summary stats from gold table (consistent with ecosystem page)
+    const summary = await query(`
+      SELECT 
+        total_grant_pools as total_rounds,
+        total_funding_distributed_usd as total_awarded,
+        total_funding_distributed_usd as total_paid,
+        total_applications as total_projects_funded
+      FROM gold__scf_system_profile
+      LIMIT 1
+    `, []);
+
+    // Quarterly breakdown - include rounds with payments OR projects
     const quarterlyData = await query(`
       SELECT 
         "org.stellar.communityfund.quarterYear" as quarter_year,
@@ -20,7 +38,8 @@ export default async function handler(
         SUM("org.stellar.communityfund.totalPaidUSD") as total_paid_usd,
         COUNT(*) as round_count
       FROM silver_scf_grant_pools
-      WHERE "org.stellar.communityfund.totalAwardedUSD" > 0
+      WHERE "org.stellar.communityfund.totalPaidUSD" > 0 
+         OR "org.stellar.communityfund.awardedSubmissions" > 0
       GROUP BY "org.stellar.communityfund.quarterYear", "org.stellar.communityfund.year"
       ORDER BY "org.stellar.communityfund.year" DESC, "org.stellar.communityfund.quarterYear" DESC
     `, []);
@@ -38,9 +57,10 @@ export default async function handler(
       ORDER BY total_awarded_usd DESC
     `, []);
 
-    // Awarded submissions by round
+    // All active rounds (with payments OR projects) - no limit for lazy loading
     const roundsBreakdown = await query(`
       SELECT 
+        id as round_id,
         name as round_name,
         "org.stellar.communityfund.quarterYear" as quarter_year,
         "org.stellar.communityfund.phase" as phase,
@@ -50,10 +70,13 @@ export default async function handler(
         "org.stellar.communityfund.totalAwardedUSD" as total_awarded_usd,
         "org.stellar.communityfund.totalPaidUSD" as total_paid_usd,
         "org.stellar.communityfund.averageAwardedUSD" as avg_awarded_usd,
-        "org.stellar.communityfund.votersNumber" as voters_count
+        "org.stellar.communityfund.votersNumber" as voters_count,
+        "org.stellar.communityfund.year" as year
       FROM silver_scf_grant_pools
-      WHERE "org.stellar.communityfund.totalAwardedUSD" > 0
-      ORDER BY "org.stellar.communityfund.year" DESC, name DESC
+      WHERE "org.stellar.communityfund.totalPaidUSD" > 0 
+         OR "org.stellar.communityfund.awardedSubmissions" > 0
+      ORDER BY "org.stellar.communityfund.year" DESC, 
+               CAST(REGEXP_REPLACE(name, '[^0-9]', '', 'g') AS INTEGER) DESC
     `, []);
 
     // Tranche/milestone metrics from silver_scf_grant_applications
@@ -67,7 +90,7 @@ export default async function handler(
         SUM("io.scf.totalAwardedUSD") as total_awarded_usd,
         SUM("io.scf.totalPaidUSD") as total_paid_usd
       FROM silver_scf_grant_applications
-      WHERE "io.scf.totalAwardedUSD" > 0
+      WHERE "io.scf.totalPaidUSD" > 0 OR "io.scf.totalAwardedUSD" > 0
     `, []);
 
     // Tranche completion by status
@@ -83,18 +106,7 @@ export default async function handler(
       ORDER BY count DESC
     `, []);
 
-    // Summary stats
-    const summary = await query(`
-      SELECT 
-        COUNT(*) as total_rounds,
-        SUM("org.stellar.communityfund.totalAwardedUSD") as total_awarded,
-        SUM("org.stellar.communityfund.totalPaidUSD") as total_paid,
-        SUM("org.stellar.communityfund.awardedSubmissions") as total_projects_funded
-      FROM silver_scf_grant_pools
-      WHERE "org.stellar.communityfund.totalAwardedUSD" > 0
-    `, []);
-
-    // Top projects
+    // Top projects by paid amount
     const topProjects = await query(`
       SELECT 
         name as project_name,
@@ -105,12 +117,13 @@ export default async function handler(
         "io.scf.awardType" as award_type,
         "io.scf.trancheCompletionPercent" as tranche_completion
       FROM silver_scf_grant_applications
-      WHERE "io.scf.totalAwardedUSD" > 0
-      ORDER BY "io.scf.totalAwardedUSD" DESC
+      WHERE "io.scf.totalPaidUSD" > 0 OR "io.scf.totalAwardedUSD" > 0
+      ORDER BY "io.scf.totalPaidUSD" DESC
       LIMIT 10
     `, []);
 
     res.status(200).json({
+      metadata: metadata[0] || null,
       summary: summary[0] || {},
       quarterlyData,
       categoryData,
