@@ -144,7 +144,7 @@ export default function Ecosystem() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={chartData}
-                  margin={{ top: 20, right: 60, left: 20, bottom: 60 }}
+                  margin={{ top: 20, right: 60, left: 60, bottom: 60 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                   <XAxis 
@@ -167,6 +167,7 @@ export default function Ecosystem() {
                       value: 'Total Funding', 
                       angle: -90, 
                       position: 'insideLeft',
+                      offset: -40,
                       style: { textAnchor: 'middle', fill: '#4A5568', fontSize: 12 }
                     }}
                   />
@@ -178,6 +179,7 @@ export default function Ecosystem() {
                       value: 'Applications', 
                       angle: 90, 
                       position: 'insideRight',
+                      offset: 40,
                       style: { textAnchor: 'middle', fill: '#4A5568', fontSize: 12 }
                     }}
                   />
