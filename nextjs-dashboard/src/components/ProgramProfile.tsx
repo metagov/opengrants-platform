@@ -17,6 +17,21 @@ export interface ProgramProfileProps {
   links?: ProgramLink[];
   tags?: string[];
   color?: string;
+  lastIndexedAt?: string;
+  dataSource?: string;
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  } catch {
+    return dateStr;
+  }
 }
 
 export function ProgramProfile({
@@ -30,6 +45,8 @@ export function ProgramProfile({
   links = [],
   tags = [],
   color = brandColors.teal,
+  lastIndexedAt,
+  dataSource,
 }: ProgramProfileProps) {
   return (
     <Box p={8} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
@@ -38,15 +55,18 @@ export function ProgramProfile({
           <Text fontSize="xl" fontWeight="semibold" color={color}>
             About {name}
           </Text>
-          {tags.length > 0 && (
-            <HStack gap={2}>
-              {tags.map((tag, idx) => (
-                <Badge key={idx} colorPalette="gray" px={2} py={1}>
-                  {tag}
-                </Badge>
-              ))}
-            </HStack>
-          )}
+          <HStack gap={2} flexWrap="wrap">
+            {lastIndexedAt && (
+              <Badge colorPalette="blue" px={2} py={1} fontSize="xs">
+                Data indexed: {formatDate(lastIndexedAt)}
+              </Badge>
+            )}
+            {tags.map((tag, idx) => (
+              <Badge key={idx} colorPalette="gray" px={2} py={1}>
+                {tag}
+              </Badge>
+            ))}
+          </HStack>
         </HStack>
         
         <Text color="gray.600" lineHeight="tall">
@@ -65,7 +85,7 @@ export function ProgramProfile({
             </Box>
           )}
           
-          {(fundingMechanism || fundingMechanismDescription) && (
+          {(fundingMechanism || fundingMechanismDescription || primaryMechanism) && (
             <Box>
               <Text fontSize="sm" fontWeight="medium" color="gray.500" mb={2}>
                 Funding Mechanism
@@ -110,6 +130,12 @@ export function ProgramProfile({
               ))}
             </HStack>
           </Box>
+        )}
+
+        {dataSource && (
+          <Text fontSize="xs" color="gray.400" mt={2}>
+            Source: {dataSource}
+          </Text>
         )}
       </VStack>
     </Box>

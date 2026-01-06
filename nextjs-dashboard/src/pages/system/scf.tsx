@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Box,
   Container,
@@ -10,6 +11,7 @@ import {
   Center,
   Tabs,
   Badge,
+  Button,
 } from '@chakra-ui/react';
 import {
   BarChart,
@@ -33,6 +35,12 @@ import { ProgramProfile } from '../../components/ProgramProfile';
 import { brandColors } from '../../theme/colors';
 
 interface SCFData {
+  metadata: {
+    platform: string;
+    last_indexed_at: string;
+    data_source: string;
+    notes: string;
+  } | null;
   summary: {
     total_rounds: number;
     total_awarded: number;
@@ -54,6 +62,7 @@ interface SCFData {
     total_paid_usd: number;
   }>;
   rounds: Array<{
+    round_id: string;
     round_name: string;
     quarter_year: string;
     phase: string;
@@ -64,6 +73,7 @@ interface SCFData {
     total_paid_usd: number;
     avg_awarded_usd: number;
     voters_count: number;
+    year: number;
   }>;
   trancheMetrics: {
     total_applications: number;
@@ -102,6 +112,11 @@ const CATEGORY_COLORS = [
 export default function SCFPage() {
   const [data, setData] = useState<SCFData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [visibleRounds, setVisibleRounds] = useState(10);
+
+  const loadMoreRounds = () => {
+    setVisibleRounds(prev => prev + 10);
+  };
 
   useEffect(() => {
     fetch('/api/systems/scf')
@@ -271,6 +286,8 @@ export default function SCFPage() {
                   ]}
                   tags={['Web3', 'Stellar Network', 'Grants']}
                   color={brandColors.olive}
+                  lastIndexedAt={data?.metadata?.last_indexed_at}
+                  dataSource={data?.metadata?.data_source}
                 />
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
@@ -501,40 +518,75 @@ export default function SCFPage() {
 
             <Tabs.Content value="rounds">
               <VStack gap={6} align="stretch">
-                {(data?.rounds || []).slice(0, 15).map((round, idx) => (
-                  <Box key={idx} p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <HStack justify="space-between" mb={4}>
-                      <VStack align="start" gap={1}>
-                        <Text fontSize="lg" fontWeight="semibold">{round.round_name}</Text>
-                        <HStack gap={2}>
-                          <Badge colorPalette="blue">{round.quarter_year}</Badge>
-                          <Badge colorPalette="gray">{round.round_type}</Badge>
+                <HStack justify="space-between" mb={2}>
+                  <Text fontSize="sm" color="gray.500">
+                    Showing {Math.min(visibleRounds, data?.rounds?.length || 0)} of {data?.rounds?.length || 0} rounds
+                  </Text>
+                </HStack>
+                
+                {(data?.rounds || []).slice(0, visibleRounds).map((round, idx) => {
+                  const roundNum = round.round_name?.match(/#(\d+)/)?.[1];
+                  return (
+                    <Link key={idx} href={roundNum ? `/system/scf/${roundNum}` : '#'} style={{ textDecoration: 'none' }}>
+                      <Box 
+                        p={6} 
+                        bg="white" 
+                        borderRadius="lg" 
+                        borderWidth="1px" 
+                        borderColor="gray.100"
+                        _hover={{ borderColor: 'gray.300', shadow: 'sm', cursor: 'pointer' }}
+                        transition="all 0.2s"
+                      >
+                        <HStack justify="space-between" mb={4}>
+                          <VStack align="start" gap={1}>
+                            <HStack gap={2}>
+                              <Text fontSize="lg" fontWeight="semibold">{round.round_name}</Text>
+                              <Text fontSize="sm" color={brandColors.teal}>→</Text>
+                            </HStack>
+                            <HStack gap={2}>
+                              <Badge colorPalette="blue">{round.quarter_year}</Badge>
+                              <Badge colorPalette="gray">{round.round_type}</Badge>
+                            </HStack>
+                          </VStack>
+                          <Text fontSize="2xl" fontWeight="bold" color={brandColors.olive}>
+                            {formatCurrency(round.total_paid_usd || round.total_awarded_usd)}
+                          </Text>
                         </HStack>
-                      </VStack>
-                      <Text fontSize="2xl" fontWeight="bold" color={brandColors.olive}>
-                        {formatCurrency(round.total_awarded_usd)}
-                      </Text>
-                    </HStack>
-                    <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
-                      <VStack align="start" gap={0}>
-                        <Text fontSize="xs" color="gray.500">Awarded</Text>
-                        <Text fontSize="md" fontWeight="medium">{round.awarded_submissions} projects</Text>
-                      </VStack>
-                      <VStack align="start" gap={0}>
-                        <Text fontSize="xs" color="gray.500">Applied</Text>
-                        <Text fontSize="md" fontWeight="medium">{round.applied_submissions || 'N/A'}</Text>
-                      </VStack>
-                      <VStack align="start" gap={0}>
-                        <Text fontSize="xs" color="gray.500">Avg Award</Text>
-                        <Text fontSize="md" fontWeight="medium">{formatCurrency(round.avg_awarded_usd)}</Text>
-                      </VStack>
-                      <VStack align="start" gap={0}>
-                        <Text fontSize="xs" color="gray.500">Paid Out</Text>
-                        <Text fontSize="md" fontWeight="medium">{formatCurrency(round.total_paid_usd)}</Text>
-                      </VStack>
-                    </SimpleGrid>
-                  </Box>
-                ))}
+                        <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
+                          <VStack align="start" gap={0}>
+                            <Text fontSize="xs" color="gray.500">Projects</Text>
+                            <Text fontSize="md" fontWeight="medium">{round.awarded_submissions}</Text>
+                          </VStack>
+                          <VStack align="start" gap={0}>
+                            <Text fontSize="xs" color="gray.500">Applied</Text>
+                            <Text fontSize="md" fontWeight="medium">{round.applied_submissions || 'N/A'}</Text>
+                          </VStack>
+                          <VStack align="start" gap={0}>
+                            <Text fontSize="xs" color="gray.500">Avg Award</Text>
+                            <Text fontSize="md" fontWeight="medium">{formatCurrency(round.avg_awarded_usd)}</Text>
+                          </VStack>
+                          <VStack align="start" gap={0}>
+                            <Text fontSize="xs" color="gray.500">Paid Out</Text>
+                            <Text fontSize="md" fontWeight="medium">{formatCurrency(round.total_paid_usd)}</Text>
+                          </VStack>
+                        </SimpleGrid>
+                      </Box>
+                    </Link>
+                  );
+                })}
+
+                {visibleRounds < (data?.rounds?.length || 0) && (
+                  <Center>
+                    <Button 
+                      onClick={loadMoreRounds}
+                      variant="outline"
+                      colorPalette="gray"
+                      size="lg"
+                    >
+                      Load More Rounds ({(data?.rounds?.length || 0) - visibleRounds} remaining)
+                    </Button>
+                  </Center>
+                )}
               </VStack>
             </Tabs.Content>
           </Tabs.Root>
