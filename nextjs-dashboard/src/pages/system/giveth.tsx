@@ -9,10 +9,9 @@ import {
   Tabs,
   Container,
   SimpleGrid,
-  useColorModeValue,
 } from "@chakra-ui/react";
 import { MarkdownRenderer } from "@/lib/markdown";
-import { getGivethAnalytics } from "@/lib/analytics";
+import { getGivethAnalytics } from "../../lib/analytics";
 import { Navigation } from "../../components/Navigation";
 import { SystemHeader } from "../../components/SystemHeader";
 import { MetricCard } from "../../components/MetricCard";
@@ -41,7 +40,6 @@ interface GivethData {
 export default function GivethPage() {
   const [data, setData] = useState<GivethData | null>(null);
   const [loading, setLoading] = useState(true);
-  const bgColor = useColorModeValue("gray.50", "gray.900");
 
   useEffect(() => {
     fetch("/api/systems/giveth")
@@ -62,12 +60,7 @@ export default function GivethPage() {
         <Navigation />
         <Box textAlign="center" py={20}>
           <Spinner size="xl" color={brandColors.burgundy} />
-          <Text
-            mt={4}
-            fontSize="lg"
-            color={brandColors.deepPurple}
-            fontFamily="Inter"
-          >
+          <Text mt={4} fontSize="lg" color={brandColors.deepPurple}>
             Loading Giveth analytics...
           </Text>
         </Box>
@@ -85,49 +78,36 @@ export default function GivethPage() {
   const infoContent = (
     <Box
       p={8}
-      bg={useColorModeValue("white", "gray.800")}
+      bg="white"
       borderRadius="lg"
       borderWidth="1px"
-      borderColor={useColorModeValue("gray.100", "gray.700")}
+      borderColor="gray.100"
     >
-      <VStack align="start" spacing={4}>
-        <Text fontSize="lg" fontWeight="medium" fontFamily="Inter">
+      <VStack align="start" gap={4}>
+        <Text fontSize="lg" fontWeight="medium">
           About Giveth
         </Text>
-        <Text
-          color={useColorModeValue("gray.600", "gray.400")}
-          fontFamily="Inter"
-        >
+        <Text color="gray.600">
           Giveth is a community-driven platform that connects donors with
           impactful projects. Through blockchain technology, Giveth ensures
           transparent and efficient fund distribution while rewarding donors
           with GIV tokens.
         </Text>
-        <SimpleGrid columns={2} spacing={6} w="full" mt={4}>
+        <SimpleGrid columns={2} gap={6} w="full" mt={4}>
           <Box>
-            <Text
-              fontSize="sm"
-              color={useColorModeValue("gray.500", "gray.500")}
-              mb={1}
-              fontFamily="Inter"
-            >
+            <Text fontSize="sm" color="gray.500" mb={1}>
               Primary Mechanism
             </Text>
-            <Text fontSize="lg" fontWeight="medium" fontFamily="Inter">
+            <Text fontSize="lg" fontWeight="medium">
               Quadratic Funding
             </Text>
           </Box>
           <Box>
-            <Text
-              fontSize="sm"
-              color={useColorModeValue("gray.500", "gray.500")}
-              mb={1}
-              fontFamily="Inter"
-            >
-              Total Grant Pools
+            <Text fontSize="sm" color="gray.500" mb={1}>
+              Total Projects
             </Text>
-            <Text fontSize="lg" fontWeight="medium" fontFamily="Inter">
-              {data?.profile?.total_grant_pools || 16}
+            <Text fontSize="lg" fontWeight="medium">
+              {data?.profile?.total_projects || 0}
             </Text>
           </Box>
         </SimpleGrid>
@@ -135,77 +115,10 @@ export default function GivethPage() {
     </Box>
   );
 
-  const tabs = [
-    {
-      label: "Info",
-      content: infoContent,
-    },
-    ...(data?.rounds || []).map((round: any) => ({
-      label: round.round_name,
-      content: (
-        <Box>
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
-            <MetricCard
-              label="Pool Size"
-              value={formatCurrency(round.total_pool_size || 0)}
-              color="purple.600"
-            />
-            <MetricCard
-              label="Projects Funded"
-              value={round.projects_funded || 0}
-            />
-            <MetricCard
-              label="Avg Funding"
-              value={formatCurrency(round.avg_funding_per_project || 0)}
-            />
-          </SimpleGrid>
-
-          <Box
-            p={6}
-            bg={useColorModeValue("white", "gray.800")}
-            borderRadius="lg"
-            borderWidth="1px"
-            borderColor={useColorModeValue("gray.100", "gray.700")}
-          >
-            <Text fontSize="sm" fontWeight="medium" mb={4} fontFamily="Inter">
-              Round Details
-            </Text>
-            <VStack align="stretch" spacing={3}>
-              <Box>
-                <Text
-                  fontSize="xs"
-                  color={useColorModeValue("gray.500", "gray.500")}
-                  fontFamily="Inter"
-                >
-                  Quarter
-                </Text>
-                <Text fontFamily="Inter">{round.year_quarter || "N/A"}</Text>
-              </Box>
-              {round.round_timestamp && (
-                <Box>
-                  <Text
-                    fontSize="xs"
-                    color={useColorModeValue("gray.500", "gray.500")}
-                    fontFamily="Inter"
-                  >
-                    Date
-                  </Text>
-                  <Text fontFamily="Inter">
-                    {new Date(round.round_timestamp).toLocaleDateString()}
-                  </Text>
-                </Box>
-              )}
-            </VStack>
-          </Box>
-        </Box>
-      ),
-    })),
-  ];
-
   return (
     <>
       <Navigation />
-      <Box minH="100vh" bg={bgColor}>
+      <Box minH="100vh" bg="gray.50">
         <Container maxW="7xl" py={12}>
           <SystemHeader
             title="Giveth"
@@ -213,7 +126,7 @@ export default function GivethPage() {
             color={brandColors.deepPurple}
           />
 
-          <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6} mb={12}>
+          <SimpleGrid columns={{ base: 1, md: 3 }} gap={6} mb={12}>
             <MetricCard
               label="Total Projects"
               value={data?.profile?.total_projects?.toLocaleString() || "0"}
@@ -227,17 +140,11 @@ export default function GivethPage() {
               color={brandColors.olive}
             />
             <MetricCard
-              label="Unique Donors"
-              value={
-                data?.donations?.total_unique_donors?.toLocaleString() || "0"
-              }
-              color={brandColors.burgundy}
-            />
-            <MetricCard
-              label="Avg per Project"
+              label="Total Donations"
               value={formatCurrency(
-                data?.profile?.avg_funding_per_project || 0,
+                data?.profile?.total_funding_distributed_usd || 0,
               )}
+              color={brandColors.olive}
             />
           </SimpleGrid>
 
@@ -252,7 +159,6 @@ export default function GivethPage() {
                 value="overview"
                 fontSize="sm"
                 fontWeight="medium"
-                fontFamily="Inter"
                 letterSpacing="wide"
                 textTransform="uppercase"
                 color="gray.500"
@@ -272,7 +178,6 @@ export default function GivethPage() {
                 value="rounds"
                 fontSize="sm"
                 fontWeight="medium"
-                fontFamily="Inter"
                 letterSpacing="wide"
                 textTransform="uppercase"
                 color="gray.500"
@@ -292,7 +197,6 @@ export default function GivethPage() {
                 value="process"
                 fontSize="sm"
                 fontWeight="medium"
-                fontFamily="Inter"
                 letterSpacing="wide"
                 textTransform="uppercase"
                 color="gray.500"
@@ -315,10 +219,10 @@ export default function GivethPage() {
             <Tabs.Content value="rounds">
               <Box
                 p={8}
-                bg={useColorModeValue("white", "gray.800")}
+                bg="white"
                 borderRadius="lg"
                 borderWidth="1px"
-                borderColor={useColorModeValue("gray.100", "gray.700")}
+                borderColor="gray.100"
               >
                 <MarkdownRenderer filePath="/grant_docs/giveth_rounds.md" />
               </Box>
@@ -327,10 +231,10 @@ export default function GivethPage() {
             <Tabs.Content value="process">
               <Box
                 p={8}
-                bg={useColorModeValue("white", "gray.800")}
+                bg="white"
                 borderRadius="lg"
                 borderWidth="1px"
-                borderColor={useColorModeValue("gray.100", "gray.700")}
+                borderColor="gray.100"
               >
                 <MarkdownRenderer filePath="/grant_docs/giveth_process.md" />
               </Box>
