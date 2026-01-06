@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -8,7 +8,7 @@ import {
   Text,
   Spinner,
   Center,
-} from '@chakra-ui/react';
+} from "@chakra-ui/react";
 import {
   BarChart,
   Bar,
@@ -18,10 +18,10 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
-import { Navigation } from '../components/Navigation';
-import { SystemHeader } from '../components/SystemHeader';
-import { MetricCard } from '../components/MetricCard';
+} from "recharts";
+import { Navigation } from "../components/Navigation";
+import { SystemHeader } from "../components/SystemHeader";
+import { MetricCard } from "../components/MetricCard";
 
 interface PlatformData {
   platform: string;
@@ -47,14 +47,14 @@ export default function Ecosystem() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/ecosystem')
-      .then(res => res.json())
-      .then(data => {
+    fetch("/api/ecosystem")
+      .then((res) => res.json())
+      .then((data) => {
         setData(data);
         setLoading(false);
       })
-      .catch(err => {
-        console.error('Error fetching ecosystem data:', err);
+      .catch((err) => {
+        console.error("Error fetching ecosystem data:", err);
         setLoading(false);
       });
   }, []);
@@ -77,20 +77,29 @@ export default function Ecosystem() {
     return `$${(value / 1000).toFixed(0)}K`;
   };
 
-  const totalFunding = (data?.platforms || []).reduce((sum, p) => sum + (parseFloat(String(p.total_funding_usd)) || 0), 0);
-  const totalProjects = (data?.platforms || []).reduce((sum, p) => sum + (parseInt(String(p.total_projects)) || 0), 0);
-  const totalPools = (data?.platforms || []).reduce((sum, p) => sum + (parseInt(String(p.total_grant_pools)) || 0), 0);
+  const totalFunding = (data?.platforms || []).reduce(
+    (sum, p) => sum + (parseFloat(String(p.total_funding_usd)) || 0),
+    0,
+  );
+  const totalProjects = (data?.platforms || []).reduce(
+    (sum, p) => sum + (parseInt(String(p.total_projects)) || 0),
+    0,
+  );
+  const totalPools = (data?.platforms || []).reduce(
+    (sum, p) => sum + (parseInt(String(p.total_grant_pools)) || 0),
+    0,
+  );
 
   const platformColors: { [key: string]: string } = {
-    giveth: 'purple.500',
-    scf: 'orange.500',
-    privote: 'teal.500',
+    giveth: "purple.500",
+    scf: "orange.500",
+    privote: "teal.500",
   };
 
   const platformDisplayNames: { [key: string]: string } = {
-    scf: 'Stellar Community Fund',
-    giveth: 'Giveth',
-    privote: 'Privote',
+    scf: "Stellar Community Fund",
+    giveth: "Giveth",
+    privote: "Privote (GG24 Privacy)",
   };
 
   const getPlatformName = (key: string) => platformDisplayNames[key] || key;
@@ -130,7 +139,14 @@ export default function Ecosystem() {
             />
           </SimpleGrid>
 
-          <Box mb={12} p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+          <Box
+            mb={12}
+            p={6}
+            bg="white"
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor="gray.100"
+          >
             <HStack gap={2} mb={2}>
               <Text fontSize="xl" fontWeight="medium" color="gray.800">
                 System Funding Comparison
@@ -147,72 +163,80 @@ export default function Ecosystem() {
                   margin={{ top: 20, right: 60, left: 60, bottom: 60 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fill: '#4A5568', fontSize: 12 }}
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: "#4A5568", fontSize: 12 }}
                     angle={-25}
                     textAnchor="end"
                     height={80}
                     interval={0}
                   />
-                  <YAxis 
+                  <YAxis
                     yAxisId="left"
-                    tick={{ fill: '#4A5568', fontSize: 12 }}
+                    tick={{ fill: "#4A5568", fontSize: 12 }}
                     tickFormatter={(value) => {
-                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-                      if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
+                      if (value >= 1000000)
+                        return `$${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000)
+                        return `$${(value / 1000).toFixed(0)}K`;
                       return `$${value}`;
                     }}
-                    label={{ 
-                      value: 'Total Funding', 
-                      angle: -90, 
-                      position: 'insideLeft',
+                    label={{
+                      value: "Total Funding",
+                      angle: -90,
+                      position: "insideLeft",
                       offset: -40,
-                      style: { textAnchor: 'middle', fill: '#4A5568', fontSize: 12 }
+                      style: {
+                        textAnchor: "middle",
+                        fill: "#4A5568",
+                        fontSize: 12,
+                      },
                     }}
                   />
-                  <YAxis 
+                  <YAxis
                     yAxisId="right"
                     orientation="right"
-                    tick={{ fill: '#4A5568', fontSize: 12 }}
-                    label={{ 
-                      value: 'Applications', 
-                      angle: 90, 
-                      position: 'insideRight',
-                      offset: 40,
-                      style: { textAnchor: 'middle', fill: '#4A5568', fontSize: 12 }
+                    tick={{ fill: "#4A5568", fontSize: 12 }}
+                    label={{
+                      value: "Applications",
+                      angle: 90,
+                      position: "insideRight",
+                      offset: 0,
+                      style: {
+                        textAnchor: "middle",
+                        fill: "#4A5568",
+                        fontSize: 12,
+                      },
                     }}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: number, name: string) => {
-                      if (name === 'Total Funding') {
+                      if (name === "Total Funding") {
                         return [formatCurrency(value), name];
                       }
                       return [value.toLocaleString(), name];
                     }}
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #E2E8F0',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #E2E8F0",
+                      borderRadius: "8px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                     }}
                   />
-                  <Legend 
-                    wrapperStyle={{ paddingTop: '20px' }}
-                  />
-                  <Bar 
+                  <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                  <Bar
                     yAxisId="left"
-                    dataKey="funding" 
+                    dataKey="funding"
                     name="Total Funding"
-                    fill="#800020" 
+                    fill="#800020"
                     radius={[4, 4, 0, 0]}
                     maxBarSize={60}
                   />
-                  <Bar 
+                  <Bar
                     yAxisId="right"
-                    dataKey="applications" 
+                    dataKey="applications"
                     name="Applications"
-                    fill="#006E7F" 
+                    fill="#006E7F"
                     radius={[4, 4, 0, 0]}
                     maxBarSize={60}
                   />
@@ -249,7 +273,9 @@ export default function Ecosystem() {
                         <Text
                           fontSize="xl"
                           fontWeight="medium"
-                          color={platformColors[platform.platform] || 'gray.700'}
+                          color={
+                            platformColors[platform.platform] || "gray.700"
+                          }
                         >
                           {getPlatformName(platform.platform)}
                         </Text>
@@ -259,7 +285,8 @@ export default function Ecosystem() {
                       </VStack>
                       <VStack align="end" gap={0}>
                         <Text fontSize="2xl" fontWeight="light">
-                          {platform.total_funding_display || formatCurrency(platform.total_funding_usd)}
+                          {platform.total_funding_display ||
+                            formatCurrency(platform.total_funding_usd)}
                         </Text>
                         <Text fontSize="xs" color="gray.500">
                           total funding
@@ -289,7 +316,8 @@ export default function Ecosystem() {
                           Applications
                         </Text>
                         <Text fontSize="lg" fontWeight="medium">
-                          {platform.total_applications?.toLocaleString() || 'N/A'}
+                          {platform.total_applications?.toLocaleString() ||
+                            "N/A"}
                         </Text>
                       </Box>
                     </SimpleGrid>

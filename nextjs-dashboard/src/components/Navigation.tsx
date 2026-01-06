@@ -58,7 +58,7 @@ export const Navigation = () => {
             <NavLink href="/ecosystem">Ecosystem</NavLink>
             <NavLink href="/system/giveth">Giveth</NavLink>
             <NavLink href="/system/scf">SCF</NavLink>
-            <NavLink href="/system/privote">Privote</NavLink>
+            <NavLink href="/system/privote">Privote (GG24 Privacy)</NavLink>
           </HStack>
         </HStack>
       </HStack>
