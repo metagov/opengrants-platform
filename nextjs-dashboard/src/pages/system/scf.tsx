@@ -119,6 +119,22 @@ interface SCFData {
     avg_completion: number;
     fully_completed: number;
   }>;
+  repeatFundingStats: {
+    total_funding_instances: number;
+    total_unique_projects: number;
+    new_projects: number;
+    repeat_funded: number;
+    funded_twice: number;
+    funded_thrice: number;
+    funded_four_times: number;
+    funded_five_plus: number;
+  };
+  cohortAnalysis: Array<{
+    round_name: string;
+    round_num: number;
+    repeat_funded_projects: number;
+    total_funded_in_round: number;
+  }>;
 }
 
 const CATEGORY_COLORS = [
@@ -444,11 +460,11 @@ export default function SCFPage() {
 
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                   <Text fontSize="md" fontWeight="semibold" mb={2}>Funding & Completion by Category</Text>
-                  <Text fontSize="sm" color="gray.500" mb={4}>Total funding and milestone completion rates per category</Text>
+                  <Text fontSize="sm" color="gray.500" mb={4}>Total funding and milestone completion rates per category (Top 5)</Text>
                   <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-                    <Box h="300px">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={categoryPerfData} layout="vertical">
+                    <Box h="280px">
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart data={categoryPerfData.slice(0, 5)} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
                           <XAxis 
                             type="number"
@@ -458,14 +474,14 @@ export default function SCFPage() {
                           <YAxis 
                             type="category"
                             dataKey="category" 
-                            tick={{ fill: '#4A5568', fontSize: 10 }}
-                            width={100}
+                            tick={{ fill: '#4A5568', fontSize: 11 }}
+                            width={130}
                           />
                           <Tooltip 
                             contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
                             formatter={(value: number) => [formatCurrency(value), 'Total Awarded']}
                           />
-                          <Bar dataKey="awarded" name="Total Awarded" fill={brandColors.olive} radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="awarded" name="Total Awarded" fill={brandColors.olive} radius={[0, 4, 4, 0]} barSize={35} />
                         </BarChart>
                       </ResponsiveContainer>
                     </Box>
@@ -491,59 +507,132 @@ export default function SCFPage() {
 
                 <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Trend Analysis</Text>
 
-                <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={2}>Average Grant Size Trend</Text>
-                    <Text fontSize="sm" color="gray.500" mb={4}>How average grant size has evolved over rounds</Text>
-                    <Box h="250px">
-                      <ResponsiveContainer width="100%" height={250}>
-                        <LineChart data={avgGrantTrendData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis 
-                            dataKey="round" 
-                            tick={{ fill: '#4A5568', fontSize: 10 }}
-                            interval={4}
-                          />
-                          <YAxis 
-                            tick={{ fill: '#4A5568', fontSize: 11 }}
-                            tickFormatter={(value) => formatCurrency(value)}
-                          />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                            formatter={(value: number) => [formatCurrency(value), 'Avg Grant']}
-                          />
-                          <Line type="monotone" dataKey="avgGrant" stroke={brandColors.olive} strokeWidth={2} dot={{ r: 3 }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </Box>
+                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                  <Text fontSize="md" fontWeight="semibold" mb={2}>Average Grant Size Trend</Text>
+                  <Text fontSize="sm" color="gray.500" mb={4}>How average grant size has evolved over rounds</Text>
+                  <Box h="250px">
+                    <ResponsiveContainer width="100%" height={250}>
+                      <LineChart data={avgGrantTrendData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis 
+                          dataKey="round" 
+                          tick={{ fill: '#4A5568', fontSize: 10 }}
+                          interval={4}
+                        />
+                        <YAxis 
+                          tick={{ fill: '#4A5568', fontSize: 11 }}
+                          tickFormatter={(value) => formatCurrency(value)}
+                        />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                          formatter={(value: number) => [formatCurrency(value), 'Avg Grant']}
+                        />
+                        <Line type="monotone" dataKey="avgGrant" stroke={brandColors.olive} strokeWidth={2} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </Box>
+                </Box>
 
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={2}>Voter Participation Trend</Text>
-                    <Text fontSize="sm" color="gray.500" mb={4}>Community engagement over rounds</Text>
-                    <Box h="250px">
-                      <ResponsiveContainer width="100%" height={250}>
-                        <ComposedChart data={avgGrantTrendData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis 
-                            dataKey="round" 
-                            tick={{ fill: '#4A5568', fontSize: 10 }}
-                            interval={4}
-                          />
-                          <YAxis 
-                            tick={{ fill: '#4A5568', fontSize: 11 }}
-                          />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                          />
-                          <Legend />
-                          <Bar dataKey="voters" name="Voters" fill={brandColors.teal} radius={[4, 4, 0, 0]} />
-                          <Line type="monotone" dataKey="projects" name="Projects Funded" stroke={brandColors.burgundy} strokeWidth={2} />
-                        </ComposedChart>
-                      </ResponsiveContainer>
-                    </Box>
+                {/* Voter Participation Trend - commented out for now
+                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                  <Text fontSize="md" fontWeight="semibold" mb={2}>Voter Participation Trend</Text>
+                  <Text fontSize="sm" color="gray.500" mb={4}>Community engagement over rounds</Text>
+                  <Box h="250px">
+                    <ResponsiveContainer width="100%" height={250}>
+                      <ComposedChart data={avgGrantTrendData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis 
+                          dataKey="round" 
+                          tick={{ fill: '#4A5568', fontSize: 10 }}
+                          interval={4}
+                        />
+                        <YAxis 
+                          tick={{ fill: '#4A5568', fontSize: 11 }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                        />
+                        <Legend />
+                        <Bar dataKey="voters" name="Voters" fill={brandColors.teal} radius={[4, 4, 0, 0]} />
+                        <Line type="monotone" dataKey="projects" name="Projects Funded" stroke={brandColors.burgundy} strokeWidth={2} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </Box>
+                </Box>
+                */}
+
+                <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Repeat Funding Analysis</Text>
+
+                <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
+                  <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Total Funding Instances</Text>
+                    <Text fontSize="xl" fontWeight="semibold">{data?.repeatFundingStats?.total_funding_instances || 0}</Text>
+                    <Text fontSize="xs" color="gray.400">Including repeat funding</Text>
+                  </Box>
+                  <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Unique Projects Funded</Text>
+                    <Text fontSize="xl" fontWeight="semibold">{data?.repeatFundingStats?.total_unique_projects || 0}</Text>
+                  </Box>
+                  <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                    <Text fontSize="xs" color="gray.500" mb={1}>New Projects</Text>
+                    <Text fontSize="xl" fontWeight="semibold">{data?.repeatFundingStats?.new_projects || 0}</Text>
+                    <Text fontSize="xs" color="gray.400">Funded only once</Text>
+                  </Box>
+                  <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Repeat-Funded Projects</Text>
+                    <Text fontSize="xl" fontWeight="semibold" color={brandColors.olive}>{data?.repeatFundingStats?.repeat_funded || 0}</Text>
                   </Box>
                 </SimpleGrid>
+
+                <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
+                  <Box p={4} bg="gray.50" borderRadius="lg">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Funded Twice</Text>
+                    <Text fontSize="lg" fontWeight="medium">{data?.repeatFundingStats?.funded_twice || 0}</Text>
+                  </Box>
+                  <Box p={4} bg="gray.50" borderRadius="lg">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Funded Thrice</Text>
+                    <Text fontSize="lg" fontWeight="medium">{data?.repeatFundingStats?.funded_thrice || 0}</Text>
+                  </Box>
+                  <Box p={4} bg="gray.50" borderRadius="lg">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Funded Four Times</Text>
+                    <Text fontSize="lg" fontWeight="medium">{data?.repeatFundingStats?.funded_four_times || 0}</Text>
+                  </Box>
+                  <Box p={4} bg="gray.50" borderRadius="lg">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Funded Five+ Times</Text>
+                    <Text fontSize="lg" fontWeight="medium">{data?.repeatFundingStats?.funded_five_plus || 0}</Text>
+                  </Box>
+                </SimpleGrid>
+
+                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                  <Text fontSize="md" fontWeight="semibold" mb={2}>Cohort Analysis: Repeat-Funded Projects by Round</Text>
+                  <Text fontSize="sm" color="gray.500" mb={4}>Which grant rounds had the highest number of repeat-funded projects?</Text>
+                  <Box h="300px">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={(data?.cohortAnalysis || []).map(r => ({
+                        round: `#${r.round_num}`,
+                        repeatFunded: Number(r.repeat_funded_projects),
+                        totalFunded: Number(r.total_funded_in_round)
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                        <XAxis 
+                          dataKey="round" 
+                          tick={{ fill: '#4A5568', fontSize: 10 }}
+                          interval={2}
+                        />
+                        <YAxis 
+                          tick={{ fill: '#4A5568', fontSize: 11 }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                          formatter={(value: number, name: string) => [value, name === 'repeatFunded' ? 'Repeat-Funded' : 'Total Funded']}
+                        />
+                        <Legend formatter={(value) => value === 'repeatFunded' ? 'Repeat-Funded Projects' : 'Total Funded in Round'} />
+                        <Bar dataKey="repeatFunded" name="repeatFunded" fill={brandColors.olive} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="totalFunded" name="totalFunded" fill={brandColors.teal} fillOpacity={0.5} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Box>
+                </Box>
 
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                   <Text fontSize="md" fontWeight="semibold" mb={4}>Quarterly Funding Distribution</Text>

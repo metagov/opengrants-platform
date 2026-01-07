@@ -143,7 +143,7 @@ export default async function handler(
       ORDER BY CAST(REGEXP_REPLACE(name, '[^0-9]', '', 'g') AS INTEGER)
     `, []);
 
-    // Category performance with completion rates
+    // Category performance with completion rates (limit to top 5)
     const categoryPerformance = await query(`
       SELECT 
         "io.scf.category" as category,
@@ -156,6 +156,54 @@ export default async function handler(
       WHERE "io.scf.category" IS NOT NULL AND "io.scf.totalAwardedUSD" > 0
       GROUP BY "io.scf.category"
       ORDER BY total_awarded DESC
+      LIMIT 5
+    `, []);
+
+    // Repeat funding statistics
+    const repeatFundingStats = await query(`
+      WITH project_funding_counts AS (
+        SELECT 
+          "io.scf.project" as project_name,
+          COUNT(*) as funding_count
+        FROM silver_scf_grant_applications
+        WHERE "io.scf.totalPaidUSD" > 0 AND "io.scf.project" IS NOT NULL AND "io.scf.project" != ''
+        GROUP BY "io.scf.project"
+      )
+      SELECT 
+        (SELECT COUNT(*) FROM silver_scf_grant_applications WHERE "io.scf.totalPaidUSD" > 0) as total_funding_instances,
+        (SELECT COUNT(*) FROM project_funding_counts) as total_unique_projects,
+        (SELECT COUNT(*) FROM project_funding_counts WHERE funding_count = 1) as new_projects,
+        (SELECT COUNT(*) FROM project_funding_counts WHERE funding_count > 1) as repeat_funded,
+        (SELECT COUNT(*) FROM project_funding_counts WHERE funding_count = 2) as funded_twice,
+        (SELECT COUNT(*) FROM project_funding_counts WHERE funding_count = 3) as funded_thrice,
+        (SELECT COUNT(*) FROM project_funding_counts WHERE funding_count = 4) as funded_four_times,
+        (SELECT COUNT(*) FROM project_funding_counts WHERE funding_count >= 5) as funded_five_plus
+    `, []);
+
+    // Cohort analysis: Rounds with highest repeat-funded projects
+    const cohortAnalysis = await query(`
+      WITH project_funding_counts AS (
+        SELECT 
+          "io.scf.project" as project_name,
+          COUNT(*) as funding_count
+        FROM silver_scf_grant_applications
+        WHERE "io.scf.totalPaidUSD" > 0 AND "io.scf.project" IS NOT NULL AND "io.scf.project" != ''
+        GROUP BY "io.scf.project"
+      ),
+      repeat_projects AS (
+        SELECT project_name FROM project_funding_counts WHERE funding_count > 1
+      )
+      SELECT 
+        gp."name" as round_name,
+        CAST(REGEXP_REPLACE(gp."name", '[^0-9]', '', 'g') AS INTEGER) as round_num,
+        COUNT(DISTINCT a."io.scf.project") as repeat_funded_projects,
+        COUNT(a.id) as total_funded_in_round
+      FROM silver_scf_grant_applications a
+      JOIN silver_scf_grant_pools gp ON a."grantPoolId" = gp.id
+      WHERE a."io.scf.totalPaidUSD" > 0 
+        AND a."io.scf.project" IN (SELECT project_name FROM repeat_projects)
+      GROUP BY gp."name"
+      ORDER BY round_num
     `, []);
 
     res.status(200).json({
@@ -168,7 +216,9 @@ export default async function handler(
       trancheByStatus,
       topProjects,
       fundingEfficiency,
-      categoryPerformance
+      categoryPerformance,
+      repeatFundingStats: repeatFundingStats[0] || {},
+      cohortAnalysis
     });
   } catch (error) {
     console.error('Database error:', error);
