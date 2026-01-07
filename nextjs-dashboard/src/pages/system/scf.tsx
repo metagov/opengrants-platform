@@ -491,7 +491,14 @@ export default function SCFPage() {
                         <Box key={cat.category} p={3} bg="gray.50" borderRadius="md">
                           <HStack justify="space-between" mb={1}>
                             <Text fontSize="sm" fontWeight="medium">{cat.category}</Text>
-                            <Badge colorPalette={cat.completionRate >= 80 ? 'green' : cat.completionRate >= 50 ? 'yellow' : 'red'}>
+                            <Badge 
+                              bg={cat.completionRate >= 80 ? brandColors.olive : cat.completionRate >= 50 ? brandColors.teal : brandColors.burgundy}
+                              color="white"
+                              px={2}
+                              py={0.5}
+                              borderRadius="md"
+                              fontSize="xs"
+                            >
                               {cat.completionRate}% paid
                             </Badge>
                           </HStack>
@@ -703,7 +710,8 @@ export default function SCFPage() {
                         <HStack key={idx} justify="space-between" py={3} borderBottomWidth="1px" borderColor="gray.100">
                           <HStack gap={3}>
                             <Badge 
-                              colorPalette={status.tranche_status?.includes('Complete') ? 'green' : status.tranche_status?.includes('Progress') ? 'blue' : 'gray'}
+                              bg={status.tranche_status?.includes('Complete') ? brandColors.olive : status.tranche_status?.includes('Progress') ? brandColors.teal : 'gray.400'}
+                              color="white"
                               px={2}
                               py={1}
                             >
@@ -770,8 +778,8 @@ export default function SCFPage() {
                               <Text fontSize="sm" color={brandColors.teal}>→</Text>
                             </HStack>
                             <HStack gap={2}>
-                              <Badge colorPalette="blue">{round.quarter_year}</Badge>
-                              <Badge colorPalette="gray">{round.round_type}</Badge>
+                              <Badge bg={brandColors.teal} color="white" px={2} py={0.5} borderRadius="md" fontSize="xs">{round.quarter_year}</Badge>
+                              <Badge bg="gray.400" color="white" px={2} py={0.5} borderRadius="md" fontSize="xs">{round.round_type}</Badge>
                             </HStack>
                           </VStack>
                           <Text fontSize="2xl" fontWeight="bold" color={brandColors.olive}>
