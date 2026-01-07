@@ -17,12 +17,12 @@ export default async function handler(
       WHERE platform = 'scf'
     `, []);
 
-    // Summary stats - get accurate totals from silver tables
+    // Summary stats - get accurate totals from silver tables (only count active rounds)
     const summaryTotals = await query(`
       SELECT 
         SUM("org.stellar.communityfund.totalAwardedUSD") as total_awarded,
         SUM("org.stellar.communityfund.totalPaidUSD") as total_paid,
-        COUNT(*) as total_rounds,
+        COUNT(*) FILTER (WHERE "org.stellar.communityfund.totalPaidUSD" > 0 OR "org.stellar.communityfund.awardedSubmissions" > 0) as total_rounds,
         SUM("org.stellar.communityfund.awardedSubmissions") as total_projects_funded
       FROM silver_scf_grant_pools
     `, []);
