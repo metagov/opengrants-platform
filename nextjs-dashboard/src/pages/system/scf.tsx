@@ -35,6 +35,7 @@ import { Navigation } from '../../components/Navigation';
 import { SystemHeader } from '../../components/SystemHeader';
 import { MetricCard } from '../../components/MetricCard';
 import { ProgramProfile } from '../../components/ProgramProfile';
+import { SupportFooter } from '../../components/SupportFooter';
 import { brandColors } from '../../theme/colors';
 
 interface SCFData {
@@ -356,26 +357,20 @@ export default function SCFPage() {
 
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                   <Text fontSize="md" fontWeight="semibold" mb={4}>Top Funded Projects</Text>
-                  <VStack align="stretch" gap={3}>
+                  <VStack align="stretch" gap={0}>
                     {(data?.topProjects || []).slice(0, 10).map((project, idx) => (
-                      <HStack key={idx} justify="space-between" py={2} borderBottomWidth="1px" borderColor="gray.100">
+                      <HStack 
+                        key={idx} 
+                        justify="space-between" 
+                        py={3} 
+                        borderBottomWidth={idx < 9 ? "1px" : "0"} 
+                        borderColor="gray.100"
+                      >
                         <VStack align="start" gap={0}>
-                          <Text fontSize="sm" fontWeight="medium">{project.project_name}</Text>
-                          <HStack gap={2}>
-                            <Text fontSize="xs" color="gray.500">{project.round_name}</Text>
-                            <Badge 
-                              bg={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
-                              color="white"
-                              px={1.5}
-                              py={0.5}
-                              borderRadius="md"
-                              fontSize="xs"
-                            >
-                              {project.category}
-                            </Badge>
-                          </HStack>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.800">{project.project_name}</Text>
+                          <Text fontSize="xs" color="gray.400">{project.round_name}</Text>
                         </VStack>
-                        <Text fontSize="sm" fontWeight="semibold" color={brandColors.olive}>
+                        <Text fontSize="sm" fontWeight="semibold" color="gray.700">
                           {formatCurrency(project.total_paid_usd || project.total_awarded_usd)}
                         </Text>
                       </HStack>
@@ -439,24 +434,6 @@ export default function SCFPage() {
                   </Box>
                 </SimpleGrid>
 
-                <Box 
-                  p={4} 
-                  bg="gray.50" 
-                  borderRadius="md" 
-                  borderLeftWidth="3px" 
-                  borderLeftColor={brandColors.olive}
-                  mt={4}
-                >
-                  <HStack gap={2} align="start">
-                    <Text fontSize="sm" color="gray.600">
-                      Notice a data discrepancy? Please report to{' '}
-                      <Text as="span" fontWeight="medium" color={brandColors.teal}>
-                        rashmi@metagov.org
-                      </Text>
-                      {' '}with screenshots and any helpful context.
-                    </Text>
-                  </HStack>
-                </Box>
               </VStack>
             </Tabs.Content>
 
@@ -840,6 +817,7 @@ export default function SCFPage() {
           </Tabs.Root>
         </Container>
       </Box>
+      <SupportFooter />
     </>
   );
 }
