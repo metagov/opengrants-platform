@@ -1,20 +1,16 @@
 import { Pool, PoolConfig } from "pg";
 
 const connectionString = process.env.DATABASE_URL;
-const isLocalhost = connectionString?.includes("localhost");
 
 const config: PoolConfig = {
   connectionString,
   connectionTimeoutMillis: 30000,
   idleTimeoutMillis: 60000,
   max: 5,
-};
-
-if (!isLocalhost && connectionString) {
-  config.ssl = {
+  ssl: {
     rejectUnauthorized: false,
-  };
-}
+  },
+};
 
 const pool = new Pool(config);
 
