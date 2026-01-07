@@ -17,16 +17,22 @@ export default async function handler(
       WHERE platform = 'scf'
     `, []);
 
-    // Summary stats from gold table (consistent with ecosystem page)
-    const summary = await query(`
+    // Summary stats - get accurate totals from silver tables
+    const summaryTotals = await query(`
       SELECT 
-        total_grant_pools as total_rounds,
-        total_funding_distributed_usd as total_awarded,
-        total_funding_distributed_usd as total_paid,
-        total_applications as total_projects_funded
-      FROM gold__scf_system_profile
-      LIMIT 1
+        SUM("org.stellar.communityfund.totalAwardedUSD") as total_awarded,
+        SUM("org.stellar.communityfund.totalPaidUSD") as total_paid,
+        COUNT(*) as total_rounds,
+        SUM("org.stellar.communityfund.awardedSubmissions") as total_projects_funded
+      FROM silver_scf_grant_pools
     `, []);
+    
+    const summary = {
+      total_rounds: Number(summaryTotals[0]?.total_rounds) || 0,
+      total_awarded: Number(summaryTotals[0]?.total_awarded) || 0,
+      total_paid: Number(summaryTotals[0]?.total_paid) || 0,
+      total_projects_funded: Number(summaryTotals[0]?.total_projects_funded) || 0,
+    };
 
     // Quarterly breakdown - include rounds with payments OR projects
     const quarterlyData = await query(`
@@ -124,7 +130,7 @@ export default async function handler(
 
     res.status(200).json({
       metadata: metadata[0] || null,
-      summary: summary[0] || {},
+      summary: summary,
       quarterlyData,
       categoryData,
       rounds: roundsBreakdown,
