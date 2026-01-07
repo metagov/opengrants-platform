@@ -159,7 +159,7 @@ export default async function handler(
       LIMIT 5
     `, []);
 
-    // Repeat funding statistics
+    // Repeat funding statistics - use grant pools total for consistency with summary
     const repeatFundingStats = await query(`
       WITH project_funding_counts AS (
         SELECT 
@@ -170,7 +170,7 @@ export default async function handler(
         GROUP BY "io.scf.project"
       )
       SELECT 
-        (SELECT COUNT(*) FROM silver_scf_grant_applications WHERE "io.scf.totalPaidUSD" > 0) as total_funding_instances,
+        (SELECT SUM("org.stellar.communityfund.awardedSubmissions") FROM silver_scf_grant_pools) as total_funding_instances,
         (SELECT COUNT(*) FROM project_funding_counts) as total_unique_projects,
         (SELECT COUNT(*) FROM project_funding_counts WHERE funding_count = 1) as new_projects,
         (SELECT COUNT(*) FROM project_funding_counts WHERE funding_count > 1) as repeat_funded,
@@ -180,7 +180,7 @@ export default async function handler(
         (SELECT COUNT(*) FROM project_funding_counts WHERE funding_count >= 5) as funded_five_plus
     `, []);
 
-    // Cohort analysis: Rounds with highest repeat-funded projects
+    // Cohort analysis: Rounds with repeat-funded projects vs total funded
     const cohortAnalysis = await query(`
       WITH project_funding_counts AS (
         SELECT 
@@ -192,18 +192,35 @@ export default async function handler(
       ),
       repeat_projects AS (
         SELECT project_name FROM project_funding_counts WHERE funding_count > 1
+      ),
+      round_totals AS (
+        SELECT 
+          gp."name" as round_name,
+          CAST(REGEXP_REPLACE(gp."name", '[^0-9]', '', 'g') AS INTEGER) as round_num,
+          COUNT(a.id) as total_funded_in_round
+        FROM silver_scf_grant_applications a
+        JOIN silver_scf_grant_pools gp ON a."grantPoolId" = gp.id
+        WHERE a."io.scf.totalPaidUSD" > 0
+        GROUP BY gp."name"
+      ),
+      repeat_counts AS (
+        SELECT 
+          gp."name" as round_name,
+          COUNT(DISTINCT a."io.scf.project") as repeat_funded_projects
+        FROM silver_scf_grant_applications a
+        JOIN silver_scf_grant_pools gp ON a."grantPoolId" = gp.id
+        WHERE a."io.scf.totalPaidUSD" > 0 
+          AND a."io.scf.project" IN (SELECT project_name FROM repeat_projects)
+        GROUP BY gp."name"
       )
       SELECT 
-        gp."name" as round_name,
-        CAST(REGEXP_REPLACE(gp."name", '[^0-9]', '', 'g') AS INTEGER) as round_num,
-        COUNT(DISTINCT a."io.scf.project") as repeat_funded_projects,
-        COUNT(a.id) as total_funded_in_round
-      FROM silver_scf_grant_applications a
-      JOIN silver_scf_grant_pools gp ON a."grantPoolId" = gp.id
-      WHERE a."io.scf.totalPaidUSD" > 0 
-        AND a."io.scf.project" IN (SELECT project_name FROM repeat_projects)
-      GROUP BY gp."name"
-      ORDER BY round_num
+        rt.round_name,
+        rt.round_num,
+        COALESCE(rc.repeat_funded_projects, 0) as repeat_funded_projects,
+        rt.total_funded_in_round
+      FROM round_totals rt
+      LEFT JOIN repeat_counts rc ON rt.round_name = rc.round_name
+      ORDER BY rt.round_num
     `, []);
 
     res.status(200).json({
