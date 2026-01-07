@@ -60,7 +60,7 @@ export default async function handler(
     `, []);
 
     const topProjects = await query(`
-      SELECT 
+      SELECT DISTINCT ON ("io.giveth.slug")
         name as project_name,
         "io.giveth.slug" as slug,
         CAST("io.giveth.totalDonations" AS numeric) as total_donations,
@@ -69,9 +69,13 @@ export default async function handler(
         "io.giveth.impactLocation" as impact_location
       FROM silver_giveth_projects
       WHERE "io.giveth.totalDonations" IS NOT NULL
-      ORDER BY CAST("io.giveth.totalDonations" AS numeric) DESC
-      LIMIT 10
+        AND "io.giveth.slug" IS NOT NULL
+      ORDER BY "io.giveth.slug", CAST("io.giveth.totalDonations" AS numeric) DESC
     `, []);
+    
+    const topProjectsSorted = topProjects
+      .sort((a: any, b: any) => Number(b.total_donations) - Number(a.total_donations))
+      .slice(0, 10);
 
     const verificationBreakdown = await query(`
       SELECT 
@@ -87,7 +91,7 @@ export default async function handler(
       metadata: metadata[0] || null,
       summary,
       rounds,
-      topProjects,
+      topProjects: topProjectsSorted,
       verificationBreakdown
     });
   } catch (error) {
