@@ -438,6 +438,25 @@ export default function SCFPage() {
                     </Box>
                   </Box>
                 </SimpleGrid>
+
+                <Box 
+                  p={4} 
+                  bg="gray.50" 
+                  borderRadius="md" 
+                  borderLeftWidth="3px" 
+                  borderLeftColor={brandColors.olive}
+                  mt={4}
+                >
+                  <HStack gap={2} align="start">
+                    <Text fontSize="sm" color="gray.600">
+                      Notice a data discrepancy? Please report to{' '}
+                      <Text as="span" fontWeight="medium" color={brandColors.teal}>
+                        rashmi@metagov.org
+                      </Text>
+                      {' '}with screenshots and any helpful context.
+                    </Text>
+                  </HStack>
+                </Box>
               </VStack>
             </Tabs.Content>
 
