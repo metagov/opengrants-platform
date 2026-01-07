@@ -130,8 +130,13 @@ export default function GivethPage() {
     return `$${value?.toFixed(0) || 0}`;
   };
 
+  const getRoundDisplayName = (r: GivethRound) => {
+    const name = r.title || r.round_name || r.slug?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Round';
+    return name.substring(0, 12);
+  };
+
   const roundsChartData = (data?.rounds || []).slice(0, 12).reverse().map(r => ({
-    name: r.title?.substring(0, 15) || r.round_name?.substring(0, 15) || '',
+    name: getRoundDisplayName(r),
     donations: Number(r.donations_usd) || 0,
     matching: Number(r.matching_pool) || 0,
     donors: Number(r.unique_donors) || 0,
@@ -170,6 +175,7 @@ export default function GivethPage() {
             <MetricCard
               label="Projects"
               value={data?.summary?.total_projects || 0}
+              info="Total projects that participated in Giveth QF rounds only, not the total aggregate of all projects listed on the Giveth platform."
             />
           </SimpleGrid>
 
@@ -373,7 +379,7 @@ export default function GivethPage() {
                   >
                     <HStack justify="space-between" mb={4}>
                       <VStack align="start" gap={1}>
-                        <Text fontSize="lg" fontWeight="semibold">{round.title || round.round_name}</Text>
+                        <Text fontSize="lg" fontWeight="semibold">{round.title || round.round_name || round.slug?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'QF Round'}</Text>
                         <HStack gap={2}>
                           <Badge colorPalette={round.is_open ? 'green' : 'gray'}>
                             {round.is_open ? 'Active' : 'Closed'}
