@@ -338,17 +338,17 @@ export default function PrivotePage() {
                   <Table.Root size="sm">
                     <Table.Header>
                       <Table.Row>
-                        <Table.ColumnHeader>Rank</Table.ColumnHeader>
-                        <Table.ColumnHeader>Project</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="end">Allocation</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="end">Votes</Table.ColumnHeader>
-                        <Table.ColumnHeader>Token</Table.ColumnHeader>
+                        <Table.ColumnHeader px={4} py={3}>Rank</Table.ColumnHeader>
+                        <Table.ColumnHeader px={4} py={3}>Project</Table.ColumnHeader>
+                        <Table.ColumnHeader px={4} py={3} textAlign="end">Allocation</Table.ColumnHeader>
+                        <Table.ColumnHeader px={4} py={3} textAlign="end">Votes</Table.ColumnHeader>
+                        <Table.ColumnHeader px={4} py={3}>Token</Table.ColumnHeader>
                       </Table.Row>
                     </Table.Header>
                     <Table.Body>
                       {(data?.allocations || []).map((project, idx) => (
                         <Table.Row key={idx}>
-                          <Table.Cell>
+                          <Table.Cell px={4} py={3}>
                             <HStack gap={2}>
                               <Text fontWeight="bold">#{project.rank}</Text>
                               {project.medal && (
@@ -358,12 +358,12 @@ export default function PrivotePage() {
                               )}
                             </HStack>
                           </Table.Cell>
-                          <Table.Cell fontWeight="medium">{project.project_name}</Table.Cell>
-                          <Table.Cell textAlign="end" fontWeight="medium" color={brandColors.teal}>
+                          <Table.Cell px={4} py={3} fontWeight="medium">{project.project_name}</Table.Cell>
+                          <Table.Cell px={4} py={3} textAlign="end" fontWeight="medium" color={brandColors.teal}>
                             {formatETH(project.allocation_eth)}
                           </Table.Cell>
-                          <Table.Cell textAlign="end">{(Number(project.votes) || 0).toLocaleString()}</Table.Cell>
-                          <Table.Cell>
+                          <Table.Cell px={4} py={3} textAlign="end">{(Number(project.votes) || 0).toLocaleString()}</Table.Cell>
+                          <Table.Cell px={4} py={3}>
                             <Badge colorPalette="teal" variant="subtle">
                               {project.token}
                             </Badge>
