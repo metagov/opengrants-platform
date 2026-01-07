@@ -49,10 +49,79 @@ export default async function handler(
       LIMIT 1
     `);
 
+    // Cross-platform comparison: Average grant size per platform
+    const avgGrantSize = await query(`
+      SELECT 
+        'SCF' as platform,
+        AVG("io.scf.totalAwardedUSD") as avg_grant_size,
+        COUNT(*) as project_count,
+        SUM("io.scf.totalAwardedUSD") as total_funding
+      FROM silver_scf_grant_applications
+      WHERE "io.scf.totalAwardedUSD" > 0
+      UNION ALL
+      SELECT 
+        'Giveth' as platform,
+        AVG(CAST("io.giveth.totalDonations" AS numeric)) as avg_grant_size,
+        COUNT(DISTINCT "io.giveth.slug") as project_count,
+        SUM(CAST("io.giveth.totalDonations" AS numeric)) as total_funding
+      FROM silver_giveth_projects
+      WHERE "io.giveth.totalDonations" IS NOT NULL
+      UNION ALL
+      SELECT 
+        'Privote' as platform,
+        AVG("funds_approved_usd") as avg_grant_size,
+        COUNT(*) as project_count,
+        SUM("funds_approved_usd") as total_funding
+      FROM silver_privote_grant_applications
+      WHERE "funds_approved_usd" > 0
+    `);
+
+    // Funding distribution curve data (top projects per platform)
+    const fundingDistribution = await query(`
+      WITH scf_ranked AS (
+        SELECT 
+          'SCF' as platform,
+          name as project_name,
+          "io.scf.totalAwardedUSD" as funding,
+          ROW_NUMBER() OVER (ORDER BY "io.scf.totalAwardedUSD" DESC) as rank
+        FROM silver_scf_grant_applications
+        WHERE "io.scf.totalAwardedUSD" > 0
+      ),
+      giveth_ranked AS (
+        SELECT 
+          'Giveth' as platform,
+          name as project_name,
+          CAST("io.giveth.totalDonations" AS numeric) as funding,
+          ROW_NUMBER() OVER (ORDER BY CAST("io.giveth.totalDonations" AS numeric) DESC) as rank
+        FROM (
+          SELECT DISTINCT ON ("io.giveth.slug") name, "io.giveth.totalDonations", "io.giveth.slug"
+          FROM silver_giveth_projects
+          WHERE "io.giveth.totalDonations" IS NOT NULL
+        ) deduped
+      ),
+      privote_ranked AS (
+        SELECT 
+          'Privote' as platform,
+          name as project_name,
+          "funds_approved_usd" as funding,
+          ROW_NUMBER() OVER (ORDER BY "funds_approved_usd" DESC) as rank
+        FROM silver_privote_grant_applications
+        WHERE "funds_approved_usd" > 0
+      )
+      SELECT * FROM scf_ranked WHERE rank <= 20
+      UNION ALL
+      SELECT * FROM giveth_ranked WHERE rank <= 20
+      UNION ALL
+      SELECT * FROM privote_ranked WHERE rank <= 20
+      ORDER BY platform, rank
+    `);
+
     res.status(200).json({
       platforms: ecosystemData || [],
       crossPlatform: crossPlatform || [],
-      scf: scfSummary?.[0] || null
+      scf: scfSummary?.[0] || null,
+      avgGrantSize: avgGrantSize || [],
+      fundingDistribution: fundingDistribution || []
     });
   } catch (error: any) {
     console.error('Database error:', error.message);

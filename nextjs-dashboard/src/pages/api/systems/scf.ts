@@ -128,6 +128,36 @@ export default async function handler(
       LIMIT 10
     `, []);
 
+    // Funding efficiency by round (awarded vs paid with payment rate)
+    const fundingEfficiency = await query(`
+      SELECT 
+        name as round_name,
+        CAST(REGEXP_REPLACE(name, '[^0-9]', '', 'g') AS INTEGER) as round_num,
+        CAST("org.stellar.communityfund.totalAwardedUSD" AS numeric) as awarded,
+        CAST("org.stellar.communityfund.totalPaidUSD" AS numeric) as paid,
+        CAST("org.stellar.communityfund.votersNumber" AS numeric) as voters,
+        CAST("org.stellar.communityfund.awardedSubmissions" AS numeric) as projects_funded,
+        CAST("org.stellar.communityfund.averageAwardedUSD" AS numeric) as avg_grant_size
+      FROM silver_scf_grant_pools
+      WHERE "org.stellar.communityfund.totalPaidUSD" > 0
+      ORDER BY CAST(REGEXP_REPLACE(name, '[^0-9]', '', 'g') AS INTEGER)
+    `, []);
+
+    // Category performance with completion rates
+    const categoryPerformance = await query(`
+      SELECT 
+        "io.scf.category" as category,
+        COUNT(*) as total_projects,
+        SUM("io.scf.totalAwardedUSD") as total_awarded,
+        SUM("io.scf.totalPaidUSD") as total_paid,
+        AVG("io.scf.trancheCompletionPercent") as avg_completion,
+        COUNT(CASE WHEN "io.scf.trancheCompletionPercent" = 100 THEN 1 END) as fully_completed
+      FROM silver_scf_grant_applications
+      WHERE "io.scf.category" IS NOT NULL AND "io.scf.totalAwardedUSD" > 0
+      GROUP BY "io.scf.category"
+      ORDER BY total_awarded DESC
+    `, []);
+
     res.status(200).json({
       metadata: metadata[0] || null,
       summary: summary,
@@ -136,7 +166,9 @@ export default async function handler(
       rounds: roundsBreakdown,
       trancheMetrics: trancheMetrics[0] || {},
       trancheByStatus,
-      topProjects
+      topProjects,
+      fundingEfficiency,
+      categoryPerformance
     });
   } catch (error) {
     console.error('Database error:', error);
