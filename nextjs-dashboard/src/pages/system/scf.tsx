@@ -568,7 +568,7 @@ export default function SCFPage() {
                 </Box>
                 */}
 
-                <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Repeat Funding Analysis</Text>
+                <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Cohort Analysis</Text>
 
                 <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
                   <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
