@@ -354,6 +354,35 @@ export default function SCFPage() {
                   dataSource={data?.metadata?.data_source}
                 />
 
+                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                  <Text fontSize="md" fontWeight="semibold" mb={4}>Top Funded Projects</Text>
+                  <VStack align="stretch" gap={3}>
+                    {(data?.topProjects || []).slice(0, 10).map((project, idx) => (
+                      <HStack key={idx} justify="space-between" py={2} borderBottomWidth="1px" borderColor="gray.100">
+                        <VStack align="start" gap={0}>
+                          <Text fontSize="sm" fontWeight="medium">{project.project_name}</Text>
+                          <HStack gap={2}>
+                            <Text fontSize="xs" color="gray.500">{project.round_name}</Text>
+                            <Badge 
+                              bg={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
+                              color="white"
+                              px={1.5}
+                              py={0.5}
+                              borderRadius="md"
+                              fontSize="xs"
+                            >
+                              {project.category}
+                            </Badge>
+                          </HStack>
+                        </VStack>
+                        <Text fontSize="sm" fontWeight="semibold" color={brandColors.olive}>
+                          {formatCurrency(project.total_paid_usd || project.total_awarded_usd)}
+                        </Text>
+                      </HStack>
+                    ))}
+                  </VStack>
+                </Box>
+
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
                   <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                     <Text fontSize="md" fontWeight="semibold" mb={4}>Quarterly Projects Awarded</Text>
@@ -459,57 +488,23 @@ export default function SCFPage() {
                 <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Category Performance</Text>
 
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={2}>Funding & Completion by Category</Text>
-                  <Text fontSize="sm" color="gray.500" mb={4}>Total funding and milestone completion rates per category (Top 5)</Text>
-                  <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-                    <Box h="280px">
-                      <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={categoryPerfData.slice(0, 5)} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis 
-                            type="number"
-                            tick={{ fill: '#4A5568', fontSize: 11 }}
-                            tickFormatter={(value) => formatCurrency(value)}
+                  <Text fontSize="md" fontWeight="semibold" mb={4}>Category Funding Breakdown</Text>
+                  <VStack align="stretch" gap={4}>
+                    {categoryPerfData.map((cat, idx) => (
+                      <HStack key={cat.category} justify="space-between" align="center">
+                        <HStack gap={3}>
+                          <Box 
+                            w="12px" 
+                            h="12px" 
+                            borderRadius="full" 
+                            bg={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
                           />
-                          <YAxis 
-                            type="category"
-                            dataKey="category" 
-                            tick={{ fill: '#4A5568', fontSize: 11 }}
-                            width={130}
-                          />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                            formatter={(value: number) => [formatCurrency(value), 'Total Awarded']}
-                          />
-                          <Bar dataKey="awarded" name="Total Awarded" fill={brandColors.olive} radius={[0, 4, 4, 0]} barSize={35} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </Box>
-                    <VStack align="stretch" gap={3}>
-                      <Text fontSize="sm" fontWeight="medium" color="gray.600">Category Metrics</Text>
-                      {categoryPerfData.slice(0, 5).map((cat, idx) => (
-                        <Box key={cat.category} p={3} bg="gray.50" borderRadius="md">
-                          <HStack justify="space-between" mb={1}>
-                            <Text fontSize="sm" fontWeight="medium">{cat.category}</Text>
-                            <Badge 
-                              bg={cat.completionRate >= 80 ? brandColors.olive : cat.completionRate >= 50 ? brandColors.teal : brandColors.burgundy}
-                              color="white"
-                              px={2}
-                              py={0.5}
-                              borderRadius="md"
-                              fontSize="xs"
-                            >
-                              {cat.completionRate}% paid
-                            </Badge>
-                          </HStack>
-                          <HStack justify="space-between" fontSize="xs" color="gray.500">
-                            <Text>{cat.projects} projects</Text>
-                            <Text>{cat.fullyCompleted} completed milestones</Text>
-                          </HStack>
-                        </Box>
-                      ))}
-                    </VStack>
-                  </SimpleGrid>
+                          <Text fontSize="md" fontWeight="medium">{cat.category}</Text>
+                        </HStack>
+                        <Text fontSize="md" fontWeight="semibold" color="gray.700">{formatCurrency(cat.awarded)}</Text>
+                      </HStack>
+                    ))}
+                  </VStack>
                 </Box>
 
                 <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Trend Analysis</Text>
