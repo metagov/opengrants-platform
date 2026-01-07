@@ -69,11 +69,11 @@ export default async function handler(
       UNION ALL
       SELECT 
         'Privote' as platform,
-        AVG("funds_approved_usd") as avg_grant_size,
+        AVG("fundsApprovedInUSD") as avg_grant_size,
         COUNT(*) as project_count,
-        SUM("funds_approved_usd") as total_funding
+        SUM("fundsApprovedInUSD") as total_funding
       FROM silver_privote_grant_applications
-      WHERE "funds_approved_usd" > 0
+      WHERE "fundsApprovedInUSD" > 0
     `);
 
     // Funding distribution curve data (top projects per platform)
@@ -103,10 +103,10 @@ export default async function handler(
         SELECT 
           'Privote' as platform,
           name as project_name,
-          "funds_approved_usd" as funding,
-          ROW_NUMBER() OVER (ORDER BY "funds_approved_usd" DESC) as rank
+          "fundsApprovedInUSD" as funding,
+          ROW_NUMBER() OVER (ORDER BY "fundsApprovedInUSD" DESC) as rank
         FROM silver_privote_grant_applications
-        WHERE "funds_approved_usd" > 0
+        WHERE "fundsApprovedInUSD" > 0
       )
       SELECT * FROM scf_ranked WHERE rank <= 20
       UNION ALL
