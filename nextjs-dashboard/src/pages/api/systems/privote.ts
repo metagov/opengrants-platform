@@ -10,6 +10,12 @@ export default async function handler(
   }
 
   try {
+    const metadata = await query(`
+      SELECT platform, last_indexed_at, data_source, notes
+      FROM platform_metadata
+      WHERE platform = 'privote'
+    `, []);
+
     const allocations = await query(`
       SELECT 
         rank,
@@ -24,34 +30,74 @@ export default async function handler(
       LIMIT 50
     `, []);
 
-    const summary = await query(`
+    const summaryData = await query(`
       SELECT 
         COUNT(*) as total_projects,
         SUM(allocation_eth) as total_allocated,
         SUM(votes) as total_votes,
-        AVG(allocation_eth) as avg_allocation
+        AVG(allocation_eth) as avg_allocation,
+        MAX(allocation_eth) as max_allocation,
+        MIN(allocation_eth) as min_allocation
       FROM privote.ui_allocations
     `, []);
 
-    const systemProfile = await query(`
+    const applicationStats = await query(`
       SELECT 
-        'privote' as platform,
-        CAST(COUNT(DISTINCT recipient_index) AS INTEGER) as total_applications,
-        CAST(SUM(votes) AS NUMERIC) as total_votes,
-        CAST(AVG(votes) AS NUMERIC) as avg_votes_per_project,
-        CAST(MAX(votes) AS INTEGER) as max_votes,
-        CAST(SUM(allocation_eth) AS DOUBLE PRECISION) as total_funding_distributed_usd,
-        CAST(AVG(allocation_eth) AS DOUBLE PRECISION) as avg_funding_per_project,
-        3 as top_3_projects,
-        CAST(COUNT(DISTINCT project_name) AS INTEGER) as total_projects,
-        1 as total_grant_pools
-      FROM privote.ui_allocations
+        COUNT(*) as total_applications,
+        SUM(CAST("fundsApprovedInUSD" AS numeric)) as total_approved_usd,
+        SUM(CAST("fundsAskedInUSD" AS numeric)) as total_asked_usd,
+        AVG(CAST("fundsApprovedInUSD" AS numeric)) as avg_approved_usd,
+        COUNT(CASE WHEN status = 'Approved' THEN 1 END) as approved_count,
+        COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending_count
+      FROM silver_privote_grant_applications
     `, []);
+
+    const roundInfo = await query(`
+      SELECT 
+        id as round_id,
+        name as round_name,
+        description,
+        "totalGrantPoolSizeInUSD" as pool_size_usd,
+        "io.privote.chain" as chain
+      FROM silver_privote_grant_pools
+      LIMIT 1
+    `, []);
+
+    const topApplications = await query(`
+      SELECT 
+        name as project_name,
+        description,
+        CAST("fundsApprovedInUSD" AS numeric) as funds_approved_usd,
+        CAST("fundsAskedInUSD" AS numeric) as funds_asked_usd,
+        status,
+        "grantPoolName" as grant_pool_name,
+        CAST("io.privote.rank" AS integer) as rank,
+        CAST("io.privote.votes" AS numeric) as votes
+      FROM silver_privote_grant_applications
+      WHERE "io.privote.rank" IS NOT NULL
+      ORDER BY CAST("io.privote.rank" AS integer) ASC
+      LIMIT 20
+    `, []);
+
+    const summary = {
+      total_projects: Number(summaryData[0]?.total_projects) || 0,
+      total_allocated: Number(summaryData[0]?.total_allocated) || 0,
+      total_votes: Number(summaryData[0]?.total_votes) || 0,
+      avg_allocation: Number(summaryData[0]?.avg_allocation) || 0,
+      max_allocation: Number(summaryData[0]?.max_allocation) || 0,
+      min_allocation: Number(summaryData[0]?.min_allocation) || 0,
+      total_applications: Number(applicationStats[0]?.total_applications) || 0,
+      total_approved_usd: Number(applicationStats[0]?.total_approved_usd) || 0,
+      total_asked_usd: Number(applicationStats[0]?.total_asked_usd) || 0,
+    };
 
     res.status(200).json({
-      profile: systemProfile[0] || {},
+      metadata: metadata[0] || null,
+      summary,
       allocations,
-      summary: summary[0]
+      round: roundInfo[0] || null,
+      topApplications,
+      applicationStats: applicationStats[0] || {}
     });
   } catch (error) {
     console.error('Database error:', error);
