@@ -45,4 +45,21 @@ free -h
 #### Connect to prod db.
  ```psql "postgresql://doadmin:<instanceid>@<db_link>/defaultdb?sslmode=require" ```
 
- 
+### Dashboard reboot
+# 1. Go to the app
+cd ~/opengrants-platform/nextjs-dashboard
+
+# 2. Pull latest code
+git pull
+
+# 3. Install deps (safe even if unchanged)
+pnpm install
+
+# 4. Build for production
+pnpm run build
+
+# 5. Restart the app via PM2
+pm2 restart opengrants-dashboard
+
+# 6. Verify status
+pm2 status

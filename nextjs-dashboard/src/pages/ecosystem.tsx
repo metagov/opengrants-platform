@@ -18,7 +18,10 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from "recharts";
+import { brandColors } from "../theme/colors";
 import { Navigation } from "../components/Navigation";
 import { SystemHeader } from "../components/SystemHeader";
 import { MetricCard } from "../components/MetricCard";
@@ -33,6 +36,20 @@ interface PlatformData {
   primary_mechanism: string;
 }
 
+interface AvgGrantData {
+  platform: string;
+  avg_grant_size: number;
+  project_count: number;
+  total_funding: number;
+}
+
+interface FundingDistData {
+  platform: string;
+  project_name: string;
+  funding: number;
+  rank: number;
+}
+
 interface EcosystemData {
   platforms: PlatformData[];
   scf: {
@@ -40,6 +57,8 @@ interface EcosystemData {
     total_paid: number;
     total_rounds: number;
   };
+  avgGrantSize: AvgGrantData[];
+  fundingDistribution: FundingDistData[];
 }
 
 export default function Ecosystem() {
@@ -109,6 +128,41 @@ export default function Ecosystem() {
     funding: parseFloat(String(platform.total_funding_usd)) || 0,
     applications: parseInt(String(platform.total_applications)) || 0,
   }));
+
+  const avgGrantChartData = (data?.avgGrantSize || []).map((item) => ({
+    platform: getPlatformName(item.platform.toLowerCase()),
+    avgGrant: Number(item.avg_grant_size) || 0,
+    projects: Number(item.project_count) || 0,
+  }));
+
+  const platformColorMap: { [key: string]: string } = {
+    'Stellar Community Fund': brandColors.olive,
+    'Giveth': brandColors.deepPurple,
+    'Privote (GG24 Privacy)': brandColors.teal,
+  };
+
+  const fundingDistChartData = (() => {
+    const scfData = (data?.fundingDistribution || []).filter(d => d.platform === 'SCF').map(d => ({
+      rank: Number(d.rank),
+      scf: Number(d.funding) || 0,
+    }));
+    const givethData = (data?.fundingDistribution || []).filter(d => d.platform === 'Giveth').map(d => ({
+      rank: Number(d.rank),
+      giveth: Number(d.funding) || 0,
+    }));
+    const privoteData = (data?.fundingDistribution || []).filter(d => d.platform === 'Privote').map(d => ({
+      rank: Number(d.rank),
+      privote: Number(d.funding) || 0,
+    }));
+    
+    const ranks = Array.from({ length: 20 }, (_, i) => i + 1);
+    return ranks.map(rank => ({
+      rank,
+      SCF: scfData.find(d => d.rank === rank)?.scf || 0,
+      Giveth: givethData.find(d => d.rank === rank)?.giveth || 0,
+      Privote: privoteData.find(d => d.rank === rank)?.privote || 0,
+    }));
+  })();
 
   return (
     <>
@@ -326,6 +380,152 @@ export default function Ecosystem() {
               </VStack>
             </Box>
           </VStack>
+
+          <Box mt={12}>
+            <HStack mb={6} align="center" gap={2}>
+              <Text
+                fontSize="sm"
+                fontWeight="medium"
+                letterSpacing="wide"
+                textTransform="uppercase"
+                color="gray.600"
+              >
+                Cross-Platform Comparison
+              </Text>
+              <Box
+                px={2}
+                py={1}
+                bg="blue.50"
+                borderRadius="md"
+                title="We are actively indexing more historical data for Giveth and Privote. Current comparison is based on available data."
+              >
+                <Text fontSize="xs" color="blue.600">
+                  Data indexing in progress
+                </Text>
+              </Box>
+            </HStack>
+
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+              <Box
+                p={6}
+                bg="white"
+                borderRadius="lg"
+                borderWidth="1px"
+                borderColor="gray.100"
+              >
+                <Text fontSize="md" fontWeight="semibold" mb={2}>
+                  Average Grant Size by Platform
+                </Text>
+                <Text fontSize="sm" color="gray.500" mb={4}>
+                  Comparing typical grant amounts across ecosystems
+                </Text>
+                <Box h="300px">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={avgGrantChartData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                      <XAxis
+                        type="number"
+                        tick={{ fill: "#4A5568", fontSize: 11 }}
+                        tickFormatter={(value) => formatCurrency(value)}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="platform"
+                        tick={{ fill: "#4A5568", fontSize: 11 }}
+                        width={140}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "white",
+                          border: "1px solid #E2E8F0",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value: number) => [
+                          formatCurrency(value),
+                          "Avg Grant",
+                        ]}
+                      />
+                      <Bar
+                        dataKey="avgGrant"
+                        name="Average Grant"
+                        fill={brandColors.burgundy}
+                        radius={[0, 4, 4, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Box>
+
+              <Box
+                p={6}
+                bg="white"
+                borderRadius="lg"
+                borderWidth="1px"
+                borderColor="gray.100"
+              >
+                <Text fontSize="md" fontWeight="semibold" mb={2}>
+                  Funding Distribution Curve
+                </Text>
+                <Text fontSize="sm" color="gray.500" mb={4}>
+                  How funding is distributed across top 20 projects per platform
+                </Text>
+                <Box h="300px">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={fundingDistChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                      <XAxis
+                        dataKey="rank"
+                        tick={{ fill: "#4A5568", fontSize: 11 }}
+                        label={{
+                          value: "Project Rank",
+                          position: "insideBottom",
+                          offset: -5,
+                          style: { fill: "#4A5568", fontSize: 11 },
+                        }}
+                      />
+                      <YAxis
+                        tick={{ fill: "#4A5568", fontSize: 11 }}
+                        tickFormatter={(value) => formatCurrency(value)}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "white",
+                          border: "1px solid #E2E8F0",
+                          borderRadius: "8px",
+                        }}
+                        formatter={(value: number, name: string) => [
+                          formatCurrency(value),
+                          name,
+                        ]}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="SCF"
+                        stroke={brandColors.olive}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Giveth"
+                        stroke={brandColors.deepPurple}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="Privote"
+                        stroke={brandColors.teal}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Box>
+            </SimpleGrid>
+          </Box>
         </Container>
       </Box>
     </>
