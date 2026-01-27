@@ -24,6 +24,7 @@ services:
       - '3000:3000'
     volumes:
       - ./og_dagster:/app
+      - ./dbt_project:/app/dbt_project
       - ./duckdb:/data/duckdb
       - ./raw_data:/app/raw_data
     environment:
@@ -36,7 +37,7 @@ services:
       - POSTGRES_PORT=5432
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-opengrants}
     env_file:
-      - .env
+      - .env.local
     command:
       - dagster
       - dev
@@ -59,7 +60,7 @@ services:
       - ./dlt_pipelines:/app
       - ./duckdb:/data/duckdb
     env_file:
-      - .env
+      - .env.local
     command:
       - python
       - loaders/privote_loader.py
@@ -76,7 +77,9 @@ services:
       - ./dbt_project:/app
       - ./duckdb:/data/duckdb
     env_file:
-      - .env
+      - .env.local
+    environment:
+      - DBT_TARGET=dev_postgres
     entrypoint:
       - dbt
     working_dir: /app

@@ -4,6 +4,16 @@ opengrants:
 
   outputs:
 
+    dev_postgres:
+      type: postgres
+      host: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__HOST') }}"
+      user: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__USERNAME') }}"
+      password: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PASSWORD') }}"
+      dbname: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__DATABASE') }}"
+      port: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PORT') | int }}"
+      schema: public
+      threads: 4
+
     prod_postgres:
       type: postgres
       host: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__HOST') }}"
