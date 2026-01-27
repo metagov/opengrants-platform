@@ -10,6 +10,7 @@ services:
       - '3000:3000'
     volumes:
       - ./og_dagster:/app
+      - ./dbt_project:/app/dbt_project
       - ./duckdb:/data/duckdb
       - ./raw_data:/app/raw_data
     environment:
@@ -60,8 +61,8 @@ services:
       - ./duckdb:/data/duckdb
     env_file:
       - .env
-    command:
-      - run
+    environment:
+      - DBT_TARGET=prod_postgres
     entrypoint:
       - dbt
     working_dir: /app

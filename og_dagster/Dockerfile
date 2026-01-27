@@ -18,10 +18,9 @@ FROM python:3.12-slim AS final
 WORKDIR /app
 ENV PYTHONPATH=/app
 
-# Copy Dagster project ONLY (not the whole repo)
-COPY og_dagster/ ./og_dagster
-COPY og_dagster/workspace.yaml ./workspace.yaml
-
+# Copy git for dbt operations
+COPY --from=base /usr/bin/git /usr/bin/git
+COPY --from=base /usr/lib/git-core /usr/lib/git-core
 
 # Copy Dagster dependencies from builder layer
 COPY --from=base /usr/local/lib/python3.12 /usr/local/lib/python3.12

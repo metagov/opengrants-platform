@@ -65,9 +65,16 @@ docker-compose.override.yml
 
 # --- Misc ---
 tree.txt
+FutureTodo.md
 
 dbt_project/target/
 dbt_project/dbt_modules/
 dbt_project/.dbt/
 logs/dbt_project/target/
 dbt_project/dbt_packages/
+
+#--- Production environment --- Log Locally Ignored Files ---
+.env.local
+docker-compose.prod.yml
+
+.claude
