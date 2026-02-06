@@ -2,7 +2,7 @@
 
 WITH all_projects AS (
     -- Giveth Projects
-    SELECT 
+    SELECT
         'giveth' as platform,
         name,
         LOWER(TRIM(name)) as normalized_name,
@@ -10,11 +10,11 @@ WITH all_projects AS (
         NULL as grant_rounds
     FROM {{ source('silver', 'silver_giveth_projects') }}
     WHERE "io.giveth.totalDonations" > 0
-    
+
     UNION ALL
-    
+
     -- SCF Projects
-    SELECT 
+    SELECT
         'scf' as platform,
         ga.name,
         LOWER(TRIM(ga.name)) as normalized_name,
@@ -23,11 +23,11 @@ WITH all_projects AS (
     FROM {{ source('silver', 'silver_scf_grant_applications') }} ga
     JOIN {{ source('silver', 'silver_scf_grant_pools') }} gp ON ga."grantPoolId" = gp.id
     WHERE ga."fundsApprovedInUSD" IS NOT NULL
-    
+
     UNION ALL
-    
+
     -- Privote Projects
-    SELECT 
+    SELECT
         'privote' as platform,
         name,
         LOWER(TRIM(name)) as normalized_name,
@@ -35,6 +35,18 @@ WITH all_projects AS (
         "grantPoolName" as grant_rounds
     FROM {{ source('silver', 'silver_privote_grant_applications') }}
     WHERE "fundsApprovedInUSD" > 0
+
+    UNION ALL
+
+    -- GrantStack Projects (from applications with donations)
+    SELECT
+        'grantsstack' as platform,
+        ga.name,
+        LOWER(TRIM(ga.name)) as normalized_name,
+        COALESCE(ga."fundsApprovedInUSD"::numeric, 0) as total_funding,
+        ga."grantPoolName" as grant_rounds
+    FROM {{ source('silver', 'silver_grantsstack_grant_applications') }} ga
+    WHERE ga."fundsApprovedInUSD" IS NOT NULL AND ga."fundsApprovedInUSD"::numeric > 0
 ),
 
 project_cross_presence AS (
@@ -52,33 +64,36 @@ project_cross_presence AS (
 ),
 
 project_details AS (
-    SELECT 
+    SELECT
         p.normalized_name,
         p.platforms_present,
         p.platforms_list,
         p.total_grant_rounds,
         p.cross_platform_funding,
         p.highest_single_funding,
-        
+
         -- Get original project names (take the most common one)
-        (SELECT name FROM all_projects ap 
-         WHERE ap.normalized_name = p.normalized_name 
+        (SELECT name FROM all_projects ap
+         WHERE ap.normalized_name = p.normalized_name
          GROUP BY name ORDER BY COUNT(*) DESC LIMIT 1) as display_name,
-         
+
         -- Get funding breakdown by platform
-        (SELECT SUM(total_funding) FROM all_projects ap 
+        (SELECT SUM(total_funding) FROM all_projects ap
          WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'giveth') as giveth_funding,
-         
-        (SELECT SUM(total_funding) FROM all_projects ap 
+
+        (SELECT SUM(total_funding) FROM all_projects ap
          WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'scf') as scf_funding,
-         
-        (SELECT SUM(total_funding) FROM all_projects ap 
-         WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'privote') as privote_funding
+
+        (SELECT SUM(total_funding) FROM all_projects ap
+         WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'privote') as privote_funding,
+
+        (SELECT SUM(total_funding) FROM all_projects ap
+         WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'grantsstack') as grantsstack_funding
 
     FROM project_cross_presence p
 )
 
-SELECT 
+SELECT
     display_name as project_name,
     platforms_present,
     platforms_list,
@@ -88,15 +103,20 @@ SELECT
     giveth_funding,
     scf_funding,
     privote_funding,
-    
-    -- Simple funding diversity indicator (no complex ROUND)
-    CASE 
-        WHEN giveth_funding > 0 AND scf_funding > 0 AND privote_funding > 0 THEN 'High Diversity'
-        WHEN (giveth_funding > 0 AND scf_funding > 0) OR 
-             (giveth_funding > 0 AND privote_funding > 0) OR 
-             (scf_funding > 0 AND privote_funding > 0) THEN 'Medium Diversity'
+    grantsstack_funding,
+
+    -- Funding diversity indicator (updated to include grantsstack)
+    CASE
+        WHEN (CASE WHEN giveth_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN scf_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN privote_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN grantsstack_funding > 0 THEN 1 ELSE 0 END) >= 3 THEN 'High Diversity'
+        WHEN (CASE WHEN giveth_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN scf_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN privote_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN grantsstack_funding > 0 THEN 1 ELSE 0 END) = 2 THEN 'Medium Diversity'
         ELSE 'Low Diversity'
     END as funding_diversity
-    
+
 FROM project_details
 ORDER BY cross_platform_funding DESC, platforms_present DESC

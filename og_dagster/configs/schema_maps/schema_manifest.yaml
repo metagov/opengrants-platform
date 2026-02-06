@@ -19,6 +19,8 @@ schemas_block:
   projects: include('project_schema')
   grant_pools: include('grant_pool_schema')
   grant_applications: include('grant_application_schema', required=False)
+  donations: include('donation_schema', required=False)
+  payouts: include('payout_schema', required=False)
 ---
 
 # ============================================================
@@ -104,6 +106,52 @@ grant_pool_schema:
     requiredCredentials: include('optional_json_array_field_schema')
     totalGrantPoolSize: include('optional_grant_pool_size_field_schema')
   extensions: map(include('grant_pool_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  join_keys: list(str(), required=False)
+---
+
+# ============================================================
+# DONATION SCHEMA
+# ============================================================
+donation_schema:
+  table: any(str(), list(str()), required=False)
+  sources: list(include('table_source_schema'), required=False)
+  target_table: str()
+  schema: str(required=False)
+  fields:
+    id: include('id_field_schema')
+    grantPoolId: include('grant_pool_id_field_schema')
+    applicationId: include('optional_string_field_schema')
+    projectId: include('project_id_field_schema')
+    donorAddress: include('optional_string_field_schema')
+    recipientAddress: include('optional_string_field_schema')
+    amount: include('optional_float_field_schema')
+    amountInUsd: include('optional_float_field_schema')
+    timestamp: include('optional_datetime_field_schema')
+    transactionHash: include('optional_string_field_schema')
+  extensions: map(include('donation_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  join_keys: list(str(), required=False)
+---
+
+# ============================================================
+# PAYOUT SCHEMA
+# ============================================================
+payout_schema:
+  table: any(str(), list(str()), required=False)
+  sources: list(include('table_source_schema'), required=False)
+  target_table: str()
+  schema: str(required=False)
+  fields:
+    id: include('id_field_schema')
+    type: include('optional_string_field_schema')
+    applicationId: include('optional_string_field_schema')
+    grantPoolId: include('grant_pool_id_field_schema')
+    amount: include('optional_float_field_schema')
+    amountInUsd: include('optional_float_field_schema')
+    sender: include('optional_string_field_schema')
+    tokenAddress: include('optional_string_field_schema')
+    timestamp: include('optional_datetime_field_schema')
+    proof: include('optional_string_field_schema')
+  extensions: map(include('payout_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
   join_keys: list(str(), required=False)
 ---
 
@@ -386,6 +434,24 @@ grant_application_extension_field:
 # Grant Pool Extension Fields
 grant_pool_extension_fields: map(include('grant_pool_extension_field'), key=str())
 grant_pool_extension_field:
+  source: any(str(), list(str()), null())
+  type: enum('string', 'integer', 'float', 'boolean', 'datetime', 'json')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+# Donation Extension Fields
+donation_extension_fields: map(include('donation_extension_field'), key=str())
+donation_extension_field:
+  source: any(str(), list(str()), null())
+  type: enum('string', 'integer', 'float', 'boolean', 'datetime', 'json')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+# Payout Extension Fields
+payout_extension_fields: map(include('payout_extension_field'), key=str())
+payout_extension_field:
   source: any(str(), list(str()), null())
   type: enum('string', 'integer', 'float', 'boolean', 'datetime', 'json')
   transform: str(required=False)
