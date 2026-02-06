@@ -1,0 +1,823 @@
+# ============================================================
+# DAOIP-5 Unified Schema Map — GrantStack (Gitcoin Grants Stack)
+# ============================================================
+
+manifest:
+  schema_name: daoip5_grantsstack
+  version: 1.0.0
+  source_system: "GrantStack Indexer API"
+  last_updated: "2026-01-27T00:00:00Z"
+  description: >
+    DAOIP-5-compliant schema mapping for GrantStack (Gitcoin Grants Stack) data.
+    Maps rounds to GrantPool schema, projects to Project schema, and applications
+    to GrantApplication schema. Preserves GrantStack-specific metadata through
+    io.grantsstack extensions.
+
+schemas:
+
+  # ----------------------------------------------------------
+  # DAOIP-5: GrantPool Schema (Rounds)
+  # ----------------------------------------------------------
+  grant_pools:
+    table: bronze_grantsstack_rounds
+    target_table: silver_grantsstack_grant_pools
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:grantsstack:grantPool:{v}' if v else None"
+
+      name:
+        source: roundMetadata
+        type: string
+        required: true
+        transform: "lambda v: json.loads(v).get('name', 'Unnamed Round') if v and isinstance(v, str) else (v.get('name', 'Unnamed Round') if isinstance(v, dict) else 'Unnamed Round')"
+
+      description:
+        source: roundMetadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('description', '') if v and isinstance(v, str) else (v.get('description', '') if isinstance(v, dict) else '')"
+
+      grantFundingMechanism:
+        source: strategyName
+        type: enum
+        required: false
+        allowed:
+          - "Quadratic Funding"
+          - "Direct Grants"
+          - "Retro Funding"
+          - "Streaming Quadratic Funding"
+          - "Bounties"
+          - "Delegated Domain Allocation"
+          - "Impact Attestations"
+        transform: "lambda v: 'Quadratic Funding' if v and 'Quadratic' in str(v) else ('Direct Grants' if v and 'Direct' in str(v) else 'Direct Grants')"
+
+      isOpen:
+        source: donationsEndTime
+        type: boolean
+        required: false
+        transform: "lambda v: v is None or (v and str(v) > '2026-01-01') if v else True"
+
+      closeDate:
+        source: donationsEndTime
+        type: datetime
+        required: false
+
+      totalGrantPoolSizeInUSD:
+        source: matchAmountInUsd
+        type: float
+        required: false
+
+      image:
+        source: roundMetadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('roundMetadataPtrCid', '') if v and isinstance(v, str) else (v.get('roundMetadataPtrCid', '') if isinstance(v, dict) else '')"
+
+      applicationsURI:
+        source: applicationMetadataCid
+        type: string
+        required: false
+
+      coverImage:
+        source: null
+        type: string
+        required: false
+
+      email:
+        source: roundMetadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('support', {}).get('info', '') if v and isinstance(v, str) else (v.get('support', {}).get('info', '') if isinstance(v, dict) else '')"
+
+      governanceURI:
+        source: null
+        type: string
+        required: false
+
+      attestationIssuersURI:
+        source: null
+        type: string
+        required: false
+
+      requiredCredentials:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      totalGrantPoolSize:
+        source: matchAmount
+        type: json
+        required: false
+        transform: "lambda v: [{'amount': float(v) if v else 0, 'denomination': 'ETH'}]"
+
+    extensions:
+      io.grantsstack:
+
+        # -------------------------
+        # CHAIN & BLOCK INFO
+        # -------------------------
+        chainId:
+          source: chainId
+          type: integer
+          required: true
+        createdAtBlock:
+          source: createdAtBlock
+          type: float
+          required: false
+        updatedAtBlock:
+          source: updatedAtBlock
+          type: float
+          required: false
+        createdByAddress:
+          source: createdByAddress
+          type: string
+          required: false
+
+        # -------------------------
+        # FUNDING DETAILS
+        # -------------------------
+        matchAmount:
+          source: matchAmount
+          type: float
+          required: false
+        matchAmountInUsd:
+          source: matchAmountInUsd
+          type: float
+          required: false
+        matchTokenAddress:
+          source: matchTokenAddress
+          type: string
+          required: false
+        fundedAmount:
+          source: fundedAmount
+          type: float
+          required: false
+        fundedAmountInUsd:
+          source: fundedAmountInUsd
+          type: float
+          required: false
+        totalAmountDonatedInUsd:
+          source: totalAmountDonatedInUsd
+          type: float
+          required: false
+        totalDonationsCount:
+          source: totalDonationsCount
+          type: integer
+          required: false
+        uniqueDonorsCount:
+          source: uniqueDonorsCount
+          type: integer
+          required: false
+
+        # -------------------------
+        # TIMING
+        # -------------------------
+        applicationsStartTime:
+          source: applicationsStartTime
+          type: datetime
+          required: false
+        applicationsEndTime:
+          source: applicationsEndTime
+          type: datetime
+          required: false
+        donationsStartTime:
+          source: donationsStartTime
+          type: datetime
+          required: false
+        donationsEndTime:
+          source: donationsEndTime
+          type: datetime
+          required: false
+
+        # -------------------------
+        # STRATEGY
+        # -------------------------
+        strategyId:
+          source: strategyId
+          type: string
+          required: false
+        strategyName:
+          source: strategyName
+          type: string
+          required: false
+        strategyAddress:
+          source: strategyAddress
+          type: string
+          required: false
+
+        # -------------------------
+        # ROLES
+        # -------------------------
+        adminRole:
+          source: adminRole
+          type: string
+          required: false
+        managerRole:
+          source: managerRole
+          type: string
+          required: false
+
+        # -------------------------
+        # METADATA (JSON)
+        # -------------------------
+        roundMetadata:
+          source: roundMetadata
+          type: json
+          required: false
+        applicationMetadata:
+          source: applicationMetadata
+          type: json
+          required: false
+        matchingDistribution:
+          source: matchingDistribution
+          type: json
+          required: false
+        tags:
+          source: tags
+          type: json
+          required: false
+
+        # -------------------------
+        # PAYOUT
+        # -------------------------
+        readyForPayoutTransaction:
+          source: readyForPayoutTransaction
+          type: string
+          required: false
+
+  # ----------------------------------------------------------
+  # DAOIP-5: Project Schema (Projects)
+  # ----------------------------------------------------------
+  projects:
+    table: bronze_grantsstack_projects
+    target_table: silver_grantsstack_projects
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:grantsstack:project:{v}' if v else None"
+
+      name:
+        source: name
+        type: string
+        required: true
+
+      description:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('description', '') if v and isinstance(v, str) else (v.get('description', '') if isinstance(v, dict) else '')"
+
+      contentURI:
+        source: metadataCid
+        type: string
+        required: false
+        transform: "lambda v: f'ipfs://{v}' if v else None"
+
+      email:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('projectTwitter', '') if v and isinstance(v, str) else (v.get('projectTwitter', '') if isinstance(v, dict) else '')"
+
+      membersURI:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('website', '') if v and isinstance(v, str) else (v.get('website', '') if isinstance(v, dict) else '')"
+
+      attestationIssuersURI:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      image:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('logoImg', '') if v and isinstance(v, str) else (v.get('logoImg', '') if isinstance(v, dict) else '')"
+
+      coverImage:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('bannerImg', '') if v and isinstance(v, str) else (v.get('bannerImg', '') if isinstance(v, dict) else '')"
+
+      licenseURI:
+        source: null
+        type: string
+        required: false
+
+      relevantTo:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      socials:
+        source: metadata
+        type: json
+        required: false
+        transform: "lambda v: {'twitter': json.loads(v).get('projectTwitter', ''), 'github': json.loads(v).get('projectGithub', '')} if v and isinstance(v, str) else ({'twitter': v.get('projectTwitter', ''), 'github': v.get('projectGithub', '')} if isinstance(v, dict) else {})"
+
+    extensions:
+      io.grantsstack:
+
+        # -------------------------
+        # CHAIN & BLOCK INFO
+        # -------------------------
+        chainId:
+          source: chainId
+          type: integer
+          required: true
+        createdAtBlock:
+          source: createdAtBlock
+          type: float
+          required: false
+        updatedAtBlock:
+          source: updatedAtBlock
+          type: float
+          required: false
+        createdByAddress:
+          source: createdByAddress
+          type: string
+          required: false
+        timestamp:
+          source: timestamp
+          type: datetime
+          required: false
+
+        # -------------------------
+        # PROJECT DETAILS
+        # -------------------------
+        nonce:
+          source: nonce
+          type: float
+          required: false
+        projectNumber:
+          source: projectNumber
+          type: integer
+          required: false
+        projectType:
+          source: projectType
+          type: string
+          required: false
+        anchorAddress:
+          source: anchorAddress
+          type: string
+          required: false
+        registryAddress:
+          source: registryAddress
+          type: string
+          required: false
+
+        # -------------------------
+        # METADATA
+        # -------------------------
+        metadata:
+          source: metadata
+          type: json
+          required: false
+        metadataCid:
+          source: metadataCid
+          type: string
+          required: false
+        tags:
+          source: tags
+          type: json
+          required: false
+
+  # ----------------------------------------------------------
+  # DAOIP-5: GrantApplication Schema (Applications)
+  # Per spec: https://github.com/metagov/daostar/blob/main/DAOIPs/daoip-5.md
+  # ----------------------------------------------------------
+  grant_applications:
+    table: bronze_grantsstack_applications
+    target_table: silver_grantsstack_grant_applications
+
+    fields:
+      # REQUIRED: Unique identifier
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:grantsstack:grantPool:{v.split(\":\")[0] if v and \":\" in v else \"unknown\"}:grantApplication:{v}' if v else None"
+
+      # REQUIRED: Application name (from metadata)
+      name:
+        source: metadata
+        type: string
+        required: true
+        transform: "lambda v: json.loads(v).get('application', {}).get('project', {}).get('title', 'Unnamed Application') if v and isinstance(v, str) else 'Unnamed Application'"
+
+      # REQUIRED: Grant pool reference
+      grantPoolId:
+        source: roundId
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:grantsstack:grantPool:{v}' if v else None"
+
+      grantPoolName:
+        source: null
+        type: string
+        required: false
+
+      # Project reference
+      projectId:
+        source: projectId
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:grantsstack:project:{v}' if v else None"
+
+      # REQUIRED: Application creation timestamp
+      createdAt:
+        source: timestamp
+        type: datetime
+        required: true
+
+      # Description (from metadata)
+      description:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('application', {}).get('project', {}).get('description', '') if v and isinstance(v, str) else ''"
+
+      # Content URI (link to full application)
+      contentURI:
+        source: metadataCid
+        type: string
+        required: false
+        transform: "lambda v: f'ipfs://{v}' if v else None"
+
+      # Status (RECOMMENDED)
+      status:
+        source: status
+        type: enum
+        required: false
+        allowed:
+          - "pending"
+          - "in_review"
+          - "approved"
+          - "funded"
+          - "rejected"
+          - "completed"
+        transform: "lambda v: v.lower() if v else 'pending'"
+
+      # Funds asked (from metadata if available)
+      fundsAsked:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      fundsAskedInUSD:
+        source: null
+        type: float
+        required: false
+
+      # Funds approved
+      fundsApproved:
+        source: totalAmountDonatedInUsd
+        type: json
+        required: false
+        transform: "lambda v: [{'amount': float(v), 'denomination': 'USD'}] if v else []"
+
+      fundsApprovedInUSD:
+        source: totalAmountDonatedInUsd
+        type: float
+        required: false
+
+      # Payout address
+      payoutAddress:
+        source: anchorAddress
+        type: json
+        required: false
+        transform: "lambda v: {'type': 'EthereumAddress', 'value': v} if v else None"
+
+      # Payouts array
+      payouts:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      # Discussion link
+      discussionTo:
+        source: null
+        type: string
+        required: false
+
+      licenseURI:
+        source: null
+        type: string
+        required: false
+
+      isInactive:
+        source: status
+        type: boolean
+        required: false
+        transform: "lambda v: v in ['REJECTED', 'CANCELLED'] if v else False"
+
+      # Application completion rate
+      applicationCompletionRate:
+        source: null
+        type: float
+        required: false
+
+      # Socials (from metadata)
+      socials:
+        source: metadata
+        type: json
+        required: false
+        transform: "lambda v: {'twitter': json.loads(v).get('application', {}).get('project', {}).get('projectTwitter', ''), 'github': json.loads(v).get('application', {}).get('project', {}).get('projectGithub', '')} if v and isinstance(v, str) else {}"
+
+    extensions:
+      io.grantsstack:
+
+        # -------------------------
+        # CHAIN & BLOCK INFO
+        # -------------------------
+        chainId:
+          source: chainId
+          type: integer
+          required: true
+        createdAtBlock:
+          source: createdAtBlock
+          type: float
+          required: false
+        statusUpdatedAtBlock:
+          source: statusUpdatedAtBlock
+          type: float
+          required: false
+        createdByAddress:
+          source: createdByAddress
+          type: string
+          required: false
+
+        # -------------------------
+        # RELATIONSHIPS (raw)
+        # -------------------------
+        roundId_raw:
+          source: roundId
+          type: string
+          required: true
+        projectId_raw:
+          source: projectId
+          type: string
+          required: false
+        anchorAddress:
+          source: anchorAddress
+          type: string
+          required: false
+
+        # -------------------------
+        # STATUS
+        # -------------------------
+        status_raw:
+          source: status
+          type: string
+          required: false
+        statusSnapshots:
+          source: statusSnapshots
+          type: json
+          required: false
+
+        # -------------------------
+        # FUNDING METRICS
+        # -------------------------
+        totalAmountDonatedInUsd:
+          source: totalAmountDonatedInUsd
+          type: float
+          required: false
+        totalDonationsCount:
+          source: totalDonationsCount
+          type: integer
+          required: false
+        uniqueDonorsCount:
+          source: uniqueDonorsCount
+          type: integer
+          required: false
+        distributionTransaction:
+          source: distributionTransaction
+          type: string
+          required: false
+
+        # -------------------------
+        # METADATA
+        # -------------------------
+        metadata:
+          source: metadata
+          type: json
+          required: false
+        metadataCid:
+          source: metadataCid
+          type: string
+          required: false
+        tags:
+          source: tags
+          type: json
+          required: false
+        timestamp:
+          source: timestamp
+          type: datetime
+          required: false
+
+  # ----------------------------------------------------------
+  # Donations (Custom Schema - extends DAOIP-5)
+  # ----------------------------------------------------------
+  donations:
+    table: bronze_grantsstack_donations
+    target_table: silver_grantsstack_donations
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:grantsstack:donation:{v}' if v else None"
+
+      grantPoolId:
+        source: roundId
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:grantsstack:grantPool:{v}' if v else None"
+
+      applicationId:
+        source: applicationId
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:grantsstack:application:{v}' if v else None"
+
+      projectId:
+        source: projectId
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:grantsstack:project:{v}' if v else None"
+
+      donorAddress:
+        source: donorAddress
+        type: string
+        required: false
+
+      recipientAddress:
+        source: recipientAddress
+        type: string
+        required: false
+
+      amount:
+        source: amount
+        type: float
+        required: false
+
+      amountInUsd:
+        source: amountInUsd
+        type: float
+        required: false
+
+      timestamp:
+        source: timestamp
+        type: datetime
+        required: false
+
+      transactionHash:
+        source: transactionHash
+        type: string
+        required: false
+
+    extensions:
+      io.grantsstack:
+        chainId:
+          source: chainId
+          type: integer
+          required: false
+        blockNumber:
+          source: blockNumber
+          type: float
+          required: false
+        tokenAddress:
+          source: tokenAddress
+          type: string
+          required: false
+        amountInRoundMatchToken:
+          source: amountInRoundMatchToken
+          type: float
+          required: false
+        roundId_raw:
+          source: roundId
+          type: string
+          required: false
+        applicationId_raw:
+          source: applicationId
+          type: string
+          required: false
+
+  # ----------------------------------------------------------
+  # Payouts (DAOIP-5 compliant - for GrantApplication.payouts)
+  # ----------------------------------------------------------
+  payouts:
+    table: bronze_grantsstack_payouts
+    target_table: silver_grantsstack_payouts
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:grantsstack:payout:{v}' if v else None"
+
+      # DAOIP-5 payout.type
+      type:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: 'OnchainTransaction'"
+
+      # DAOIP-5 payout.value (transaction details)
+      applicationId:
+        source: applicationId
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:grantsstack:application:{v}' if v else None"
+
+      grantPoolId:
+        source: roundId
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:grantsstack:grantPool:{v}' if v else None"
+
+      amount:
+        source: amount
+        type: float
+        required: false
+
+      amountInUsd:
+        source: amountInUsd
+        type: float
+        required: false
+
+      sender:
+        source: sender
+        type: string
+        required: false
+
+      tokenAddress:
+        source: tokenAddress
+        type: string
+        required: false
+
+      timestamp:
+        source: timestamp
+        type: datetime
+        required: false
+
+      # DAOIP-5 payout.proof
+      proof:
+        source: transactionHash
+        type: string
+        required: false
+
+    extensions:
+      io.grantsstack:
+        chainId:
+          source: chainId
+          type: integer
+          required: false
+        transactionHash:
+          source: transactionHash
+          type: string
+          required: false
+        amountInRoundMatchToken:
+          source: amountInRoundMatchToken
+          type: float
+          required: false
+        roundId_raw:
+          source: roundId
+          type: string
+          required: false
+        applicationId_raw:
+          source: applicationId
+          type: string
+          required: false
+
+meta:
+  daoip_version: 5
+  author: "OpenGrants Platform"
+  mapping_strategy: "DAOIP-5 compliant + io.grantsstack extensions"
+  compatible_with:
+    - "opengrants-silver-pipeline>=0.3.0"
+  validation_rules:
+    json_fields_must_parse: true
+    json_schema_enforced: false
+    id_format: "daoip-5:grantsstack"
+    enum_enforced: true
+    required_fields:
+      - id
+      - name

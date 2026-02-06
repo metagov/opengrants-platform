@@ -11,6 +11,16 @@ from assets.silver.scf.scf import (
     silver_scf_grant_pools,
     silver_scf_projects,
 )
+
+# --- GrantStack Silver Assets ---
+from assets.silver.grantsstack.grantsstack import (
+    silver_grantsstack_grant_pools,
+    silver_grantsstack_projects,
+    silver_grantsstack_grant_applications,
+    silver_grantsstack_donations,
+    silver_grantsstack_payouts,
+)
+
 from dagster import AssetSelection, Definitions, define_asset_job
 from resources.database import database_engine_resource
 
@@ -46,6 +56,18 @@ silver_privote_etl_job = define_asset_job(
     description="Transform Privote Subgraph Raw data into the Silver layer.",
 )
 
+silver_grantsstack_etl_job = define_asset_job(
+    name="silver_grantsstack_etl_job",
+    selection=AssetSelection.assets(
+        silver_grantsstack_grant_pools,
+        silver_grantsstack_projects,
+        silver_grantsstack_grant_applications,
+        silver_grantsstack_donations,
+        silver_grantsstack_payouts,
+    ),
+    description="Transform GrantStack Raw data into the Silver layer (DAOIP-5 compliant).",
+)
+
 
 # -----------------------------
 # Asset registry
@@ -59,11 +81,17 @@ defs = Definitions(
         silver_scf_projects,
         silver_scf_grant_applications,
         silver_scf_grant_pools,
+        silver_grantsstack_grant_pools,
+        silver_grantsstack_projects,
+        silver_grantsstack_grant_applications,
+        silver_grantsstack_donations,
+        silver_grantsstack_payouts,
     ],
     resources={"database_engine": database_engine_resource},
     jobs=[
         silver_giveth_etl_job,
         silver_scf_etl_job,
         silver_privote_etl_job,
+        silver_grantsstack_etl_job,
     ],
 )

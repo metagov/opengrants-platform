@@ -1,0 +1,3585 @@
+# GraphQL Schema Summary
+# Generated from introspection
+
+enum ApplicationsPayoutsSelectColumn {
+  amount
+  amountInRoundMatchToken
+  amountInUsd
+  applicationId
+  chainId
+  id
+  roundId
+  sender
+  timestamp
+  tokenAddress
+  transactionHash
+}
+
+enum ApplicationsSelectColumn {
+  anchorAddress
+  chainId
+  createdAtBlock
+  createdByAddress
+  distributionTransaction
+  id
+  metadata
+  metadataCid
+  projectId
+  roundId
+  status
+  statusSnapshots
+  statusUpdatedAtBlock
+  tags
+  timestamp
+  totalAmountDonatedInUsd
+  totalDonationsCount
+  uniqueDonorsCount
+}
+
+enum AttestationTxnsSelectColumn {
+  attestationChainId
+  attestationUid
+  chainId
+  txnHash
+}
+
+enum AttestationsSelectColumn {
+  chainId
+  chainIdsContributed
+  fee
+  metadata
+  metadataCid
+  projectsContributed
+  recipient
+  refUid
+  roundsContributed
+  timestamp
+  totalUsdamount
+  uid
+}
+
+enum CursorOrdering {
+  ASC
+  DESC
+}
+
+enum DonationsSelectColumn {
+  amount
+  amountInRoundMatchToken
+  amountInUsd
+  applicationId
+  blockNumber
+  chainId
+  donorAddress
+  id
+  projectId
+  recipientAddress
+  roundId
+  timestamp
+  tokenAddress
+  transactionHash
+}
+
+enum EventsRegistrySelectColumn {
+  blockNumber
+  blockTimestamp
+  chainId
+  logIndex
+  rawEvent
+}
+
+enum LegacyProjectsSelectColumn {
+  id
+  v1ChainId
+  v1ProjectId
+  v2ProjectId
+}
+
+enum OrderBy {
+  ASC
+  ASC_NULLS_FIRST
+  ASC_NULLS_LAST
+  DESC
+  DESC_NULLS_FIRST
+  DESC_NULLS_LAST
+}
+
+enum PendingProjectRolesSelectColumn {
+  address
+  chainId
+  createdAtBlock
+  id
+  role
+}
+
+enum PendingRoundRolesSelectColumn {
+  address
+  chainId
+  createdAtBlock
+  id
+  role
+}
+
+enum ProjectRolesSelectColumn {
+  address
+  chainId
+  createdAtBlock
+  projectId
+  role
+}
+
+enum ProjectsSelectColumn {
+  anchorAddress
+  chainId
+  createdAtBlock
+  createdByAddress
+  id
+  metadata
+  metadataCid
+  name
+  nonce
+  projectNumber
+  projectType
+  registryAddress
+  tags
+  timestamp
+  updatedAtBlock
+}
+
+enum RoundRolesSelectColumn {
+  address
+  chainId
+  createdAtBlock
+  role
+  roundId
+}
+
+enum RoundsSelectColumn {
+  adminRole
+  applicationMetadata
+  applicationMetadataCid
+  applicationsEndTime
+  applicationsStartTime
+  chainId
+  createdAtBlock
+  createdByAddress
+  donationsEndTime
+  donationsStartTime
+  fundedAmount
+  fundedAmountInUsd
+  id
+  managerRole
+  matchAmount
+  matchAmountInUsd
+  matchTokenAddress
+  matchingDistribution
+  projectId
+  readyForPayoutTransaction
+  roundMetadata
+  roundMetadataCid
+  strategyAddress
+  strategyId
+  strategyName
+  tags
+  timestamp
+  totalAmountDonatedInUsd
+  totalDistributed
+  totalDonationsCount
+  uniqueDonorsCount
+  updatedAtBlock
+}
+
+input ApplicationStatusComparisonExp {
+  _eq: application_status
+  _gt: application_status
+  _gte: application_status
+  _in: [application_status!]
+  _isNull: Boolean
+  _lt: application_status
+  _lte: application_status
+  _neq: application_status
+  _nin: [application_status!]
+}
+
+input ApplicationsAggregateBoolExp {
+  count: applicationsAggregateBoolExpCount
+}
+
+input ApplicationsAggregateOrderBy {
+  avg: ApplicationsAvgOrderBy
+  count: OrderBy
+  max: ApplicationsMaxOrderBy
+  min: ApplicationsMinOrderBy
+  stddev: ApplicationsStddevOrderBy
+  stddevPop: ApplicationsStddevPopOrderBy
+  stddevSamp: ApplicationsStddevSampOrderBy
+  sum: ApplicationsSumOrderBy
+  varPop: ApplicationsVarPopOrderBy
+  varSamp: ApplicationsVarSampOrderBy
+  variance: ApplicationsVarianceOrderBy
+}
+
+input ApplicationsAvgOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsBoolExp {
+  _and: [ApplicationsBoolExp!]
+  _not: ApplicationsBoolExp
+  _or: [ApplicationsBoolExp!]
+  anchorAddress: StringComparisonExp
+  applicationsPayouts: ApplicationsPayoutsBoolExp
+  applicationsPayoutsAggregate: ApplicationsPayoutsAggregateBoolExp
+  chainId: IntComparisonExp
+  createdAtBlock: NumericComparisonExp
+  createdByAddress: StringComparisonExp
+  distributionTransaction: StringComparisonExp
+  donations: DonationsBoolExp
+  donationsAggregate: DonationsAggregateBoolExp
+  id: StringComparisonExp
+  metadata: JsonbComparisonExp
+  metadataCid: StringComparisonExp
+  project: ProjectsBoolExp
+  projectId: StringComparisonExp
+  projects: ProjectsBoolExp
+  projectsAggregate: ProjectsAggregateBoolExp
+  round: RoundsBoolExp
+  roundId: StringComparisonExp
+  status: ApplicationStatusComparisonExp
+  statusSnapshots: JsonbComparisonExp
+  statusUpdatedAtBlock: NumericComparisonExp
+  tags: JsonbComparisonExp
+  timestamp: TimestamptzComparisonExp
+  totalAmountDonatedInUsd: NumericComparisonExp
+  totalDonationsCount: IntComparisonExp
+  uniqueDonorsCount: IntComparisonExp
+}
+
+input ApplicationsMaxOrderBy {
+  anchorAddress: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  createdByAddress: OrderBy
+  distributionTransaction: OrderBy
+  id: OrderBy
+  metadataCid: OrderBy
+  projectId: OrderBy
+  roundId: OrderBy
+  status: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  timestamp: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsMinOrderBy {
+  anchorAddress: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  createdByAddress: OrderBy
+  distributionTransaction: OrderBy
+  id: OrderBy
+  metadataCid: OrderBy
+  projectId: OrderBy
+  roundId: OrderBy
+  status: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  timestamp: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsOrderBy {
+  anchorAddress: OrderBy
+  applicationsPayoutsAggregate: ApplicationsPayoutsAggregateOrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  createdByAddress: OrderBy
+  distributionTransaction: OrderBy
+  donationsAggregate: DonationsAggregateOrderBy
+  id: OrderBy
+  metadata: OrderBy
+  metadataCid: OrderBy
+  project: ProjectsOrderBy
+  projectId: OrderBy
+  projectsAggregate: ProjectsAggregateOrderBy
+  round: RoundsOrderBy
+  roundId: OrderBy
+  status: OrderBy
+  statusSnapshots: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  tags: OrderBy
+  timestamp: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsPayoutsAggregateBoolExp {
+  count: applicationsPayoutsAggregateBoolExpCount
+}
+
+input ApplicationsPayoutsAggregateOrderBy {
+  avg: ApplicationsPayoutsAvgOrderBy
+  count: OrderBy
+  max: ApplicationsPayoutsMaxOrderBy
+  min: ApplicationsPayoutsMinOrderBy
+  stddev: ApplicationsPayoutsStddevOrderBy
+  stddevPop: ApplicationsPayoutsStddevPopOrderBy
+  stddevSamp: ApplicationsPayoutsStddevSampOrderBy
+  sum: ApplicationsPayoutsSumOrderBy
+  varPop: ApplicationsPayoutsVarPopOrderBy
+  varSamp: ApplicationsPayoutsVarSampOrderBy
+  variance: ApplicationsPayoutsVarianceOrderBy
+}
+
+input ApplicationsPayoutsAvgOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+}
+
+input ApplicationsPayoutsBoolExp {
+  _and: [ApplicationsPayoutsBoolExp!]
+  _not: ApplicationsPayoutsBoolExp
+  _or: [ApplicationsPayoutsBoolExp!]
+  amount: NumericComparisonExp
+  amountInRoundMatchToken: NumericComparisonExp
+  amountInUsd: NumericComparisonExp
+  application: ApplicationsBoolExp
+  applicationId: StringComparisonExp
+  chainId: IntComparisonExp
+  id: IntComparisonExp
+  roundId: StringComparisonExp
+  sender: StringComparisonExp
+  timestamp: TimestamptzComparisonExp
+  tokenAddress: StringComparisonExp
+  transactionHash: StringComparisonExp
+}
+
+input ApplicationsPayoutsMaxOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  applicationId: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+  roundId: OrderBy
+  sender: OrderBy
+  timestamp: OrderBy
+  tokenAddress: OrderBy
+  transactionHash: OrderBy
+}
+
+input ApplicationsPayoutsMinOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  applicationId: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+  roundId: OrderBy
+  sender: OrderBy
+  timestamp: OrderBy
+  tokenAddress: OrderBy
+  transactionHash: OrderBy
+}
+
+input ApplicationsPayoutsOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  application: ApplicationsOrderBy
+  applicationId: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+  roundId: OrderBy
+  sender: OrderBy
+  timestamp: OrderBy
+  tokenAddress: OrderBy
+  transactionHash: OrderBy
+}
+
+input ApplicationsPayoutsStddevOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+}
+
+input ApplicationsPayoutsStddevPopOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+}
+
+input ApplicationsPayoutsStddevSampOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+}
+
+input ApplicationsPayoutsStreamCursorInput {
+  initialValue: ApplicationsPayoutsStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input ApplicationsPayoutsStreamCursorValueInput {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  applicationId: String
+  chainId: Int
+  id: Int
+  roundId: String
+  sender: String
+  timestamp: timestamptz
+  tokenAddress: String
+  transactionHash: String
+}
+
+input ApplicationsPayoutsSumOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+}
+
+input ApplicationsPayoutsVarPopOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+}
+
+input ApplicationsPayoutsVarSampOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+}
+
+input ApplicationsPayoutsVarianceOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  chainId: OrderBy
+  id: OrderBy
+}
+
+input ApplicationsStddevOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsStddevPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsStddevSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsStreamCursorInput {
+  initialValue: ApplicationsStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input ApplicationsStreamCursorValueInput {
+  anchorAddress: String
+  chainId: Int
+  createdAtBlock: numeric
+  createdByAddress: String
+  distributionTransaction: String
+  id: String
+  metadata: jsonb
+  metadataCid: String
+  projectId: String
+  roundId: String
+  status: application_status
+  statusSnapshots: jsonb
+  statusUpdatedAtBlock: numeric
+  tags: jsonb
+  timestamp: timestamptz
+  totalAmountDonatedInUsd: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+}
+
+input ApplicationsSumOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsVarPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsVarSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input ApplicationsVarianceOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  statusUpdatedAtBlock: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+}
+
+input AttestationTxnsAggregateBoolExp {
+  count: attestationTxnsAggregateBoolExpCount
+}
+
+input AttestationTxnsAggregateOrderBy {
+  avg: AttestationTxnsAvgOrderBy
+  count: OrderBy
+  max: AttestationTxnsMaxOrderBy
+  min: AttestationTxnsMinOrderBy
+  stddev: AttestationTxnsStddevOrderBy
+  stddevPop: AttestationTxnsStddevPopOrderBy
+  stddevSamp: AttestationTxnsStddevSampOrderBy
+  sum: AttestationTxnsSumOrderBy
+  varPop: AttestationTxnsVarPopOrderBy
+  varSamp: AttestationTxnsVarSampOrderBy
+  variance: AttestationTxnsVarianceOrderBy
+}
+
+input AttestationTxnsAvgOrderBy {
+  attestationChainId: OrderBy
+  chainId: OrderBy
+}
+
+input AttestationTxnsBoolExp {
+  _and: [AttestationTxnsBoolExp!]
+  _not: AttestationTxnsBoolExp
+  _or: [AttestationTxnsBoolExp!]
+  attestation: AttestationsBoolExp
+  attestationChainId: IntComparisonExp
+  attestationUid: StringComparisonExp
+  chainId: IntComparisonExp
+  donation: DonationsBoolExp
+  txnHash: StringComparisonExp
+}
+
+input AttestationTxnsMaxOrderBy {
+  attestationChainId: OrderBy
+  attestationUid: OrderBy
+  chainId: OrderBy
+  txnHash: OrderBy
+}
+
+input AttestationTxnsMinOrderBy {
+  attestationChainId: OrderBy
+  attestationUid: OrderBy
+  chainId: OrderBy
+  txnHash: OrderBy
+}
+
+input AttestationTxnsOrderBy {
+  attestation: AttestationsOrderBy
+  attestationChainId: OrderBy
+  attestationUid: OrderBy
+  chainId: OrderBy
+  donation: DonationsOrderBy
+  txnHash: OrderBy
+}
+
+input AttestationTxnsStddevOrderBy {
+  attestationChainId: OrderBy
+  chainId: OrderBy
+}
+
+input AttestationTxnsStddevPopOrderBy {
+  attestationChainId: OrderBy
+  chainId: OrderBy
+}
+
+input AttestationTxnsStddevSampOrderBy {
+  attestationChainId: OrderBy
+  chainId: OrderBy
+}
+
+input AttestationTxnsStreamCursorInput {
+  initialValue: AttestationTxnsStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input AttestationTxnsStreamCursorValueInput {
+  attestationChainId: Int
+  attestationUid: String
+  chainId: Int
+  txnHash: String
+}
+
+input AttestationTxnsSumOrderBy {
+  attestationChainId: OrderBy
+  chainId: OrderBy
+}
+
+input AttestationTxnsVarPopOrderBy {
+  attestationChainId: OrderBy
+  chainId: OrderBy
+}
+
+input AttestationTxnsVarSampOrderBy {
+  attestationChainId: OrderBy
+  chainId: OrderBy
+}
+
+input AttestationTxnsVarianceOrderBy {
+  attestationChainId: OrderBy
+  chainId: OrderBy
+}
+
+input AttestationsBoolExp {
+  _and: [AttestationsBoolExp!]
+  _not: AttestationsBoolExp
+  _or: [AttestationsBoolExp!]
+  attestationTxns: AttestationTxnsBoolExp
+  attestationTxnsAggregate: AttestationTxnsAggregateBoolExp
+  chainId: IntComparisonExp
+  chainIdsContributed: NumericComparisonExp
+  fee: NumericComparisonExp
+  metadata: JsonbComparisonExp
+  metadataCid: StringComparisonExp
+  projectsContributed: NumericComparisonExp
+  recipient: StringComparisonExp
+  refUid: StringComparisonExp
+  roundsContributed: NumericComparisonExp
+  timestamp: TimestamptzComparisonExp
+  totalUsdamount: NumericComparisonExp
+  uid: StringComparisonExp
+}
+
+input AttestationsOrderBy {
+  attestationTxnsAggregate: AttestationTxnsAggregateOrderBy
+  chainId: OrderBy
+  chainIdsContributed: OrderBy
+  fee: OrderBy
+  metadata: OrderBy
+  metadataCid: OrderBy
+  projectsContributed: OrderBy
+  recipient: OrderBy
+  refUid: OrderBy
+  roundsContributed: OrderBy
+  timestamp: OrderBy
+  totalUsdamount: OrderBy
+  uid: OrderBy
+}
+
+input AttestationsStreamCursorInput {
+  initialValue: AttestationsStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input AttestationsStreamCursorValueInput {
+  chainId: Int
+  chainIdsContributed: numeric
+  fee: numeric
+  metadata: jsonb
+  metadataCid: String
+  projectsContributed: numeric
+  recipient: String
+  refUid: String
+  roundsContributed: numeric
+  timestamp: timestamptz
+  totalUsdamount: numeric
+  uid: String
+}
+
+input BigintComparisonExp {
+  _eq: bigint
+  _gt: bigint
+  _gte: bigint
+  _in: [bigint!]
+  _isNull: Boolean
+  _lt: bigint
+  _lte: bigint
+  _neq: bigint
+  _nin: [bigint!]
+}
+
+input DonationsAggregateBoolExp {
+  count: donationsAggregateBoolExpCount
+}
+
+input DonationsAggregateOrderBy {
+  avg: DonationsAvgOrderBy
+  count: OrderBy
+  max: DonationsMaxOrderBy
+  min: DonationsMinOrderBy
+  stddev: DonationsStddevOrderBy
+  stddevPop: DonationsStddevPopOrderBy
+  stddevSamp: DonationsStddevSampOrderBy
+  sum: DonationsSumOrderBy
+  varPop: DonationsVarPopOrderBy
+  varSamp: DonationsVarSampOrderBy
+  variance: DonationsVarianceOrderBy
+}
+
+input DonationsAvgOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+}
+
+input DonationsBoolExp {
+  _and: [DonationsBoolExp!]
+  _not: DonationsBoolExp
+  _or: [DonationsBoolExp!]
+  amount: NumericComparisonExp
+  amountInRoundMatchToken: NumericComparisonExp
+  amountInUsd: NumericComparisonExp
+  application: ApplicationsBoolExp
+  applicationId: StringComparisonExp
+  attestationTransactions: AttestationTxnsBoolExp
+  attestationTransactionsAggregate: AttestationTxnsAggregateBoolExp
+  blockNumber: NumericComparisonExp
+  chainId: IntComparisonExp
+  donorAddress: StringComparisonExp
+  id: StringComparisonExp
+  projectId: StringComparisonExp
+  recipientAddress: StringComparisonExp
+  round: RoundsBoolExp
+  roundId: StringComparisonExp
+  timestamp: TimestamptzComparisonExp
+  tokenAddress: StringComparisonExp
+  transactionHash: StringComparisonExp
+}
+
+input DonationsMaxOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  applicationId: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+  donorAddress: OrderBy
+  id: OrderBy
+  projectId: OrderBy
+  recipientAddress: OrderBy
+  roundId: OrderBy
+  timestamp: OrderBy
+  tokenAddress: OrderBy
+  transactionHash: OrderBy
+}
+
+input DonationsMinOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  applicationId: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+  donorAddress: OrderBy
+  id: OrderBy
+  projectId: OrderBy
+  recipientAddress: OrderBy
+  roundId: OrderBy
+  timestamp: OrderBy
+  tokenAddress: OrderBy
+  transactionHash: OrderBy
+}
+
+input DonationsOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  application: ApplicationsOrderBy
+  applicationId: OrderBy
+  attestationTransactionsAggregate: AttestationTxnsAggregateOrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+  donorAddress: OrderBy
+  id: OrderBy
+  projectId: OrderBy
+  recipientAddress: OrderBy
+  round: RoundsOrderBy
+  roundId: OrderBy
+  timestamp: OrderBy
+  tokenAddress: OrderBy
+  transactionHash: OrderBy
+}
+
+input DonationsStddevOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+}
+
+input DonationsStddevPopOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+}
+
+input DonationsStddevSampOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+}
+
+input DonationsStreamCursorInput {
+  initialValue: DonationsStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input DonationsStreamCursorValueInput {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  applicationId: String
+  blockNumber: numeric
+  chainId: Int
+  donorAddress: String
+  id: String
+  projectId: String
+  recipientAddress: String
+  roundId: String
+  timestamp: timestamptz
+  tokenAddress: String
+  transactionHash: String
+}
+
+input DonationsSumOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+}
+
+input DonationsVarPopOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+}
+
+input DonationsVarSampOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+}
+
+input DonationsVarianceOrderBy {
+  amount: OrderBy
+  amountInRoundMatchToken: OrderBy
+  amountInUsd: OrderBy
+  blockNumber: OrderBy
+  chainId: OrderBy
+}
+
+input EventsRegistryBoolExp {
+  _and: [EventsRegistryBoolExp!]
+  _not: EventsRegistryBoolExp
+  _or: [EventsRegistryBoolExp!]
+  blockNumber: IntComparisonExp
+  blockTimestamp: BigintComparisonExp
+  chainId: IntComparisonExp
+  logIndex: IntComparisonExp
+  rawEvent: JsonbComparisonExp
+}
+
+input EventsRegistryOrderBy {
+  blockNumber: OrderBy
+  blockTimestamp: OrderBy
+  chainId: OrderBy
+  logIndex: OrderBy
+  rawEvent: OrderBy
+}
+
+input EventsRegistryStreamCursorInput {
+  initialValue: EventsRegistryStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input EventsRegistryStreamCursorValueInput {
+  blockNumber: Int
+  blockTimestamp: bigint
+  chainId: Int
+  logIndex: Int
+  rawEvent: jsonb
+}
+
+input IntComparisonExp {
+  _eq: Int
+  _gt: Int
+  _gte: Int
+  _in: [Int!]
+  _isNull: Boolean
+  _lt: Int
+  _lte: Int
+  _neq: Int
+  _nin: [Int!]
+}
+
+input JsonbCastExp {
+  String: StringComparisonExp
+}
+
+input JsonbComparisonExp {
+  _cast: JsonbCastExp
+  _containedIn: jsonb
+  _contains: jsonb
+  _eq: jsonb
+  _gt: jsonb
+  _gte: jsonb
+  _hasKey: String
+  _hasKeysAll: [String!]
+  _hasKeysAny: [String!]
+  _in: [jsonb!]
+  _isNull: Boolean
+  _lt: jsonb
+  _lte: jsonb
+  _neq: jsonb
+  _nin: [jsonb!]
+}
+
+input LegacyProjectsBoolExp {
+  _and: [LegacyProjectsBoolExp!]
+  _not: LegacyProjectsBoolExp
+  _or: [LegacyProjectsBoolExp!]
+  id: IntComparisonExp
+  v1ChainId: IntComparisonExp
+  v1ProjectId: StringComparisonExp
+  v2ProjectId: StringComparisonExp
+}
+
+input LegacyProjectsOrderBy {
+  id: OrderBy
+  v1ChainId: OrderBy
+  v1ProjectId: OrderBy
+  v2ProjectId: OrderBy
+}
+
+input LegacyProjectsStreamCursorInput {
+  initialValue: LegacyProjectsStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input LegacyProjectsStreamCursorValueInput {
+  id: Int
+  v1ChainId: Int
+  v1ProjectId: String
+  v2ProjectId: String
+}
+
+input NumericComparisonExp {
+  _eq: numeric
+  _gt: numeric
+  _gte: numeric
+  _in: [numeric!]
+  _isNull: Boolean
+  _lt: numeric
+  _lte: numeric
+  _neq: numeric
+  _nin: [numeric!]
+}
+
+input PendingProjectRolesBoolExp {
+  _and: [PendingProjectRolesBoolExp!]
+  _not: PendingProjectRolesBoolExp
+  _or: [PendingProjectRolesBoolExp!]
+  address: StringComparisonExp
+  chainId: IntComparisonExp
+  createdAtBlock: NumericComparisonExp
+  id: IntComparisonExp
+  role: StringComparisonExp
+}
+
+input PendingProjectRolesOrderBy {
+  address: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  id: OrderBy
+  role: OrderBy
+}
+
+input PendingProjectRolesStreamCursorInput {
+  initialValue: PendingProjectRolesStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input PendingProjectRolesStreamCursorValueInput {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int
+  role: String
+}
+
+input PendingRoundRolesBoolExp {
+  _and: [PendingRoundRolesBoolExp!]
+  _not: PendingRoundRolesBoolExp
+  _or: [PendingRoundRolesBoolExp!]
+  address: StringComparisonExp
+  chainId: IntComparisonExp
+  createdAtBlock: NumericComparisonExp
+  id: IntComparisonExp
+  role: StringComparisonExp
+}
+
+input PendingRoundRolesOrderBy {
+  address: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  id: OrderBy
+  role: OrderBy
+}
+
+input PendingRoundRolesStreamCursorInput {
+  initialValue: PendingRoundRolesStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input PendingRoundRolesStreamCursorValueInput {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int
+  role: String
+}
+
+input ProjectRoleNameComparisonExp {
+  _eq: project_role_name
+  _gt: project_role_name
+  _gte: project_role_name
+  _in: [project_role_name!]
+  _isNull: Boolean
+  _lt: project_role_name
+  _lte: project_role_name
+  _neq: project_role_name
+  _nin: [project_role_name!]
+}
+
+input ProjectRolesAggregateBoolExp {
+  count: projectRolesAggregateBoolExpCount
+}
+
+input ProjectRolesAggregateOrderBy {
+  avg: ProjectRolesAvgOrderBy
+  count: OrderBy
+  max: ProjectRolesMaxOrderBy
+  min: ProjectRolesMinOrderBy
+  stddev: ProjectRolesStddevOrderBy
+  stddevPop: ProjectRolesStddevPopOrderBy
+  stddevSamp: ProjectRolesStddevSampOrderBy
+  sum: ProjectRolesSumOrderBy
+  varPop: ProjectRolesVarPopOrderBy
+  varSamp: ProjectRolesVarSampOrderBy
+  variance: ProjectRolesVarianceOrderBy
+}
+
+input ProjectRolesAvgOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input ProjectRolesBoolExp {
+  _and: [ProjectRolesBoolExp!]
+  _not: ProjectRolesBoolExp
+  _or: [ProjectRolesBoolExp!]
+  address: StringComparisonExp
+  chainId: IntComparisonExp
+  createdAtBlock: NumericComparisonExp
+  project: ProjectsBoolExp
+  projectId: StringComparisonExp
+  role: ProjectRoleNameComparisonExp
+}
+
+input ProjectRolesMaxOrderBy {
+  address: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  projectId: OrderBy
+  role: OrderBy
+}
+
+input ProjectRolesMinOrderBy {
+  address: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  projectId: OrderBy
+  role: OrderBy
+}
+
+input ProjectRolesOrderBy {
+  address: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  project: ProjectsOrderBy
+  projectId: OrderBy
+  role: OrderBy
+}
+
+input ProjectRolesStddevOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input ProjectRolesStddevPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input ProjectRolesStddevSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input ProjectRolesStreamCursorInput {
+  initialValue: ProjectRolesStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input ProjectRolesStreamCursorValueInput {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  projectId: String
+  role: project_role_name
+}
+
+input ProjectRolesSumOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input ProjectRolesVarPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input ProjectRolesVarSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input ProjectRolesVarianceOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input ProjectTypeComparisonExp {
+  _eq: project_type
+  _gt: project_type
+  _gte: project_type
+  _in: [project_type!]
+  _isNull: Boolean
+  _lt: project_type
+  _lte: project_type
+  _neq: project_type
+  _nin: [project_type!]
+}
+
+input ProjectsAggregateBoolExp {
+  count: projectsAggregateBoolExpCount
+}
+
+input ProjectsAggregateOrderBy {
+  avg: ProjectsAvgOrderBy
+  count: OrderBy
+  max: ProjectsMaxOrderBy
+  min: ProjectsMinOrderBy
+  stddev: ProjectsStddevOrderBy
+  stddevPop: ProjectsStddevPopOrderBy
+  stddevSamp: ProjectsStddevSampOrderBy
+  sum: ProjectsSumOrderBy
+  varPop: ProjectsVarPopOrderBy
+  varSamp: ProjectsVarSampOrderBy
+  variance: ProjectsVarianceOrderBy
+}
+
+input ProjectsAvgOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsBoolExp {
+  _and: [ProjectsBoolExp!]
+  _not: ProjectsBoolExp
+  _or: [ProjectsBoolExp!]
+  anchorAddress: StringComparisonExp
+  applications: ApplicationsBoolExp
+  applicationsAggregate: ApplicationsAggregateBoolExp
+  chainId: IntComparisonExp
+  createdAtBlock: NumericComparisonExp
+  createdByAddress: StringComparisonExp
+  id: StringComparisonExp
+  metadata: JsonbComparisonExp
+  metadataCid: StringComparisonExp
+  name: StringComparisonExp
+  nonce: NumericComparisonExp
+  projectNumber: IntComparisonExp
+  projectRoles: ProjectRolesBoolExp
+  projectRolesAggregate: ProjectRolesAggregateBoolExp
+  projectType: ProjectTypeComparisonExp
+  registryAddress: StringComparisonExp
+  rounds: RoundsBoolExp
+  roundsAggregate: RoundsAggregateBoolExp
+  tags: JsonbComparisonExp
+  timestamp: TimestamptzComparisonExp
+  updatedAtBlock: NumericComparisonExp
+}
+
+input ProjectsMaxOrderBy {
+  anchorAddress: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  createdByAddress: OrderBy
+  id: OrderBy
+  metadataCid: OrderBy
+  name: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  projectType: OrderBy
+  registryAddress: OrderBy
+  timestamp: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsMinOrderBy {
+  anchorAddress: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  createdByAddress: OrderBy
+  id: OrderBy
+  metadataCid: OrderBy
+  name: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  projectType: OrderBy
+  registryAddress: OrderBy
+  timestamp: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsOrderBy {
+  anchorAddress: OrderBy
+  applicationsAggregate: ApplicationsAggregateOrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  createdByAddress: OrderBy
+  id: OrderBy
+  metadata: OrderBy
+  metadataCid: OrderBy
+  name: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  projectRolesAggregate: ProjectRolesAggregateOrderBy
+  projectType: OrderBy
+  registryAddress: OrderBy
+  roundsAggregate: RoundsAggregateOrderBy
+  tags: OrderBy
+  timestamp: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsStddevOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsStddevPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsStddevSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsStreamCursorInput {
+  initialValue: ProjectsStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input ProjectsStreamCursorValueInput {
+  anchorAddress: String
+  chainId: Int
+  createdAtBlock: numeric
+  createdByAddress: String
+  id: String
+  metadata: jsonb
+  metadataCid: String
+  name: String
+  nonce: numeric
+  projectNumber: Int
+  projectType: project_type
+  registryAddress: String
+  tags: jsonb
+  timestamp: timestamptz
+  updatedAtBlock: numeric
+}
+
+input ProjectsSumOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsVarPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsVarSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input ProjectsVarianceOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  nonce: OrderBy
+  projectNumber: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundRoleNameComparisonExp {
+  _eq: round_role_name
+  _gt: round_role_name
+  _gte: round_role_name
+  _in: [round_role_name!]
+  _isNull: Boolean
+  _lt: round_role_name
+  _lte: round_role_name
+  _neq: round_role_name
+  _nin: [round_role_name!]
+}
+
+input RoundRolesAggregateBoolExp {
+  count: roundRolesAggregateBoolExpCount
+}
+
+input RoundRolesAggregateOrderBy {
+  avg: RoundRolesAvgOrderBy
+  count: OrderBy
+  max: RoundRolesMaxOrderBy
+  min: RoundRolesMinOrderBy
+  stddev: RoundRolesStddevOrderBy
+  stddevPop: RoundRolesStddevPopOrderBy
+  stddevSamp: RoundRolesStddevSampOrderBy
+  sum: RoundRolesSumOrderBy
+  varPop: RoundRolesVarPopOrderBy
+  varSamp: RoundRolesVarSampOrderBy
+  variance: RoundRolesVarianceOrderBy
+}
+
+input RoundRolesAvgOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input RoundRolesBoolExp {
+  _and: [RoundRolesBoolExp!]
+  _not: RoundRolesBoolExp
+  _or: [RoundRolesBoolExp!]
+  address: StringComparisonExp
+  chainId: IntComparisonExp
+  createdAtBlock: NumericComparisonExp
+  role: RoundRoleNameComparisonExp
+  round: RoundsBoolExp
+  roundId: StringComparisonExp
+}
+
+input RoundRolesMaxOrderBy {
+  address: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  role: OrderBy
+  roundId: OrderBy
+}
+
+input RoundRolesMinOrderBy {
+  address: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  role: OrderBy
+  roundId: OrderBy
+}
+
+input RoundRolesOrderBy {
+  address: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  role: OrderBy
+  round: RoundsOrderBy
+  roundId: OrderBy
+}
+
+input RoundRolesStddevOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input RoundRolesStddevPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input RoundRolesStddevSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input RoundRolesStreamCursorInput {
+  initialValue: RoundRolesStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input RoundRolesStreamCursorValueInput {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  role: round_role_name
+  roundId: String
+}
+
+input RoundRolesSumOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input RoundRolesVarPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input RoundRolesVarSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input RoundRolesVarianceOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+}
+
+input RoundsAggregateBoolExp {
+  count: roundsAggregateBoolExpCount
+}
+
+input RoundsAggregateOrderBy {
+  avg: RoundsAvgOrderBy
+  count: OrderBy
+  max: RoundsMaxOrderBy
+  min: RoundsMinOrderBy
+  stddev: RoundsStddevOrderBy
+  stddevPop: RoundsStddevPopOrderBy
+  stddevSamp: RoundsStddevSampOrderBy
+  sum: RoundsSumOrderBy
+  varPop: RoundsVarPopOrderBy
+  varSamp: RoundsVarSampOrderBy
+  variance: RoundsVarianceOrderBy
+}
+
+input RoundsAvgOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsBoolExp {
+  _and: [RoundsBoolExp!]
+  _not: RoundsBoolExp
+  _or: [RoundsBoolExp!]
+  adminRole: StringComparisonExp
+  applicationMetadata: JsonbComparisonExp
+  applicationMetadataCid: StringComparisonExp
+  applications: ApplicationsBoolExp
+  applicationsAggregate: ApplicationsAggregateBoolExp
+  applicationsEndTime: TimestamptzComparisonExp
+  applicationsStartTime: TimestamptzComparisonExp
+  chainId: IntComparisonExp
+  createdAtBlock: NumericComparisonExp
+  createdByAddress: StringComparisonExp
+  donations: DonationsBoolExp
+  donationsAggregate: DonationsAggregateBoolExp
+  donationsEndTime: TimestamptzComparisonExp
+  donationsStartTime: TimestamptzComparisonExp
+  fundedAmount: NumericComparisonExp
+  fundedAmountInUsd: NumericComparisonExp
+  id: StringComparisonExp
+  managerRole: StringComparisonExp
+  matchAmount: NumericComparisonExp
+  matchAmountInUsd: NumericComparisonExp
+  matchTokenAddress: StringComparisonExp
+  matchingDistribution: JsonbComparisonExp
+  project: ProjectsBoolExp
+  projectId: StringComparisonExp
+  readyForPayoutTransaction: StringComparisonExp
+  roundMetadata: JsonbComparisonExp
+  roundMetadataCid: StringComparisonExp
+  roundRoles: RoundRolesBoolExp
+  roundRolesAggregate: RoundRolesAggregateBoolExp
+  strategyAddress: StringComparisonExp
+  strategyId: StringComparisonExp
+  strategyName: StringComparisonExp
+  tags: JsonbComparisonExp
+  timestamp: TimestamptzComparisonExp
+  totalAmountDonatedInUsd: NumericComparisonExp
+  totalDistributed: NumericComparisonExp
+  totalDonationsCount: IntComparisonExp
+  uniqueDonorsCount: IntComparisonExp
+  updatedAtBlock: NumericComparisonExp
+}
+
+input RoundsMaxOrderBy {
+  adminRole: OrderBy
+  applicationMetadataCid: OrderBy
+  applicationsEndTime: OrderBy
+  applicationsStartTime: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  createdByAddress: OrderBy
+  donationsEndTime: OrderBy
+  donationsStartTime: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  id: OrderBy
+  managerRole: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  matchTokenAddress: OrderBy
+  projectId: OrderBy
+  readyForPayoutTransaction: OrderBy
+  roundMetadataCid: OrderBy
+  strategyAddress: OrderBy
+  strategyId: OrderBy
+  strategyName: OrderBy
+  timestamp: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsMinOrderBy {
+  adminRole: OrderBy
+  applicationMetadataCid: OrderBy
+  applicationsEndTime: OrderBy
+  applicationsStartTime: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  createdByAddress: OrderBy
+  donationsEndTime: OrderBy
+  donationsStartTime: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  id: OrderBy
+  managerRole: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  matchTokenAddress: OrderBy
+  projectId: OrderBy
+  readyForPayoutTransaction: OrderBy
+  roundMetadataCid: OrderBy
+  strategyAddress: OrderBy
+  strategyId: OrderBy
+  strategyName: OrderBy
+  timestamp: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsOrderBy {
+  adminRole: OrderBy
+  applicationMetadata: OrderBy
+  applicationMetadataCid: OrderBy
+  applicationsAggregate: ApplicationsAggregateOrderBy
+  applicationsEndTime: OrderBy
+  applicationsStartTime: OrderBy
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  createdByAddress: OrderBy
+  donationsAggregate: DonationsAggregateOrderBy
+  donationsEndTime: OrderBy
+  donationsStartTime: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  id: OrderBy
+  managerRole: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  matchTokenAddress: OrderBy
+  matchingDistribution: OrderBy
+  project: ProjectsOrderBy
+  projectId: OrderBy
+  readyForPayoutTransaction: OrderBy
+  roundMetadata: OrderBy
+  roundMetadataCid: OrderBy
+  roundRolesAggregate: RoundRolesAggregateOrderBy
+  strategyAddress: OrderBy
+  strategyId: OrderBy
+  strategyName: OrderBy
+  tags: OrderBy
+  timestamp: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsStddevOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsStddevPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsStddevSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsStreamCursorInput {
+  initialValue: RoundsStreamCursorValueInput!
+  ordering: CursorOrdering
+}
+
+input RoundsStreamCursorValueInput {
+  adminRole: String
+  applicationMetadata: jsonb
+  applicationMetadataCid: String
+  applicationsEndTime: timestamptz
+  applicationsStartTime: timestamptz
+  chainId: Int
+  createdAtBlock: numeric
+  createdByAddress: String
+  donationsEndTime: timestamptz
+  donationsStartTime: timestamptz
+  fundedAmount: numeric
+  fundedAmountInUsd: numeric
+  id: String
+  managerRole: String
+  matchAmount: numeric
+  matchAmountInUsd: numeric
+  matchTokenAddress: String
+  matchingDistribution: jsonb
+  projectId: String
+  readyForPayoutTransaction: String
+  roundMetadata: jsonb
+  roundMetadataCid: String
+  strategyAddress: String
+  strategyId: String
+  strategyName: String
+  tags: jsonb
+  timestamp: timestamptz
+  totalAmountDonatedInUsd: numeric
+  totalDistributed: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+  updatedAtBlock: numeric
+}
+
+input RoundsSumOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsVarPopOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsVarSampOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input RoundsVarianceOrderBy {
+  chainId: OrderBy
+  createdAtBlock: OrderBy
+  fundedAmount: OrderBy
+  fundedAmountInUsd: OrderBy
+  matchAmount: OrderBy
+  matchAmountInUsd: OrderBy
+  totalAmountDonatedInUsd: OrderBy
+  totalDistributed: OrderBy
+  totalDonationsCount: OrderBy
+  uniqueDonorsCount: OrderBy
+  updatedAtBlock: OrderBy
+}
+
+input StringComparisonExp {
+  _eq: String
+  _gt: String
+  _gte: String
+  _ilike: String
+  _in: [String!]
+  _iregex: String
+  _isNull: Boolean
+  _like: String
+  _lt: String
+  _lte: String
+  _neq: String
+  _nilike: String
+  _nin: [String!]
+  _niregex: String
+  _nlike: String
+  _nregex: String
+  _nsimilar: String
+  _regex: String
+  _similar: String
+}
+
+input TimestamptzComparisonExp {
+  _eq: timestamptz
+  _gt: timestamptz
+  _gte: timestamptz
+  _in: [timestamptz!]
+  _isNull: Boolean
+  _lt: timestamptz
+  _lte: timestamptz
+  _neq: timestamptz
+  _nin: [timestamptz!]
+}
+
+input applicationsAggregateBoolExpCount {
+  arguments: [ApplicationsSelectColumn!]
+  distinct: Boolean
+  filter: ApplicationsBoolExp
+  predicate: IntComparisonExp!
+}
+
+input applicationsPayoutsAggregateBoolExpCount {
+  arguments: [ApplicationsPayoutsSelectColumn!]
+  distinct: Boolean
+  filter: ApplicationsPayoutsBoolExp
+  predicate: IntComparisonExp!
+}
+
+input attestationTxnsAggregateBoolExpCount {
+  arguments: [AttestationTxnsSelectColumn!]
+  distinct: Boolean
+  filter: AttestationTxnsBoolExp
+  predicate: IntComparisonExp!
+}
+
+input donationsAggregateBoolExpCount {
+  arguments: [DonationsSelectColumn!]
+  distinct: Boolean
+  filter: DonationsBoolExp
+  predicate: IntComparisonExp!
+}
+
+input projectRolesAggregateBoolExpCount {
+  arguments: [ProjectRolesSelectColumn!]
+  distinct: Boolean
+  filter: ProjectRolesBoolExp
+  predicate: IntComparisonExp!
+}
+
+input projectsAggregateBoolExpCount {
+  arguments: [ProjectsSelectColumn!]
+  distinct: Boolean
+  filter: ProjectsBoolExp
+  predicate: IntComparisonExp!
+}
+
+input roundRolesAggregateBoolExpCount {
+  arguments: [RoundRolesSelectColumn!]
+  distinct: Boolean
+  filter: RoundRolesBoolExp
+  predicate: IntComparisonExp!
+}
+
+input roundsAggregateBoolExpCount {
+  arguments: [RoundsSelectColumn!]
+  distinct: Boolean
+  filter: RoundsBoolExp
+  predicate: IntComparisonExp!
+}
+
+input searchProjectsArgs {
+  search_term: String
+}
+
+type Applications {
+  anchorAddress: String
+  applicationsPayouts: [ApplicationsPayouts!]!
+  applicationsPayoutsAggregate: ApplicationsPayoutsAggregate!
+  chainId: Int!
+  createdAtBlock: numeric
+  createdByAddress: String
+  distributionTransaction: String
+  donations: [Donations!]!
+  donationsAggregate: DonationsAggregate!
+  id: String!
+  metadata: jsonb
+  metadataCid: String
+  project: Projects
+  projectId: String
+  projects: [Projects!]!
+  projectsAggregate: ProjectsAggregate!
+  round: Rounds
+  roundId: String!
+  status: application_status
+  statusSnapshots: jsonb
+  statusUpdatedAtBlock: numeric
+  tags: jsonb
+  timestamp: timestamptz
+  totalAmountDonatedInUsd: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+}
+
+type ApplicationsAggregate {
+  aggregate: ApplicationsAggregateFields
+  nodes: [Applications!]!
+}
+
+type ApplicationsAggregateFields {
+  avg: ApplicationsAvgFields
+  count: Int!
+  max: ApplicationsMaxFields
+  min: ApplicationsMinFields
+  stddev: ApplicationsStddevFields
+  stddevPop: ApplicationsStddevPopFields
+  stddevSamp: ApplicationsStddevSampFields
+  sum: ApplicationsSumFields
+  varPop: ApplicationsVarPopFields
+  varSamp: ApplicationsVarSampFields
+  variance: ApplicationsVarianceFields
+}
+
+type ApplicationsAvgFields {
+  chainId: Float
+  createdAtBlock: Float
+  statusUpdatedAtBlock: Float
+  totalAmountDonatedInUsd: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+}
+
+type ApplicationsMaxFields {
+  anchorAddress: String
+  chainId: Int
+  createdAtBlock: numeric
+  createdByAddress: String
+  distributionTransaction: String
+  id: String
+  metadataCid: String
+  projectId: String
+  roundId: String
+  status: application_status
+  statusUpdatedAtBlock: numeric
+  timestamp: timestamptz
+  totalAmountDonatedInUsd: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+}
+
+type ApplicationsMinFields {
+  anchorAddress: String
+  chainId: Int
+  createdAtBlock: numeric
+  createdByAddress: String
+  distributionTransaction: String
+  id: String
+  metadataCid: String
+  projectId: String
+  roundId: String
+  status: application_status
+  statusUpdatedAtBlock: numeric
+  timestamp: timestamptz
+  totalAmountDonatedInUsd: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+}
+
+type ApplicationsPayouts {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  application: Applications
+  applicationId: String
+  chainId: Int
+  id: Int!
+  roundId: String
+  sender: String
+  timestamp: timestamptz
+  tokenAddress: String
+  transactionHash: String
+}
+
+type ApplicationsPayoutsAggregate {
+  aggregate: ApplicationsPayoutsAggregateFields
+  nodes: [ApplicationsPayouts!]!
+}
+
+type ApplicationsPayoutsAggregateFields {
+  avg: ApplicationsPayoutsAvgFields
+  count: Int!
+  max: ApplicationsPayoutsMaxFields
+  min: ApplicationsPayoutsMinFields
+  stddev: ApplicationsPayoutsStddevFields
+  stddevPop: ApplicationsPayoutsStddevPopFields
+  stddevSamp: ApplicationsPayoutsStddevSampFields
+  sum: ApplicationsPayoutsSumFields
+  varPop: ApplicationsPayoutsVarPopFields
+  varSamp: ApplicationsPayoutsVarSampFields
+  variance: ApplicationsPayoutsVarianceFields
+}
+
+type ApplicationsPayoutsAvgFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  chainId: Float
+  id: Float
+}
+
+type ApplicationsPayoutsMaxFields {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  applicationId: String
+  chainId: Int
+  id: Int
+  roundId: String
+  sender: String
+  timestamp: timestamptz
+  tokenAddress: String
+  transactionHash: String
+}
+
+type ApplicationsPayoutsMinFields {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  applicationId: String
+  chainId: Int
+  id: Int
+  roundId: String
+  sender: String
+  timestamp: timestamptz
+  tokenAddress: String
+  transactionHash: String
+}
+
+type ApplicationsPayoutsStddevFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  chainId: Float
+  id: Float
+}
+
+type ApplicationsPayoutsStddevPopFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  chainId: Float
+  id: Float
+}
+
+type ApplicationsPayoutsStddevSampFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  chainId: Float
+  id: Float
+}
+
+type ApplicationsPayoutsSumFields {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  chainId: Int
+  id: Int
+}
+
+type ApplicationsPayoutsVarPopFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  chainId: Float
+  id: Float
+}
+
+type ApplicationsPayoutsVarSampFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  chainId: Float
+  id: Float
+}
+
+type ApplicationsPayoutsVarianceFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  chainId: Float
+  id: Float
+}
+
+type ApplicationsStddevFields {
+  chainId: Float
+  createdAtBlock: Float
+  statusUpdatedAtBlock: Float
+  totalAmountDonatedInUsd: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+}
+
+type ApplicationsStddevPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  statusUpdatedAtBlock: Float
+  totalAmountDonatedInUsd: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+}
+
+type ApplicationsStddevSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  statusUpdatedAtBlock: Float
+  totalAmountDonatedInUsd: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+}
+
+type ApplicationsSumFields {
+  chainId: Int
+  createdAtBlock: numeric
+  statusUpdatedAtBlock: numeric
+  totalAmountDonatedInUsd: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+}
+
+type ApplicationsVarPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  statusUpdatedAtBlock: Float
+  totalAmountDonatedInUsd: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+}
+
+type ApplicationsVarSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  statusUpdatedAtBlock: Float
+  totalAmountDonatedInUsd: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+}
+
+type ApplicationsVarianceFields {
+  chainId: Float
+  createdAtBlock: Float
+  statusUpdatedAtBlock: Float
+  totalAmountDonatedInUsd: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+}
+
+type AttestationTxns {
+  attestation: Attestations
+  attestationChainId: Int
+  attestationUid: String
+  chainId: Int
+  donation: Donations
+  txnHash: String
+}
+
+type AttestationTxnsAggregate {
+  aggregate: AttestationTxnsAggregateFields
+  nodes: [AttestationTxns!]!
+}
+
+type AttestationTxnsAggregateFields {
+  avg: AttestationTxnsAvgFields
+  count: Int!
+  max: AttestationTxnsMaxFields
+  min: AttestationTxnsMinFields
+  stddev: AttestationTxnsStddevFields
+  stddevPop: AttestationTxnsStddevPopFields
+  stddevSamp: AttestationTxnsStddevSampFields
+  sum: AttestationTxnsSumFields
+  varPop: AttestationTxnsVarPopFields
+  varSamp: AttestationTxnsVarSampFields
+  variance: AttestationTxnsVarianceFields
+}
+
+type AttestationTxnsAvgFields {
+  attestationChainId: Float
+  chainId: Float
+}
+
+type AttestationTxnsMaxFields {
+  attestationChainId: Int
+  attestationUid: String
+  chainId: Int
+  txnHash: String
+}
+
+type AttestationTxnsMinFields {
+  attestationChainId: Int
+  attestationUid: String
+  chainId: Int
+  txnHash: String
+}
+
+type AttestationTxnsStddevFields {
+  attestationChainId: Float
+  chainId: Float
+}
+
+type AttestationTxnsStddevPopFields {
+  attestationChainId: Float
+  chainId: Float
+}
+
+type AttestationTxnsStddevSampFields {
+  attestationChainId: Float
+  chainId: Float
+}
+
+type AttestationTxnsSumFields {
+  attestationChainId: Int
+  chainId: Int
+}
+
+type AttestationTxnsVarPopFields {
+  attestationChainId: Float
+  chainId: Float
+}
+
+type AttestationTxnsVarSampFields {
+  attestationChainId: Float
+  chainId: Float
+}
+
+type AttestationTxnsVarianceFields {
+  attestationChainId: Float
+  chainId: Float
+}
+
+type Attestations {
+  attestationTxns: [AttestationTxns!]!
+  attestationTxnsAggregate: AttestationTxnsAggregate!
+  chainId: Int!
+  chainIdsContributed: numeric
+  fee: numeric
+  metadata: jsonb
+  metadataCid: String
+  projectsContributed: numeric
+  recipient: String
+  refUid: String
+  roundsContributed: numeric
+  timestamp: timestamptz
+  totalUsdamount: numeric
+  uid: String!
+}
+
+type AttestationsAggregate {
+  aggregate: AttestationsAggregateFields
+  nodes: [Attestations!]!
+}
+
+type AttestationsAggregateFields {
+  avg: AttestationsAvgFields
+  count: Int!
+  max: AttestationsMaxFields
+  min: AttestationsMinFields
+  stddev: AttestationsStddevFields
+  stddevPop: AttestationsStddevPopFields
+  stddevSamp: AttestationsStddevSampFields
+  sum: AttestationsSumFields
+  varPop: AttestationsVarPopFields
+  varSamp: AttestationsVarSampFields
+  variance: AttestationsVarianceFields
+}
+
+type AttestationsAvgFields {
+  chainId: Float
+  chainIdsContributed: Float
+  fee: Float
+  projectsContributed: Float
+  roundsContributed: Float
+  totalUsdamount: Float
+}
+
+type AttestationsMaxFields {
+  chainId: Int
+  chainIdsContributed: numeric
+  fee: numeric
+  metadataCid: String
+  projectsContributed: numeric
+  recipient: String
+  refUid: String
+  roundsContributed: numeric
+  timestamp: timestamptz
+  totalUsdamount: numeric
+  uid: String
+}
+
+type AttestationsMinFields {
+  chainId: Int
+  chainIdsContributed: numeric
+  fee: numeric
+  metadataCid: String
+  projectsContributed: numeric
+  recipient: String
+  refUid: String
+  roundsContributed: numeric
+  timestamp: timestamptz
+  totalUsdamount: numeric
+  uid: String
+}
+
+type AttestationsStddevFields {
+  chainId: Float
+  chainIdsContributed: Float
+  fee: Float
+  projectsContributed: Float
+  roundsContributed: Float
+  totalUsdamount: Float
+}
+
+type AttestationsStddevPopFields {
+  chainId: Float
+  chainIdsContributed: Float
+  fee: Float
+  projectsContributed: Float
+  roundsContributed: Float
+  totalUsdamount: Float
+}
+
+type AttestationsStddevSampFields {
+  chainId: Float
+  chainIdsContributed: Float
+  fee: Float
+  projectsContributed: Float
+  roundsContributed: Float
+  totalUsdamount: Float
+}
+
+type AttestationsSumFields {
+  chainId: Int
+  chainIdsContributed: numeric
+  fee: numeric
+  projectsContributed: numeric
+  roundsContributed: numeric
+  totalUsdamount: numeric
+}
+
+type AttestationsVarPopFields {
+  chainId: Float
+  chainIdsContributed: Float
+  fee: Float
+  projectsContributed: Float
+  roundsContributed: Float
+  totalUsdamount: Float
+}
+
+type AttestationsVarSampFields {
+  chainId: Float
+  chainIdsContributed: Float
+  fee: Float
+  projectsContributed: Float
+  roundsContributed: Float
+  totalUsdamount: Float
+}
+
+type AttestationsVarianceFields {
+  chainId: Float
+  chainIdsContributed: Float
+  fee: Float
+  projectsContributed: Float
+  roundsContributed: Float
+  totalUsdamount: Float
+}
+
+type Donations {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  application: Applications
+  applicationId: String
+  attestationTransactions: [AttestationTxns!]!
+  attestationTransactionsAggregate: AttestationTxnsAggregate!
+  blockNumber: numeric
+  chainId: Int
+  donorAddress: String
+  id: String!
+  projectId: String
+  recipientAddress: String
+  round: Rounds
+  roundId: String
+  timestamp: timestamptz
+  tokenAddress: String
+  transactionHash: String
+}
+
+type DonationsAggregate {
+  aggregate: DonationsAggregateFields
+  nodes: [Donations!]!
+}
+
+type DonationsAggregateFields {
+  avg: DonationsAvgFields
+  count: Int!
+  max: DonationsMaxFields
+  min: DonationsMinFields
+  stddev: DonationsStddevFields
+  stddevPop: DonationsStddevPopFields
+  stddevSamp: DonationsStddevSampFields
+  sum: DonationsSumFields
+  varPop: DonationsVarPopFields
+  varSamp: DonationsVarSampFields
+  variance: DonationsVarianceFields
+}
+
+type DonationsAvgFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  blockNumber: Float
+  chainId: Float
+}
+
+type DonationsMaxFields {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  applicationId: String
+  blockNumber: numeric
+  chainId: Int
+  donorAddress: String
+  id: String
+  projectId: String
+  recipientAddress: String
+  roundId: String
+  timestamp: timestamptz
+  tokenAddress: String
+  transactionHash: String
+}
+
+type DonationsMinFields {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  applicationId: String
+  blockNumber: numeric
+  chainId: Int
+  donorAddress: String
+  id: String
+  projectId: String
+  recipientAddress: String
+  roundId: String
+  timestamp: timestamptz
+  tokenAddress: String
+  transactionHash: String
+}
+
+type DonationsStddevFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  blockNumber: Float
+  chainId: Float
+}
+
+type DonationsStddevPopFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  blockNumber: Float
+  chainId: Float
+}
+
+type DonationsStddevSampFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  blockNumber: Float
+  chainId: Float
+}
+
+type DonationsSumFields {
+  amount: numeric
+  amountInRoundMatchToken: numeric
+  amountInUsd: numeric
+  blockNumber: numeric
+  chainId: Int
+}
+
+type DonationsVarPopFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  blockNumber: Float
+  chainId: Float
+}
+
+type DonationsVarSampFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  blockNumber: Float
+  chainId: Float
+}
+
+type DonationsVarianceFields {
+  amount: Float
+  amountInRoundMatchToken: Float
+  amountInUsd: Float
+  blockNumber: Float
+  chainId: Float
+}
+
+type EventsRegistry {
+  blockNumber: Int
+  blockTimestamp: bigint
+  chainId: Int!
+  logIndex: Int
+  rawEvent: jsonb
+}
+
+type EventsRegistryAggregate {
+  aggregate: EventsRegistryAggregateFields
+  nodes: [EventsRegistry!]!
+}
+
+type EventsRegistryAggregateFields {
+  avg: EventsRegistryAvgFields
+  count: Int!
+  max: EventsRegistryMaxFields
+  min: EventsRegistryMinFields
+  stddev: EventsRegistryStddevFields
+  stddevPop: EventsRegistryStddevPopFields
+  stddevSamp: EventsRegistryStddevSampFields
+  sum: EventsRegistrySumFields
+  varPop: EventsRegistryVarPopFields
+  varSamp: EventsRegistryVarSampFields
+  variance: EventsRegistryVarianceFields
+}
+
+type EventsRegistryAvgFields {
+  blockNumber: Float
+  blockTimestamp: Float
+  chainId: Float
+  logIndex: Float
+}
+
+type EventsRegistryMaxFields {
+  blockNumber: Int
+  blockTimestamp: bigint
+  chainId: Int
+  logIndex: Int
+}
+
+type EventsRegistryMinFields {
+  blockNumber: Int
+  blockTimestamp: bigint
+  chainId: Int
+  logIndex: Int
+}
+
+type EventsRegistryStddevFields {
+  blockNumber: Float
+  blockTimestamp: Float
+  chainId: Float
+  logIndex: Float
+}
+
+type EventsRegistryStddevPopFields {
+  blockNumber: Float
+  blockTimestamp: Float
+  chainId: Float
+  logIndex: Float
+}
+
+type EventsRegistryStddevSampFields {
+  blockNumber: Float
+  blockTimestamp: Float
+  chainId: Float
+  logIndex: Float
+}
+
+type EventsRegistrySumFields {
+  blockNumber: Int
+  blockTimestamp: bigint
+  chainId: Int
+  logIndex: Int
+}
+
+type EventsRegistryVarPopFields {
+  blockNumber: Float
+  blockTimestamp: Float
+  chainId: Float
+  logIndex: Float
+}
+
+type EventsRegistryVarSampFields {
+  blockNumber: Float
+  blockTimestamp: Float
+  chainId: Float
+  logIndex: Float
+}
+
+type EventsRegistryVarianceFields {
+  blockNumber: Float
+  blockTimestamp: Float
+  chainId: Float
+  logIndex: Float
+}
+
+type LegacyProjects {
+  id: Int!
+  v1ChainId: Int
+  v1ProjectId: String
+  v2ProjectId: String
+}
+
+type LegacyProjectsAggregate {
+  aggregate: LegacyProjectsAggregateFields
+  nodes: [LegacyProjects!]!
+}
+
+type LegacyProjectsAggregateFields {
+  avg: LegacyProjectsAvgFields
+  count: Int!
+  max: LegacyProjectsMaxFields
+  min: LegacyProjectsMinFields
+  stddev: LegacyProjectsStddevFields
+  stddevPop: LegacyProjectsStddevPopFields
+  stddevSamp: LegacyProjectsStddevSampFields
+  sum: LegacyProjectsSumFields
+  varPop: LegacyProjectsVarPopFields
+  varSamp: LegacyProjectsVarSampFields
+  variance: LegacyProjectsVarianceFields
+}
+
+type LegacyProjectsAvgFields {
+  id: Float
+  v1ChainId: Float
+}
+
+type LegacyProjectsMaxFields {
+  id: Int
+  v1ChainId: Int
+  v1ProjectId: String
+  v2ProjectId: String
+}
+
+type LegacyProjectsMinFields {
+  id: Int
+  v1ChainId: Int
+  v1ProjectId: String
+  v2ProjectId: String
+}
+
+type LegacyProjectsStddevFields {
+  id: Float
+  v1ChainId: Float
+}
+
+type LegacyProjectsStddevPopFields {
+  id: Float
+  v1ChainId: Float
+}
+
+type LegacyProjectsStddevSampFields {
+  id: Float
+  v1ChainId: Float
+}
+
+type LegacyProjectsSumFields {
+  id: Int
+  v1ChainId: Int
+}
+
+type LegacyProjectsVarPopFields {
+  id: Float
+  v1ChainId: Float
+}
+
+type LegacyProjectsVarSampFields {
+  id: Float
+  v1ChainId: Float
+}
+
+type LegacyProjectsVarianceFields {
+  id: Float
+  v1ChainId: Float
+}
+
+type PendingProjectRoles {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int!
+  role: String
+}
+
+type PendingProjectRolesAggregate {
+  aggregate: PendingProjectRolesAggregateFields
+  nodes: [PendingProjectRoles!]!
+}
+
+type PendingProjectRolesAggregateFields {
+  avg: PendingProjectRolesAvgFields
+  count: Int!
+  max: PendingProjectRolesMaxFields
+  min: PendingProjectRolesMinFields
+  stddev: PendingProjectRolesStddevFields
+  stddevPop: PendingProjectRolesStddevPopFields
+  stddevSamp: PendingProjectRolesStddevSampFields
+  sum: PendingProjectRolesSumFields
+  varPop: PendingProjectRolesVarPopFields
+  varSamp: PendingProjectRolesVarSampFields
+  variance: PendingProjectRolesVarianceFields
+}
+
+type PendingProjectRolesAvgFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingProjectRolesMaxFields {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int
+  role: String
+}
+
+type PendingProjectRolesMinFields {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int
+  role: String
+}
+
+type PendingProjectRolesStddevFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingProjectRolesStddevPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingProjectRolesStddevSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingProjectRolesSumFields {
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int
+}
+
+type PendingProjectRolesVarPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingProjectRolesVarSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingProjectRolesVarianceFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingRoundRoles {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int!
+  role: String
+}
+
+type PendingRoundRolesAggregate {
+  aggregate: PendingRoundRolesAggregateFields
+  nodes: [PendingRoundRoles!]!
+}
+
+type PendingRoundRolesAggregateFields {
+  avg: PendingRoundRolesAvgFields
+  count: Int!
+  max: PendingRoundRolesMaxFields
+  min: PendingRoundRolesMinFields
+  stddev: PendingRoundRolesStddevFields
+  stddevPop: PendingRoundRolesStddevPopFields
+  stddevSamp: PendingRoundRolesStddevSampFields
+  sum: PendingRoundRolesSumFields
+  varPop: PendingRoundRolesVarPopFields
+  varSamp: PendingRoundRolesVarSampFields
+  variance: PendingRoundRolesVarianceFields
+}
+
+type PendingRoundRolesAvgFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingRoundRolesMaxFields {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int
+  role: String
+}
+
+type PendingRoundRolesMinFields {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int
+  role: String
+}
+
+type PendingRoundRolesStddevFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingRoundRolesStddevPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingRoundRolesStddevSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingRoundRolesSumFields {
+  chainId: Int
+  createdAtBlock: numeric
+  id: Int
+}
+
+type PendingRoundRolesVarPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingRoundRolesVarSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type PendingRoundRolesVarianceFields {
+  chainId: Float
+  createdAtBlock: Float
+  id: Float
+}
+
+type ProjectRoles {
+  address: String!
+  chainId: Int!
+  createdAtBlock: numeric
+  project: Projects
+  projectId: String!
+  role: project_role_name!
+}
+
+type ProjectRolesAggregate {
+  aggregate: ProjectRolesAggregateFields
+  nodes: [ProjectRoles!]!
+}
+
+type ProjectRolesAggregateFields {
+  avg: ProjectRolesAvgFields
+  count: Int!
+  max: ProjectRolesMaxFields
+  min: ProjectRolesMinFields
+  stddev: ProjectRolesStddevFields
+  stddevPop: ProjectRolesStddevPopFields
+  stddevSamp: ProjectRolesStddevSampFields
+  sum: ProjectRolesSumFields
+  varPop: ProjectRolesVarPopFields
+  varSamp: ProjectRolesVarSampFields
+  variance: ProjectRolesVarianceFields
+}
+
+type ProjectRolesAvgFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type ProjectRolesMaxFields {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  projectId: String
+  role: project_role_name
+}
+
+type ProjectRolesMinFields {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  projectId: String
+  role: project_role_name
+}
+
+type ProjectRolesStddevFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type ProjectRolesStddevPopFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type ProjectRolesStddevSampFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type ProjectRolesSumFields {
+  chainId: Int
+  createdAtBlock: numeric
+}
+
+type ProjectRolesVarPopFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type ProjectRolesVarSampFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type ProjectRolesVarianceFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type Projects {
+  anchorAddress: String
+  applications: [Applications!]!
+  applicationsAggregate: ApplicationsAggregate!
+  chainId: Int!
+  createdAtBlock: numeric
+  createdByAddress: String
+  id: String!
+  metadata: jsonb
+  metadataCid: String
+  name: String
+  nonce: numeric
+  projectNumber: Int
+  projectRoles: [ProjectRoles!]!
+  projectRolesAggregate: ProjectRolesAggregate!
+  projectType: project_type
+  registryAddress: String
+  rounds: [Rounds!]!
+  roundsAggregate: RoundsAggregate!
+  tags: jsonb
+  timestamp: timestamptz
+  updatedAtBlock: numeric
+}
+
+type ProjectsAggregate {
+  aggregate: ProjectsAggregateFields
+  nodes: [Projects!]!
+}
+
+type ProjectsAggregateFields {
+  avg: ProjectsAvgFields
+  count: Int!
+  max: ProjectsMaxFields
+  min: ProjectsMinFields
+  stddev: ProjectsStddevFields
+  stddevPop: ProjectsStddevPopFields
+  stddevSamp: ProjectsStddevSampFields
+  sum: ProjectsSumFields
+  varPop: ProjectsVarPopFields
+  varSamp: ProjectsVarSampFields
+  variance: ProjectsVarianceFields
+}
+
+type ProjectsAvgFields {
+  chainId: Float
+  createdAtBlock: Float
+  nonce: Float
+  projectNumber: Float
+  updatedAtBlock: Float
+}
+
+type ProjectsMaxFields {
+  anchorAddress: String
+  chainId: Int
+  createdAtBlock: numeric
+  createdByAddress: String
+  id: String
+  metadataCid: String
+  name: String
+  nonce: numeric
+  projectNumber: Int
+  projectType: project_type
+  registryAddress: String
+  timestamp: timestamptz
+  updatedAtBlock: numeric
+}
+
+type ProjectsMinFields {
+  anchorAddress: String
+  chainId: Int
+  createdAtBlock: numeric
+  createdByAddress: String
+  id: String
+  metadataCid: String
+  name: String
+  nonce: numeric
+  projectNumber: Int
+  projectType: project_type
+  registryAddress: String
+  timestamp: timestamptz
+  updatedAtBlock: numeric
+}
+
+type ProjectsStddevFields {
+  chainId: Float
+  createdAtBlock: Float
+  nonce: Float
+  projectNumber: Float
+  updatedAtBlock: Float
+}
+
+type ProjectsStddevPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  nonce: Float
+  projectNumber: Float
+  updatedAtBlock: Float
+}
+
+type ProjectsStddevSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  nonce: Float
+  projectNumber: Float
+  updatedAtBlock: Float
+}
+
+type ProjectsSumFields {
+  chainId: Int
+  createdAtBlock: numeric
+  nonce: numeric
+  projectNumber: Int
+  updatedAtBlock: numeric
+}
+
+type ProjectsVarPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  nonce: Float
+  projectNumber: Float
+  updatedAtBlock: Float
+}
+
+type ProjectsVarSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  nonce: Float
+  projectNumber: Float
+  updatedAtBlock: Float
+}
+
+type ProjectsVarianceFields {
+  chainId: Float
+  createdAtBlock: Float
+  nonce: Float
+  projectNumber: Float
+  updatedAtBlock: Float
+}
+
+type RoundRoles {
+  address: String!
+  chainId: Int!
+  createdAtBlock: numeric
+  role: round_role_name!
+  round: Rounds
+  roundId: String!
+}
+
+type RoundRolesAggregate {
+  aggregate: RoundRolesAggregateFields
+  nodes: [RoundRoles!]!
+}
+
+type RoundRolesAggregateFields {
+  avg: RoundRolesAvgFields
+  count: Int!
+  max: RoundRolesMaxFields
+  min: RoundRolesMinFields
+  stddev: RoundRolesStddevFields
+  stddevPop: RoundRolesStddevPopFields
+  stddevSamp: RoundRolesStddevSampFields
+  sum: RoundRolesSumFields
+  varPop: RoundRolesVarPopFields
+  varSamp: RoundRolesVarSampFields
+  variance: RoundRolesVarianceFields
+}
+
+type RoundRolesAvgFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type RoundRolesMaxFields {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  role: round_role_name
+  roundId: String
+}
+
+type RoundRolesMinFields {
+  address: String
+  chainId: Int
+  createdAtBlock: numeric
+  role: round_role_name
+  roundId: String
+}
+
+type RoundRolesStddevFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type RoundRolesStddevPopFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type RoundRolesStddevSampFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type RoundRolesSumFields {
+  chainId: Int
+  createdAtBlock: numeric
+}
+
+type RoundRolesVarPopFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type RoundRolesVarSampFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type RoundRolesVarianceFields {
+  chainId: Float
+  createdAtBlock: Float
+}
+
+type Rounds {
+  adminRole: String
+  applicationMetadata: jsonb
+  applicationMetadataCid: String
+  applications: [Applications!]!
+  applicationsAggregate: ApplicationsAggregate!
+  applicationsEndTime: timestamptz
+  applicationsStartTime: timestamptz
+  chainId: Int!
+  createdAtBlock: numeric
+  createdByAddress: String
+  donations: [Donations!]!
+  donationsAggregate: DonationsAggregate!
+  donationsEndTime: timestamptz
+  donationsStartTime: timestamptz
+  fundedAmount: numeric
+  fundedAmountInUsd: numeric
+  id: String!
+  managerRole: String
+  matchAmount: numeric
+  matchAmountInUsd: numeric
+  matchTokenAddress: String
+  matchingDistribution: jsonb
+  project: Projects
+  projectId: String
+  readyForPayoutTransaction: String
+  roundMetadata: jsonb
+  roundMetadataCid: String
+  roundRoles: [RoundRoles!]!
+  roundRolesAggregate: RoundRolesAggregate!
+  strategyAddress: String
+  strategyId: String
+  strategyName: String
+  tags: jsonb
+  timestamp: timestamptz
+  totalAmountDonatedInUsd: numeric
+  totalDistributed: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+  updatedAtBlock: numeric
+}
+
+type RoundsAggregate {
+  aggregate: RoundsAggregateFields
+  nodes: [Rounds!]!
+}
+
+type RoundsAggregateFields {
+  avg: RoundsAvgFields
+  count: Int!
+  max: RoundsMaxFields
+  min: RoundsMinFields
+  stddev: RoundsStddevFields
+  stddevPop: RoundsStddevPopFields
+  stddevSamp: RoundsStddevSampFields
+  sum: RoundsSumFields
+  varPop: RoundsVarPopFields
+  varSamp: RoundsVarSampFields
+  variance: RoundsVarianceFields
+}
+
+type RoundsAvgFields {
+  chainId: Float
+  createdAtBlock: Float
+  fundedAmount: Float
+  fundedAmountInUsd: Float
+  matchAmount: Float
+  matchAmountInUsd: Float
+  totalAmountDonatedInUsd: Float
+  totalDistributed: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+  updatedAtBlock: Float
+}
+
+type RoundsMaxFields {
+  adminRole: String
+  applicationMetadataCid: String
+  applicationsEndTime: timestamptz
+  applicationsStartTime: timestamptz
+  chainId: Int
+  createdAtBlock: numeric
+  createdByAddress: String
+  donationsEndTime: timestamptz
+  donationsStartTime: timestamptz
+  fundedAmount: numeric
+  fundedAmountInUsd: numeric
+  id: String
+  managerRole: String
+  matchAmount: numeric
+  matchAmountInUsd: numeric
+  matchTokenAddress: String
+  projectId: String
+  readyForPayoutTransaction: String
+  roundMetadataCid: String
+  strategyAddress: String
+  strategyId: String
+  strategyName: String
+  timestamp: timestamptz
+  totalAmountDonatedInUsd: numeric
+  totalDistributed: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+  updatedAtBlock: numeric
+}
+
+type RoundsMinFields {
+  adminRole: String
+  applicationMetadataCid: String
+  applicationsEndTime: timestamptz
+  applicationsStartTime: timestamptz
+  chainId: Int
+  createdAtBlock: numeric
+  createdByAddress: String
+  donationsEndTime: timestamptz
+  donationsStartTime: timestamptz
+  fundedAmount: numeric
+  fundedAmountInUsd: numeric
+  id: String
+  managerRole: String
+  matchAmount: numeric
+  matchAmountInUsd: numeric
+  matchTokenAddress: String
+  projectId: String
+  readyForPayoutTransaction: String
+  roundMetadataCid: String
+  strategyAddress: String
+  strategyId: String
+  strategyName: String
+  timestamp: timestamptz
+  totalAmountDonatedInUsd: numeric
+  totalDistributed: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+  updatedAtBlock: numeric
+}
+
+type RoundsStddevFields {
+  chainId: Float
+  createdAtBlock: Float
+  fundedAmount: Float
+  fundedAmountInUsd: Float
+  matchAmount: Float
+  matchAmountInUsd: Float
+  totalAmountDonatedInUsd: Float
+  totalDistributed: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+  updatedAtBlock: Float
+}
+
+type RoundsStddevPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  fundedAmount: Float
+  fundedAmountInUsd: Float
+  matchAmount: Float
+  matchAmountInUsd: Float
+  totalAmountDonatedInUsd: Float
+  totalDistributed: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+  updatedAtBlock: Float
+}
+
+type RoundsStddevSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  fundedAmount: Float
+  fundedAmountInUsd: Float
+  matchAmount: Float
+  matchAmountInUsd: Float
+  totalAmountDonatedInUsd: Float
+  totalDistributed: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+  updatedAtBlock: Float
+}
+
+type RoundsSumFields {
+  chainId: Int
+  createdAtBlock: numeric
+  fundedAmount: numeric
+  fundedAmountInUsd: numeric
+  matchAmount: numeric
+  matchAmountInUsd: numeric
+  totalAmountDonatedInUsd: numeric
+  totalDistributed: numeric
+  totalDonationsCount: Int
+  uniqueDonorsCount: Int
+  updatedAtBlock: numeric
+}
+
+type RoundsVarPopFields {
+  chainId: Float
+  createdAtBlock: Float
+  fundedAmount: Float
+  fundedAmountInUsd: Float
+  matchAmount: Float
+  matchAmountInUsd: Float
+  totalAmountDonatedInUsd: Float
+  totalDistributed: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+  updatedAtBlock: Float
+}
+
+type RoundsVarSampFields {
+  chainId: Float
+  createdAtBlock: Float
+  fundedAmount: Float
+  fundedAmountInUsd: Float
+  matchAmount: Float
+  matchAmountInUsd: Float
+  totalAmountDonatedInUsd: Float
+  totalDistributed: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+  updatedAtBlock: Float
+}
+
+type RoundsVarianceFields {
+  chainId: Float
+  createdAtBlock: Float
+  fundedAmount: Float
+  fundedAmountInUsd: Float
+  matchAmount: Float
+  matchAmountInUsd: Float
+  totalAmountDonatedInUsd: Float
+  totalDistributed: Float
+  totalDonationsCount: Float
+  uniqueDonorsCount: Float
+  updatedAtBlock: Float
+}
+
+type query_root {
+  applications: [Applications!]!
+  applicationsAggregate: ApplicationsAggregate!
+  applicationsByPk: Applications
+  applicationsPayouts: [ApplicationsPayouts!]!
+  applicationsPayoutsAggregate: ApplicationsPayoutsAggregate!
+  applicationsPayoutsByPk: ApplicationsPayouts
+  attestationTxns: [AttestationTxns!]!
+  attestationTxnsAggregate: AttestationTxnsAggregate!
+  attestations: [Attestations!]!
+  attestationsAggregate: AttestationsAggregate!
+  attestationsByPk: Attestations
+  donations: [Donations!]!
+  donationsAggregate: DonationsAggregate!
+  donationsByPk: Donations
+  eventsRegistry: [EventsRegistry!]!
+  eventsRegistryAggregate: EventsRegistryAggregate!
+  eventsRegistryByPk: EventsRegistry
+  legacyProjects: [LegacyProjects!]!
+  legacyProjectsAggregate: LegacyProjectsAggregate!
+  legacyProjectsByPk: LegacyProjects
+  pendingProjectRoles: [PendingProjectRoles!]!
+  pendingProjectRolesAggregate: PendingProjectRolesAggregate!
+  pendingProjectRolesByPk: PendingProjectRoles
+  pendingRoundRoles: [PendingRoundRoles!]!
+  pendingRoundRolesAggregate: PendingRoundRolesAggregate!
+  pendingRoundRolesByPk: PendingRoundRoles
+  projectRoles: [ProjectRoles!]!
+  projectRolesAggregate: ProjectRolesAggregate!
+  projectRolesByPk: ProjectRoles
+  projects: [Projects!]!
+  projectsAggregate: ProjectsAggregate!
+  projectsByPk: Projects
+  roundRoles: [RoundRoles!]!
+  roundRolesAggregate: RoundRolesAggregate!
+  roundRolesByPk: RoundRoles
+  rounds: [Rounds!]!
+  roundsAggregate: RoundsAggregate!
+  roundsByPk: Rounds
+  searchProjects: [Projects!]!
+  searchProjectsAggregate: ProjectsAggregate!
+}
+
+type subscription_root {
+  applications: [Applications!]!
+  applicationsAggregate: ApplicationsAggregate!
+  applicationsByPk: Applications
+  applicationsPayouts: [ApplicationsPayouts!]!
+  applicationsPayoutsAggregate: ApplicationsPayoutsAggregate!
+  applicationsPayoutsByPk: ApplicationsPayouts
+  applicationsPayoutsStream: [ApplicationsPayouts!]!
+  applicationsStream: [Applications!]!
+  attestationTxns: [AttestationTxns!]!
+  attestationTxnsAggregate: AttestationTxnsAggregate!
+  attestationTxnsStream: [AttestationTxns!]!
+  attestations: [Attestations!]!
+  attestationsAggregate: AttestationsAggregate!
+  attestationsByPk: Attestations
+  attestationsStream: [Attestations!]!
+  donations: [Donations!]!
+  donationsAggregate: DonationsAggregate!
+  donationsByPk: Donations
+  donationsStream: [Donations!]!
+  eventsRegistry: [EventsRegistry!]!
+  eventsRegistryAggregate: EventsRegistryAggregate!
+  eventsRegistryByPk: EventsRegistry
+  eventsRegistryStream: [EventsRegistry!]!
+  legacyProjects: [LegacyProjects!]!
+  legacyProjectsAggregate: LegacyProjectsAggregate!
+  legacyProjectsByPk: LegacyProjects
+  legacyProjectsStream: [LegacyProjects!]!
+  pendingProjectRoles: [PendingProjectRoles!]!
+  pendingProjectRolesAggregate: PendingProjectRolesAggregate!
+  pendingProjectRolesByPk: PendingProjectRoles
+  pendingProjectRolesStream: [PendingProjectRoles!]!
+  pendingRoundRoles: [PendingRoundRoles!]!
+  pendingRoundRolesAggregate: PendingRoundRolesAggregate!
+  pendingRoundRolesByPk: PendingRoundRoles
+  pendingRoundRolesStream: [PendingRoundRoles!]!
+  projectRoles: [ProjectRoles!]!
+  projectRolesAggregate: ProjectRolesAggregate!
+  projectRolesByPk: ProjectRoles
+  projectRolesStream: [ProjectRoles!]!
+  projects: [Projects!]!
+  projectsAggregate: ProjectsAggregate!
+  projectsByPk: Projects
+  projectsStream: [Projects!]!
+  roundRoles: [RoundRoles!]!
+  roundRolesAggregate: RoundRolesAggregate!
+  roundRolesByPk: RoundRoles
+  roundRolesStream: [RoundRoles!]!
+  rounds: [Rounds!]!
+  roundsAggregate: RoundsAggregate!
+  roundsByPk: Rounds
+  roundsStream: [Rounds!]!
+  searchProjects: [Projects!]!
+  searchProjectsAggregate: ProjectsAggregate!
+}

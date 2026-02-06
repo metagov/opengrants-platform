@@ -2,31 +2,31 @@
 
 WITH platform_metrics AS (
     -- Giveth
-    SELECT 
+    SELECT
         'giveth' as platform,
         COUNT(*) as total_projects,
         (SELECT COUNT(*) FROM {{ source('silver', 'silver_giveth_grant_pools') }}) as total_grant_pools,
-        COUNT(*) as total_applications,  -- Fixed: Giveth projects = applications
+        COUNT(*) as total_applications,  -- Giveth projects = applications
         SUM(COALESCE("io.giveth.totalDonations", 0)) as total_funding_usd,
         'Direct Donations' as primary_mechanism
     FROM {{ source('silver', 'silver_giveth_projects') }}
-    
+
     UNION ALL
-    
+
     -- SCF
-    SELECT 
+    SELECT
         'scf' as platform,
         (SELECT COUNT(*) FROM {{ source('silver', 'silver_scf_projects') }}) as total_projects,
         (SELECT COUNT(*) FROM {{ source('silver', 'silver_scf_grant_pools') }}) as total_grant_pools,
         COUNT(*) as total_applications,
-        SUM(COALESCE("fundsApprovedInUSD"::numeric, 0)) as total_funding_usd,  -- Fixed: Handle NULL values
+        SUM(COALESCE("fundsApprovedInUSD"::numeric, 0)) as total_funding_usd,
         'Community Voting' as primary_mechanism
     FROM {{ source('silver', 'silver_scf_grant_applications') }}
-    
+
     UNION ALL
-    
+
     -- Privote
-    SELECT 
+    SELECT
         'privote' as platform,
         (SELECT COUNT(*) FROM {{ source('silver', 'silver_privote_projects') }}) as total_projects,
         (SELECT COUNT(*) FROM {{ source('silver', 'silver_privote_grant_pools') }}) as total_grant_pools,
@@ -34,6 +34,20 @@ WITH platform_metrics AS (
         SUM(COALESCE("fundsApprovedInUSD", 0)) as total_funding_usd,
         'Quadratic Funding' as primary_mechanism
     FROM {{ source('silver', 'silver_privote_grant_applications') }}
+
+    UNION ALL
+
+    -- GrantStack (Gitcoin Grants Stack)
+    SELECT
+        'grantsstack' as platform,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_grantsstack_projects') }}) as total_projects,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_grantsstack_grant_pools') }}) as total_grant_pools,
+        COUNT(*) as total_applications,
+        -- Total funding = donations + matching pool
+        COALESCE((SELECT SUM("amountInUsd"::numeric) FROM {{ source('silver', 'silver_grantsstack_donations') }}), 0) +
+        COALESCE((SELECT SUM("totalGrantPoolSizeInUSD"::numeric) FROM {{ source('silver', 'silver_grantsstack_grant_pools') }}), 0) as total_funding_usd,
+        'Quadratic Funding' as primary_mechanism
+    FROM {{ source('silver', 'silver_grantsstack_grant_applications') }}
 )
 
 SELECT 

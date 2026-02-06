@@ -14,7 +14,7 @@ FROM {{ source('silver', 'silver_scf_grant_applications') }}
 UNION ALL
 
 -- Privote Applications
-SELECT 
+SELECT
     'privote' as platform,
     id,
     name as project_name,
@@ -23,3 +23,16 @@ SELECT
     "grantPoolId" as grant_pool_id,
     "fundsApprovedInUSD" as funds_approved_usd
 FROM {{ source('silver', 'silver_privote_grant_applications') }}
+
+UNION ALL
+
+-- GrantStack (Gitcoin Grants Stack) Applications
+SELECT
+    'grantsstack' as platform,
+    id,
+    name as project_name,
+    "grantPoolName" as grant_pool_name,
+    "projectId" as project_id,
+    "grantPoolId" as grant_pool_id,
+    "fundsApprovedInUSD"::numeric as funds_approved_usd
+FROM {{ source('silver', 'silver_grantsstack_grant_applications') }}
