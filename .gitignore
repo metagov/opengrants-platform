@@ -48,12 +48,7 @@ cache/
 node_modules/
 .next/
 out/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-lock.yaml
 package-lock.json
-.next/
 *.tsbuildinfo
 
 # --- Docker ---
@@ -77,4 +72,5 @@ dbt_project/dbt_packages/
 .env.local
 docker-compose.prod.yml
 
+ca-certificate.crt
 .claude

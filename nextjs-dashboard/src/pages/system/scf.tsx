@@ -102,6 +102,16 @@ interface SCFData {
     category: string;
     award_type: string;
     tranche_completion: number;
+    most_recent_payment_date: string;
+  }>;
+  milestoneProjects: Array<{
+    project_name: string;
+    round_name: string;
+    total_awarded_usd: number;
+    total_paid_usd: number;
+    tranche_status: string;
+    tranche_completion_percent: number;
+    most_recent_payment_date: string;
   }>;
   fundingEfficiency: Array<{
     round_name: string;
@@ -355,29 +365,6 @@ export default function SCFPage() {
                   dataSource={data?.metadata?.data_source}
                 />
 
-                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={4}>Top Funded Projects</Text>
-                  <VStack align="stretch" gap={0}>
-                    {(data?.topProjects || []).slice(0, 10).map((project, idx) => (
-                      <HStack 
-                        key={idx} 
-                        justify="space-between" 
-                        py={3} 
-                        borderBottomWidth={idx < 9 ? "1px" : "0"} 
-                        borderColor="gray.100"
-                      >
-                        <VStack align="start" gap={0}>
-                          <Text fontSize="sm" fontWeight="medium" color="gray.800">{project.project_name}</Text>
-                          <Text fontSize="xs" color="gray.400">{project.round_name}</Text>
-                        </VStack>
-                        <Text fontSize="sm" fontWeight="semibold" color="gray.700">
-                          {formatCurrency(project.total_paid_usd || project.total_awarded_usd)}
-                        </Text>
-                      </HStack>
-                    ))}
-                  </VStack>
-                </Box>
-
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
                   <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                     <Text fontSize="md" fontWeight="semibold" mb={4}>Quarterly Projects Awarded</Text>
@@ -385,15 +372,15 @@ export default function SCFPage() {
                       <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={quarterlyChartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis 
-                            dataKey="quarter" 
+                          <XAxis
+                            dataKey="quarter"
                             tick={{ fill: '#4A5568', fontSize: 11 }}
                             angle={-45}
                             textAnchor="end"
                             height={60}
                           />
                           <YAxis tick={{ fill: '#4A5568', fontSize: 11 }} />
-                          <Tooltip 
+                          <Tooltip
                             contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
                             formatter={(value: number) => [value, 'Projects']}
                           />
@@ -422,7 +409,7 @@ export default function SCFPage() {
                               <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip 
+                          <Tooltip
                             formatter={(value: number, name: string, props: any) => [
                               `${value} projects (${formatCurrency(props.payload.funding)})`,
                               name
@@ -433,6 +420,29 @@ export default function SCFPage() {
                     </Box>
                   </Box>
                 </SimpleGrid>
+
+                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                  <Text fontSize="md" fontWeight="semibold" mb={4}>Top Funded Projects</Text>
+                  <VStack align="stretch" gap={0}>
+                    {(data?.topProjects || []).slice(0, 10).map((project, idx) => (
+                      <HStack
+                        key={idx}
+                        justify="space-between"
+                        py={3}
+                        borderBottomWidth={idx < 9 ? "1px" : "0"}
+                        borderColor="gray.100"
+                      >
+                        <VStack align="start" gap={0}>
+                          <Text fontSize="sm" fontWeight="medium" color="gray.800">{project.project_name}</Text>
+                          <Text fontSize="xs" color="gray.400">{project.round_name}</Text>
+                        </VStack>
+                        <Text fontSize="sm" fontWeight="semibold" color="gray.700">
+                          {formatCurrency(project.total_paid_usd || project.total_awarded_usd)}
+                        </Text>
+                      </HStack>
+                    ))}
+                  </VStack>
+                </Box>
 
               </VStack>
             </Tabs.Content>
@@ -731,10 +741,61 @@ export default function SCFPage() {
                 </Box>
 
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                  <Text fontSize="md" fontWeight="semibold" mb={4}>Recent Milestone Activity</Text>
+                  <Text fontSize="sm" color="gray.500" mb={6}>
+                    Projects with their tranche completion status and most recent payment date.
+                  </Text>
+
+                  {(data?.milestoneProjects || []).length > 0 ? (
+                    <VStack align="stretch" gap={0}>
+                      {(data?.milestoneProjects || []).map((project, idx) => (
+                        <HStack
+                          key={idx}
+                          justify="space-between"
+                          py={3}
+                          borderBottomWidth={idx < (data?.milestoneProjects?.length || 1) - 1 ? "1px" : "0"}
+                          borderColor="gray.100"
+                        >
+                          <VStack align="start" gap={0} flex={1}>
+                            <Text fontSize="sm" fontWeight="medium" color="gray.800">{project.project_name}</Text>
+                            <HStack gap={2}>
+                              <Text fontSize="xs" color="gray.400">{project.round_name}</Text>
+                              {project.most_recent_payment_date && (
+                                <Text fontSize="xs" color="gray.500">
+                                  Last paid: {new Date(project.most_recent_payment_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </Text>
+                              )}
+                            </HStack>
+                          </VStack>
+                          <HStack gap={4}>
+                            <Badge
+                              bg={project.tranche_completion_percent === 100 ? brandColors.olive : project.tranche_completion_percent > 0 ? brandColors.teal : 'gray.400'}
+                              color="white"
+                              px={2}
+                              py={0.5}
+                              fontSize="xs"
+                            >
+                              {project.tranche_status}
+                            </Badge>
+                            <Text fontSize="sm" fontWeight="semibold" color="gray.700">
+                              {formatCurrency(project.total_paid_usd || project.total_awarded_usd)}
+                            </Text>
+                          </HStack>
+                        </HStack>
+                      ))}
+                    </VStack>
+                  ) : (
+                    <Box p={8} textAlign="center" bg="gray.50" borderRadius="lg">
+                      <Text color="gray.500">No milestone activity data available yet.</Text>
+                    </Box>
+                  )}
+                </Box>
+
+                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                   <Text fontSize="md" fontWeight="semibold" mb={2}>About SCF Milestones</Text>
                   <Text fontSize="sm" color="gray.600" lineHeight="tall">
-                    SCF projects typically receive funding in three tranches: Pre-Launch (33%), Testnet deployment (33%), 
-                    and Mainnet launch (34%). Each tranche is unlocked upon successful review of deliverables. 
+                    SCF projects typically receive funding in three tranches: Pre-Launch (33%), Testnet deployment (33%),
+                    and Mainnet launch (34%). Each tranche is unlocked upon successful review of deliverables.
                     This structure ensures accountability and allows the community to track project progress effectively.
                   </Text>
                 </Box>

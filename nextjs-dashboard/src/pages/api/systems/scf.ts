@@ -114,18 +114,36 @@ export default async function handler(
 
     // Top projects by paid amount
     const topProjects = await query(`
-      SELECT 
+      SELECT
         name as project_name,
         "io.scf.round" as round_name,
         "io.scf.totalAwardedUSD" as total_awarded_usd,
         "io.scf.totalPaidUSD" as total_paid_usd,
         "io.scf.category" as category,
         "io.scf.awardType" as award_type,
-        "io.scf.trancheCompletionPercent" as tranche_completion
+        "io.scf.trancheCompletionPercent" as tranche_completion,
+        "io.scf.mostRecentPaymentDate" as most_recent_payment_date
       FROM silver_scf_grant_applications
       WHERE "io.scf.totalPaidUSD" > 0 OR "io.scf.totalAwardedUSD" > 0
       ORDER BY "io.scf.totalPaidUSD" DESC
       LIMIT 10
+    `, []);
+
+    // Milestone projects with dates for milestones tab
+    const milestoneProjects = await query(`
+      SELECT
+        name as project_name,
+        "io.scf.round" as round_name,
+        "io.scf.totalAwardedUSD" as total_awarded_usd,
+        "io.scf.totalPaidUSD" as total_paid_usd,
+        "io.scf.trancheCompletion" as tranche_status,
+        "io.scf.trancheCompletionPercent" as tranche_completion_percent,
+        "io.scf.mostRecentPaymentDate" as most_recent_payment_date
+      FROM silver_scf_grant_applications
+      WHERE ("io.scf.totalPaidUSD" > 0 OR "io.scf.totalAwardedUSD" > 0)
+        AND "io.scf.trancheCompletion" IS NOT NULL AND "io.scf.trancheCompletion" != ''
+      ORDER BY "io.scf.mostRecentPaymentDate" DESC NULLS LAST, "io.scf.totalPaidUSD" DESC
+      LIMIT 20
     `, []);
 
     // Funding efficiency by round (awarded vs paid with payment rate)
@@ -232,6 +250,7 @@ export default async function handler(
       trancheMetrics: trancheMetrics[0] || {},
       trancheByStatus,
       topProjects,
+      milestoneProjects,
       fundingEfficiency,
       categoryPerformance,
       repeatFundingStats: repeatFundingStats[0] || {},
