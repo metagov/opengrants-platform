@@ -44,7 +44,7 @@ export async function query(text: string, params: any[] = []) {
   } catch (error) {
     // Log error without exposing sensitive details in production
     if (isProduction) {
-      console.error("Database query error occurred");
+      console.error("Database query error occurred +error", error instanceof Error ? error.message : error);
     } else {
       console.error("Database query error:", error);
     }
