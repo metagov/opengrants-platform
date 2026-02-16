@@ -7,21 +7,19 @@ const isProduction = process.env.NODE_ENV === "production";
 let sslConfig: any = false;
 
 if (isProduction) {
-  // Check if we have a CA certificate in an environment variable
-  const caCert = process.env.DATABASE_CA_CERT;
+  const rawCaCert = process.env.DATABASE_CA_CERT;
 
-  if (caCert) {
+  if (rawCaCert) {
+    // Replace literal \n with actual newlines (common in env variable configs)
+    const caCert = rawCaCert.replace(/\\n/g, '\n');
     sslConfig = {
       ca: caCert,
       rejectUnauthorized: true
     };
     console.log('✅ Using CA certificate from DATABASE_CA_CERT env variable');
-  } else if (connectionString?.includes("sslmode=require")) {
-    sslConfig = { rejectUnauthorized: true };
-    console.log('✅ Using standard SSL validation');
   } else {
     sslConfig = { rejectUnauthorized: false };
-    console.log('⚠️ Using SSL without certificate validation');
+    console.log('⚠️ DATABASE_CA_CERT not set, using SSL without certificate validation');
   }
 }
 
