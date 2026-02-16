@@ -5,7 +5,6 @@ const isProduction = process.env.NODE_ENV === "production";
 
 // Determine SSL config
 let sslConfig: any = false;
-
 if (isProduction) {
   const rawCaCert = process.env.DATABASE_CA_CERT;
 
