@@ -14,7 +14,7 @@ if (isProduction) {
     const caCert = rawCaCert.replace(/\\n/g, '\n');
     sslConfig = {
       ca: caCert,
-      rejectUnauthorized: true
+      rejectUnauthorized: false, // Set to false to allow self-signed certificates, adjust as needed
     };
     console.log('✅ Using CA certificate from DATABASE_CA_CERT env variable');
   } else {
