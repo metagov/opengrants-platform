@@ -53,27 +53,27 @@ export default async function handler(
     const avgGrantSize = await query(`
       SELECT 
         'SCF' as platform,
-        AVG("io.scf.totalAwardedUSD") as avg_grant_size,
+        AVG(CAST("fundsApprovedInUSD" AS numeric)) as avg_grant_size,
         COUNT(*) as project_count,
-        SUM("io.scf.totalAwardedUSD") as total_funding
+        SUM(CAST("fundsApprovedInUSD" AS numeric)) as total_funding
       FROM silver_scf_grant_applications
-      WHERE "io.scf.totalAwardedUSD" > 0
+      WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
       UNION ALL
       SELECT 
         'Giveth' as platform,
         AVG(CAST("io.giveth.totalDonations" AS numeric)) as avg_grant_size,
-        COUNT(DISTINCT "io.giveth.slug") as project_count,
+        COUNT(DISTINCT id) as project_count,
         SUM(CAST("io.giveth.totalDonations" AS numeric)) as total_funding
       FROM silver_giveth_projects
       WHERE "io.giveth.totalDonations" IS NOT NULL
       UNION ALL
       SELECT 
         'Privote' as platform,
-        AVG("fundsApprovedInUSD") as avg_grant_size,
+        AVG(CAST("fundsApprovedInUSD" AS numeric)) as avg_grant_size,
         COUNT(*) as project_count,
-        SUM("fundsApprovedInUSD") as total_funding
+        SUM(CAST("fundsApprovedInUSD" AS numeric)) as total_funding
       FROM silver_privote_grant_applications
-      WHERE "fundsApprovedInUSD" > 0
+      WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
     `);
 
     // Funding distribution curve data (top projects per platform)
@@ -82,10 +82,10 @@ export default async function handler(
         SELECT 
           'SCF' as platform,
           name as project_name,
-          "io.scf.totalAwardedUSD" as funding,
-          ROW_NUMBER() OVER (ORDER BY "io.scf.totalAwardedUSD" DESC) as rank
+          CAST("fundsApprovedInUSD" AS numeric) as funding,
+          ROW_NUMBER() OVER (ORDER BY CAST("fundsApprovedInUSD" AS numeric) DESC) as rank
         FROM silver_scf_grant_applications
-        WHERE "io.scf.totalAwardedUSD" > 0
+        WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
       ),
       giveth_ranked AS (
         SELECT 
@@ -94,7 +94,7 @@ export default async function handler(
           CAST("io.giveth.totalDonations" AS numeric) as funding,
           ROW_NUMBER() OVER (ORDER BY CAST("io.giveth.totalDonations" AS numeric) DESC) as rank
         FROM (
-          SELECT DISTINCT ON ("io.giveth.slug") name, "io.giveth.totalDonations", "io.giveth.slug"
+          SELECT DISTINCT ON (id) name, "io.giveth.totalDonations", id
           FROM silver_giveth_projects
           WHERE "io.giveth.totalDonations" IS NOT NULL
         ) deduped
@@ -103,10 +103,10 @@ export default async function handler(
         SELECT 
           'Privote' as platform,
           name as project_name,
-          "fundsApprovedInUSD" as funding,
-          ROW_NUMBER() OVER (ORDER BY "fundsApprovedInUSD" DESC) as rank
+          CAST("fundsApprovedInUSD" AS numeric) as funding,
+          ROW_NUMBER() OVER (ORDER BY CAST("fundsApprovedInUSD" AS numeric) DESC) as rank
         FROM silver_privote_grant_applications
-        WHERE "fundsApprovedInUSD" > 0
+        WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
       )
       SELECT * FROM scf_ranked WHERE rank <= 20
       UNION ALL
