@@ -1,6 +1,4 @@
 import { Pool, PoolConfig } from "pg";
-import fs from 'fs';
-import path from 'path';
 
 const connectionString = process.env.DATABASE_URL;
 const isProduction = process.env.NODE_ENV === "production";
@@ -9,22 +7,19 @@ const isProduction = process.env.NODE_ENV === "production";
 let sslConfig: any = false;
 
 if (isProduction) {
-  // Check if we have a custom CA certificate
-  const caPath = process.env.NODE_EXTRA_CA_CERTS;
-  
-  if (caPath && fs.existsSync(caPath)) {
-    // Use custom CA certificate
+  // Check if we have a CA certificate in an environment variable
+  const caCert = process.env.DATABASE_CA_CERT;
+
+  if (caCert) {
     sslConfig = {
-      ca: fs.readFileSync(caPath, 'utf8'),
+      ca: caCert,
       rejectUnauthorized: true
     };
-    console.log(`✅ Using custom CA certificate from: ${caPath}`);
+    console.log('✅ Using CA certificate from DATABASE_CA_CERT env variable');
   } else if (connectionString?.includes("sslmode=require")) {
-    // Use standard SSL validation
     sslConfig = { rejectUnauthorized: true };
     console.log('✅ Using standard SSL validation');
   } else {
-    // Fallback for development
     sslConfig = { rejectUnauthorized: false };
     console.log('⚠️ Using SSL without certificate validation');
   }
