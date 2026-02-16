@@ -125,7 +125,7 @@ export default async function handler(
     });
   } catch (error: any) {
     // Log error server-side only, don't expose details to client
-    console.error('Database error:', process.env.NODE_ENV === 'development' ? error.message : 'Error occurred');
+    console.error('Database error:', error.message || 'Error occurred');
     res.status(500).json({
       message: 'Internal server error',
       platforms: [],
