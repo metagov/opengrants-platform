@@ -32,14 +32,14 @@ services:
     env_file:
       - .env
     command:
-      - dagster-webserver
-      - '--read-only'
-      - '-h'
-      - 0.0.0.0
-      - '-p'
-      - '3000'
-      - '-w'
-      - workspace.yaml
+      - /bin/sh
+      - -c
+      - |
+        echo "=================================================="
+        echo "🚀 Dagster webserver starting..."
+        echo "📊 Access it at: http://localhost:3001"
+        echo "=================================================="
+        exec dagster-webserver --read-only -h 0.0.0.0 -p 3000 -w workspace.yaml
 
   dagster:
     container_name: dagster
