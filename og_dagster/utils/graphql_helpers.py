@@ -141,8 +141,10 @@ def align_columns(data: list[dict]) -> pl.DataFrame:
             elif v is None:
                 safe_row[k] = None
             else:
-                # Always cast to str for mixed-type fields
-                if not isinstance(v, (int, float, bool, type(None))):
+                if isinstance(v, int) and (v > 2**63 - 1 or v < -(2**63)):
+                    # Blockchain uint256/bytes32 values overflow Polars Int64
+                    safe_row[k] = str(v)
+                elif not isinstance(v, (int, float, bool, type(None))):
                     safe_row[k] = str(v)
                 else:
                     safe_row[k] = v
