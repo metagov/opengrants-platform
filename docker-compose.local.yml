@@ -11,6 +11,35 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: opengrants
+  
+  dagster-readonly:
+    container_name: dagster-readonly
+    build:
+      context: .
+      dockerfile: og_dagster/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    volumes:
+      - ./og_dagster:/app
+      - ./dbt_project:/app/dbt_project
+      - ./duckdb:/data/duckdb
+      - ./raw_data:/app/raw_data
+    environment:
+      - DAGSTER_HOME=/app
+      - DATABASE_URL="${DATABASE_URL}"
+      - DUCKDB_CACHE_PATH=/data/duckdb/local.duckdb
+    env_file:
+      - .env
+    command:
+      - dagster-webserver
+      - '--read-only'
+      - '-h'
+      - 0.0.0.0
+      - '-p'
+      - '3000'
+      - '-w'
+      - workspace.yaml
 
   dagster:
     container_name: dagster
