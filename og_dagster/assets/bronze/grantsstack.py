@@ -43,6 +43,7 @@ GRANTSSTACK_ENDPOINT = os.getenv(
 PAGE_SIZE = 100
 MAX_PAGES = 5000
 REQUEST_DELAY = 0.3
+WRITE_BATCH_SIZE = 1000  # rows to accumulate before flushing to DB
 
 # ======================
 # DATABASE CONFIG
@@ -269,27 +270,30 @@ query GetAggregates {
 
 
 # ======================
-# PAGINATION HELPER
+# BATCH HELPERS
 # ======================
-def fetch_paginated(
+def _fetch_and_write(
     query: str,
     entity_name: str,
+    table_name: str,
     page_size: int = PAGE_SIZE,
     max_pages: int = MAX_PAGES,
-) -> List[dict]:
+    batch_size: int = WRITE_BATCH_SIZE,
+) -> int:
     """
-    Fetch all records for an entity using Hasura-style pagination.
+    Fetch an entity with pagination and write to Postgres in batches.
 
-    Args:
-        query: GraphQL query with $limit and $offset variables
-        entity_name: Name of the entity in the response (e.g., "rounds")
-        page_size: Number of records per page
-        max_pages: Maximum number of pages to fetch (safety limit)
+    Instead of accumulating all records in memory, this flushes to the DB
+    every `batch_size` rows so that:
+    - Memory stays bounded even for millions of rows (donations).
+    - If a later batch fails, earlier batches are already persisted.
+    - The job can be retried with if_table_exists="append" for resumption.
 
-    Returns:
-        List of all fetched records (flattened)
+    Returns the total number of rows written.
     """
-    all_results = []
+    buffer: List[dict] = []
+    total_written = 0
+    first_write = True
     offset = 0
 
     for page in range(max_pages):
@@ -304,14 +308,21 @@ def fetch_paginated(
                 logger.info(f"No more {entity_name} records")
                 break
 
-            # Flatten each record
             for item in items:
-                all_results.append(flatten_dict(item))
+                buffer.append(flatten_dict(item))
 
-            logger.info(f"{entity_name} page {page + 1}: {len(items)} records (total: {len(all_results)})")
+            logger.info(
+                f"{entity_name} page {page + 1}: {len(items)} records "
+                f"(buffer: {len(buffer)}, total written: {total_written})"
+            )
+
+            # Flush buffer when it reaches batch_size
+            if len(buffer) >= batch_size:
+                total_written += _flush_buffer(buffer, table_name, first_write)
+                first_write = False
+                buffer = []
 
             if len(items) < page_size:
-                # Last page
                 break
 
             offset += page_size
@@ -319,10 +330,32 @@ def fetch_paginated(
 
         except Exception as e:
             logger.error(f"Error fetching {entity_name} at offset {offset}: {e}")
-            break
+            # Flush whatever we have so far so it isn't lost
+            if buffer:
+                total_written += _flush_buffer(buffer, table_name, first_write)
+                buffer = []
+            raise
 
-    logger.info(f"Total {entity_name} fetched: {len(all_results)}")
-    return all_results
+    # Flush remaining records
+    if buffer:
+        total_written += _flush_buffer(buffer, table_name, first_write)
+
+    logger.info(f"Total {entity_name} written: {total_written}")
+    return total_written
+
+
+def _flush_buffer(buffer: List[dict], table_name: str, replace: bool) -> int:
+    """Convert a list of dicts to a Polars DataFrame and write to Postgres."""
+    df = align_columns(buffer)
+    df = sanitize_for_sql(df)
+    mode = "replace" if replace else "append"
+    df.write_database(
+        table_name=table_name,
+        connection=engine,
+        if_table_exists=mode,
+    )
+    logger.info(f"Flushed {len(df)} rows to {table_name} ({mode})")
+    return len(df)
 
 
 # ======================
@@ -358,12 +391,9 @@ def fetch_grantsstack_data():
     """
     Fetch all data from GrantStack GraphQL API for complete indexing.
 
-    Extracts:
-    - Rounds: Grant pools/programs with funding details
-    - Projects: Registered projects on the platform
-    - Applications: Project applications to specific rounds
-    - Donations: Individual contributions to projects
-    - Payouts: Payout transactions for applications (DAOIP-5 compliant)
+    Uses batched writes so that large datasets (donations) don't
+    accumulate entirely in memory. Each entity is fetched, transformed,
+    and flushed to Postgres in chunks of WRITE_BATCH_SIZE rows.
     """
 
     logger.info("Starting GrantStack data extraction...")
@@ -385,117 +415,53 @@ def fetch_grantsstack_data():
         logger.warning(f"Could not fetch aggregates: {e}")
 
     # ======================
-    # 2. FETCH ROUNDS
+    # 2. FETCH & WRITE EACH ENTITY IN BATCHES
     # ======================
-    logger.info("Fetching rounds...")
-    rounds_data = fetch_paginated(ROUNDS_QUERY, "rounds")
+    entities = [
+        (ROUNDS_QUERY, "rounds", "bronze_grantsstack_rounds"),
+        (PROJECTS_QUERY, "projects", "bronze_grantsstack_projects"),
+        (APPLICATIONS_QUERY, "applications", "bronze_grantsstack_applications"),
+        (DONATIONS_QUERY, "donations", "bronze_grantsstack_donations"),
+        (PAYOUTS_QUERY, "applicationsPayouts", "bronze_grantsstack_payouts"),
+    ]
+
+    counts = {}
+    for query, entity_name, table_name in entities:
+        logger.info(f"Processing {entity_name}...")
+        counts[entity_name] = _fetch_and_write(query, entity_name, table_name)
 
     # ======================
-    # 3. FETCH PROJECTS
+    # 3. READ BACK FINAL TABLES FOR DAGSTER OUTPUTS
     # ======================
-    logger.info("Fetching projects...")
-    projects_data = fetch_paginated(PROJECTS_QUERY, "projects")
+    logger.info("Reading back final tables for Dagster outputs...")
+
+    import polars as pl
+
+    tables = {
+        "rounds": "bronze_grantsstack_rounds",
+        "projects": "bronze_grantsstack_projects",
+        "applications": "bronze_grantsstack_applications",
+        "donations": "bronze_grantsstack_donations",
+        "payouts": "bronze_grantsstack_payouts",
+    }
+
+    dfs = {}
+    for key, table_name in tables.items():
+        dfs[key] = pl.read_database(
+            query=f"SELECT * FROM {table_name}",
+            connection=engine,
+        )
 
     # ======================
-    # 4. FETCH APPLICATIONS
-    # ======================
-    logger.info("Fetching applications...")
-    applications_data = fetch_paginated(APPLICATIONS_QUERY, "applications")
-
-    # ======================
-    # 5. FETCH DONATIONS
-    # ======================
-    logger.info("Fetching donations...")
-    # Donations can be very large, so we may want to limit
-    donations_data = fetch_paginated(
-        DONATIONS_QUERY,
-        "donations",
-        page_size=PAGE_SIZE,
-        max_pages=MAX_PAGES,
-    )
-
-    # ======================
-    # 6. FETCH PAYOUTS (DAOIP-5 compliant)
-    # ======================
-    logger.info("Fetching payouts...")
-    payouts_data = fetch_paginated(PAYOUTS_QUERY, "applicationsPayouts")
-
-    # ======================
-    # 7. CREATE DATAFRAMES
-    # ======================
-    logger.info("Creating DataFrames...")
-
-    rounds_df = align_columns(rounds_data) if rounds_data else align_columns([])
-    projects_df = align_columns(projects_data) if projects_data else align_columns([])
-    applications_df = align_columns(applications_data) if applications_data else align_columns([])
-    donations_df = align_columns(donations_data) if donations_data else align_columns([])
-    payouts_df = align_columns(payouts_data) if payouts_data else align_columns([])
-
-    # ======================
-    # 8. SANITIZE FOR SQL
-    # ======================
-    logger.info("Sanitizing DataFrames for SQL compatibility...")
-
-    rounds_df = sanitize_for_sql(rounds_df)
-    projects_df = sanitize_for_sql(projects_df)
-    applications_df = sanitize_for_sql(applications_df)
-    donations_df = sanitize_for_sql(donations_df)
-    payouts_df = sanitize_for_sql(payouts_df)
-
-    # ======================
-    # 9. WRITE TO DATABASE
-    # ======================
-    logger.info("Writing bronze tables to Postgres...")
-
-    rounds_df.write_database(
-        table_name="bronze_grantsstack_rounds",
-        connection=engine,
-        if_table_exists="replace",
-    )
-    logger.info(f"Written {len(rounds_df)} rounds")
-
-    projects_df.write_database(
-        table_name="bronze_grantsstack_projects",
-        connection=engine,
-        if_table_exists="replace",
-    )
-    logger.info(f"Written {len(projects_df)} projects")
-
-    applications_df.write_database(
-        table_name="bronze_grantsstack_applications",
-        connection=engine,
-        if_table_exists="replace",
-    )
-    logger.info(f"Written {len(applications_df)} applications")
-
-    donations_df.write_database(
-        table_name="bronze_grantsstack_donations",
-        connection=engine,
-        if_table_exists="replace",
-    )
-    logger.info(f"Written {len(donations_df)} donations")
-
-    payouts_df.write_database(
-        table_name="bronze_grantsstack_payouts",
-        connection=engine,
-        if_table_exists="replace",
-    )
-    logger.info(f"Written {len(payouts_df)} payouts")
-
-    # ======================
-    # 10. SUMMARY
+    # 4. SUMMARY
     # ======================
     logger.info(
         f"GrantStack extraction complete - "
-        f"Rounds: {len(rounds_df)}, "
-        f"Projects: {len(projects_df)}, "
-        f"Applications: {len(applications_df)}, "
-        f"Donations: {len(donations_df)}, "
-        f"Payouts: {len(payouts_df)}"
+        + ", ".join(f"{k}: {v}" for k, v in counts.items())
     )
 
-    yield Output(rounds_df, "bronze__grantsstack_rounds")
-    yield Output(projects_df, "bronze__grantsstack_projects")
-    yield Output(applications_df, "bronze__grantsstack_applications")
-    yield Output(donations_df, "bronze__grantsstack_donations")
-    yield Output(payouts_df, "bronze__grantsstack_payouts")
+    yield Output(dfs["rounds"], "bronze__grantsstack_rounds")
+    yield Output(dfs["projects"], "bronze__grantsstack_projects")
+    yield Output(dfs["applications"], "bronze__grantsstack_applications")
+    yield Output(dfs["donations"], "bronze__grantsstack_donations")
+    yield Output(dfs["payouts"], "bronze__grantsstack_payouts")
