@@ -13,29 +13,13 @@ import {
   Button,
   Progress,
 } from '@chakra-ui/react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  ComposedChart,
-} from 'recharts';
 import { Navigation } from '../../components/Navigation';
 import { SystemHeader } from '../../components/SystemHeader';
 import { MetricCard } from '../../components/MetricCard';
 import { ProgramProfile } from '../../components/ProgramProfile';
 import { SupportFooter } from '../../components/SupportFooter';
+import { BarChart, PieChart, ComposedChart, ChartCard } from '../../components/charts';
+import { formatCurrency, formatNumber } from '@/lib/formatters';
 import { gitcoinColors, brandColors } from '../../theme/colors';
 
 interface GrantStackData {
@@ -202,26 +186,6 @@ export default function GrantStackPage() {
     );
   }
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    }
-    if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`;
-    }
-    return `$${value?.toFixed(0) || 0}`;
-  };
-
-  const formatNumber = (value: number) => {
-    if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M`;
-    }
-    if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}K`;
-    }
-    return value?.toFixed(0) || '0';
-  };
-
   const chainChartData = (data?.chainMetrics || []).map((c, idx) => ({
     name: c.chain_name,
     funding: Number(c.total_funding_volume_usd) || 0,
@@ -230,7 +194,7 @@ export default function GrantStackPage() {
     color: CHAIN_COLORS[idx % CHAIN_COLORS.length],
   }));
 
-  const mechanismChartData = (data?.fundingMechanisms || []).map((m, idx) => ({
+  const mechanismChartData = (data?.fundingMechanisms || []).map((m) => ({
     name: m.mechanism || 'Other',
     value: Number(m.round_count) || 0,
     funding: Number(m.total_pool_usd) || 0,
@@ -254,6 +218,10 @@ export default function GrantStackPage() {
     value: Number(s.count) || 0,
     funds: Number(s.total_funds) || 0,
   }));
+
+  const applicationStatusColors = applicationStatusData.map((entry, index) =>
+    STATUS_COLORS[entry.name] || CHAIN_COLORS[index % CHAIN_COLORS.length]
+  );
 
   const approvalRate = data?.summary?.total_applications > 0
     ? ((data.summary.approved_applications / data.summary.total_applications) * 100).toFixed(1)
@@ -424,62 +392,29 @@ export default function GrantStackPage() {
                 </Box>
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={4}>Funding by Chain</Text>
-                    <Box h="300px">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={chainChartData.slice(0, 8)} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis
-                            type="number"
-                            tick={{ fill: '#4A5568', fontSize: 11 }}
-                            tickFormatter={(value) => formatCurrency(value)}
-                          />
-                          <YAxis
-                            type="category"
-                            dataKey="name"
-                            tick={{ fill: '#4A5568', fontSize: 11 }}
-                            width={100}
-                          />
-                          <Tooltip
-                            contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                            formatter={(value: number) => [formatCurrency(value), 'Total Funding']}
-                          />
-                          <Bar dataKey="funding" fill={gitcoinColors.primary} radius={[0, 4, 4, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
+                  <ChartCard title="Funding by Chain">
+                    <BarChart
+                      data={chainChartData.slice(0, 8)}
+                      xKey="name"
+                      bars={[{ dataKey: 'funding', color: gitcoinColors.primary }]}
+                      layout="vertical"
+                      height={300}
+                      tooltipFormatter={(value: number) => [formatCurrency(value), 'Total Funding']}
+                    />
+                  </ChartCard>
 
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={4}>Funding Mechanisms</Text>
-                    <Box h="300px">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={mechanismChartData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            dataKey="value"
-                            nameKey="name"
-                            label={({ name, percent }) => `${name?.split(' ')[0] || 'Other'} ${(percent * 100).toFixed(0)}%`}
-                            labelLine={false}
-                          >
-                            {mechanismChartData.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={CHAIN_COLORS[index % CHAIN_COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value: number, name: string, props: any) => [
-                              `${value} rounds (${formatCurrency(props.payload.funding)})`,
-                              name
-                            ]}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
+                  <ChartCard title="Funding Mechanisms">
+                    <PieChart
+                      data={mechanismChartData}
+                      colors={CHAIN_COLORS}
+                      height={300}
+                      label={({ name, percent }: any) => `${name?.split(' ')[0] || 'Other'} ${(percent * 100).toFixed(0)}%`}
+                      tooltipFormatter={(value: number, name: string, props: any) => [
+                        `${value} rounds (${formatCurrency(props.payload.funding)})`,
+                        name
+                      ]}
+                    />
+                  </ChartCard>
                 </SimpleGrid>
               </VStack>
             </Tabs.Content>
@@ -518,119 +453,59 @@ export default function GrantStackPage() {
                   </Box>
                 </SimpleGrid>
 
-                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={2}>Donation Trends Over Time</Text>
-                  <Text fontSize="sm" color="gray.500" mb={4}>Monthly donation volume and donor activity</Text>
-                  <Box h="350px">
-                    <ResponsiveContainer width="100%" height={350}>
-                      <ComposedChart data={trendData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis
-                          dataKey="month"
-                          tick={{ fill: '#4A5568', fontSize: 10 }}
-                          interval="preserveStartEnd"
-                        />
-                        <YAxis
-                          yAxisId="left"
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                          tickFormatter={(value) => formatCurrency(value)}
-                        />
-                        <YAxis
-                          yAxisId="right"
-                          orientation="right"
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                        />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                          formatter={(value: number, name: string) => {
-                            if (name === 'Donated') return [formatCurrency(value), name];
-                            return [formatNumber(value), name];
-                          }}
-                        />
-                        <Legend />
-                        <Area
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="donations"
-                          name="Donated"
-                          stroke={gitcoinColors.primary}
-                          fill={gitcoinColors.primary}
-                          fillOpacity={0.2}
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="donors"
-                          name="Unique Donors"
-                          stroke={gitcoinColors.secondary}
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
+                <ChartCard
+                  title="Donation Trends Over Time"
+                  subtitle="Monthly donation volume and donor activity"
+                  height="350px"
+                >
+                  <ComposedChart
+                    data={trendData}
+                    xKey="month"
+                    series={[
+                      { type: 'area', dataKey: 'donations', name: 'Donated', color: gitcoinColors.primary, yAxisId: 'left', fillOpacity: 0.2 },
+                      { type: 'line', dataKey: 'donors', name: 'Unique Donors', color: gitcoinColors.secondary, yAxisId: 'right', strokeWidth: 2, dot: false },
+                    ]}
+                    yAxes={[
+                      { id: 'left', tickFormatter: (v: number) => formatCurrency(v) },
+                      { id: 'right', orientation: 'right' },
+                    ]}
+                    height={350}
+                    tooltipFormatter={(value: number, name: string) => {
+                      if (name === 'Donated') return [formatCurrency(value), name];
+                      return [formatNumber(value), name];
+                    }}
+                    xAxisInterval="preserveStartEnd"
+                  />
+                </ChartCard>
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={4}>Donation Size Distribution</Text>
-                    <Box h="300px">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={donationDistData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis
-                            dataKey="range"
-                            tick={{ fill: '#4A5568', fontSize: 10 }}
-                            angle={-45}
-                            textAnchor="end"
-                            height={60}
-                          />
-                          <YAxis tick={{ fill: '#4A5568', fontSize: 11 }} />
-                          <Tooltip
-                            contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                            formatter={(value: number, name: string) => [
-                              name === 'count' ? formatNumber(value) + ' donations' : formatCurrency(value),
-                              name === 'count' ? 'Count' : 'Total'
-                            ]}
-                          />
-                          <Bar dataKey="count" fill={gitcoinColors.accent} radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
+                  <ChartCard title="Donation Size Distribution">
+                    <BarChart
+                      data={donationDistData}
+                      xKey="range"
+                      bars={[{ dataKey: 'count', color: gitcoinColors.accent }]}
+                      height={300}
+                      rotateLabels
+                      tickSize="sm"
+                      tooltipFormatter={(value: number, name: string) => [
+                        name === 'count' ? formatNumber(value) + ' donations' : formatCurrency(value),
+                        name === 'count' ? 'Count' : 'Total'
+                      ]}
+                    />
+                  </ChartCard>
 
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={4}>Application Status Distribution</Text>
-                    <Box h="300px">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={applicationStatusData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            dataKey="value"
-                            nameKey="name"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            labelLine={false}
-                          >
-                            {applicationStatusData.map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={STATUS_COLORS[entry.name] || CHAIN_COLORS[index % CHAIN_COLORS.length]}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value: number, name: string, props: any) => [
-                              `${formatNumber(value)} applications`,
-                              name
-                            ]}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
+                  <ChartCard title="Application Status Distribution">
+                    <PieChart
+                      data={applicationStatusData}
+                      colors={applicationStatusColors}
+                      height={300}
+                      label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      tooltipFormatter={(value: number, name: string) => [
+                        `${formatNumber(value)} applications`,
+                        name
+                      ]}
+                    />
+                  </ChartCard>
                 </SimpleGrid>
 
                 <Text fontSize="lg" fontWeight="semibold" color={gitcoinColors.primary} mt={4}>Payout Analytics</Text>
@@ -729,37 +604,24 @@ export default function GrantStackPage() {
                   ))}
                 </SimpleGrid>
 
-                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={4}>Funding Distribution by Chain</Text>
-                  <Box h="400px">
-                    <ResponsiveContainer width="100%" height={400}>
-                      <BarChart data={chainChartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis
-                          dataKey="name"
-                          tick={{ fill: '#4A5568', fontSize: 10 }}
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                        />
-                        <YAxis
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                          tickFormatter={(value) => formatCurrency(value)}
-                        />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                          formatter={(value: number, name: string) => [
-                            formatCurrency(value),
-                            name === 'funding' ? 'Total Funding' : name === 'donations' ? 'Donations' : name
-                          ]}
-                        />
-                        <Legend />
-                        <Bar dataKey="funding" name="Total Funding" fill={gitcoinColors.primary} radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="donations" name="Donations" fill={gitcoinColors.accent} radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
+                <ChartCard title="Funding Distribution by Chain" height="400px">
+                  <BarChart
+                    data={chainChartData}
+                    xKey="name"
+                    bars={[
+                      { dataKey: 'funding', name: 'Total Funding', color: gitcoinColors.primary },
+                      { dataKey: 'donations', name: 'Donations', color: gitcoinColors.accent },
+                    ]}
+                    height={400}
+                    rotateLabels
+                    tickSize="sm"
+                    showLegend
+                    tooltipFormatter={(value: number, name: string) => [
+                      formatCurrency(value),
+                      name === 'funding' ? 'Total Funding' : name === 'donations' ? 'Donations' : name
+                    ]}
+                  />
+                </ChartCard>
               </VStack>
             </Tabs.Content>
 

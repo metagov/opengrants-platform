@@ -13,29 +13,13 @@ import {
   Badge,
   Button,
 } from '@chakra-ui/react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  ComposedChart,
-} from 'recharts';
 import { Navigation } from '../../components/Navigation';
 import { SystemHeader } from '../../components/SystemHeader';
 import { MetricCard } from '../../components/MetricCard';
 import { ProgramProfile } from '../../components/ProgramProfile';
 import { SupportFooter } from '../../components/SupportFooter';
+import { BarChart, PieChart, AreaChart, LineChart, ComposedChart, ChartCard } from '../../components/charts';
+import { formatCurrency } from '@/lib/formatters';
 import { brandColors } from '../../theme/colors';
 
 interface SCFData {
@@ -189,16 +173,6 @@ export default function SCFPage() {
     );
   }
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    }
-    if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`;
-    }
-    return `$${value?.toFixed(0) || 0}`;
-  };
-
   const quarterlyChartData = (data?.quarterlyData || [])
     .slice()
     .reverse()
@@ -253,6 +227,12 @@ export default function SCFPage() {
     completionRate: c.total_awarded > 0 ? Math.round((Number(c.total_paid) / Number(c.total_awarded)) * 100) : 0,
     avgCompletion: Math.round(Number(c.avg_completion) || 0),
     fullyCompleted: Number(c.fully_completed) || 0,
+  }));
+
+  const cohortChartData = (data?.cohortAnalysis || []).map(r => ({
+    round: `#${r.round_num}`,
+    repeatFunded: Number(r.repeat_funded_projects),
+    totalFunded: Number(r.total_funded_in_round),
   }));
 
   return (
@@ -366,59 +346,29 @@ export default function SCFPage() {
                 />
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={4}>Quarterly Projects Awarded</Text>
-                    <Box h="300px" minH="300px">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={quarterlyChartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis
-                            dataKey="quarter"
-                            tick={{ fill: '#4A5568', fontSize: 11 }}
-                            angle={-45}
-                            textAnchor="end"
-                            height={60}
-                          />
-                          <YAxis tick={{ fill: '#4A5568', fontSize: 11 }} />
-                          <Tooltip
-                            contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                            formatter={(value: number) => [value, 'Projects']}
-                          />
-                          <Bar dataKey="projects" fill={brandColors.olive} radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
+                  <ChartCard title="Quarterly Projects Awarded">
+                    <BarChart
+                      data={quarterlyChartData}
+                      xKey="quarter"
+                      bars={[{ dataKey: 'projects', color: brandColors.olive }]}
+                      height={300}
+                      rotateLabels
+                      tooltipFormatter={(value: number) => [String(value), 'Projects']}
+                    />
+                  </ChartCard>
 
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={4}>Projects by Category</Text>
-                    <Box h="300px" minH="300px">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={categoryChartData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            dataKey="value"
-                            nameKey="name"
-                            label={({ name, percent }) => `${name?.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
-                            labelLine={false}
-                          >
-                            {categoryChartData.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value: number, name: string, props: any) => [
-                              `${value} projects (${formatCurrency(props.payload.funding)})`,
-                              name
-                            ]}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
+                  <ChartCard title="Projects by Category">
+                    <PieChart
+                      data={categoryChartData}
+                      colors={CATEGORY_COLORS}
+                      height={300}
+                      label={({ name, percent }: any) => `${name?.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
+                      tooltipFormatter={(value: number, name: string, props: any) => [
+                        `${value} projects (${formatCurrency(props.payload.funding)})`,
+                        name
+                      ]}
+                    />
+                  </ChartCard>
                 </SimpleGrid>
 
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
@@ -450,46 +400,32 @@ export default function SCFPage() {
             <Tabs.Content value="analytics">
               <VStack gap={8} align="stretch">
                 <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive}>Funding Efficiency Analysis</Text>
-                
-                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={2}>Payment Rate by Round</Text>
-                  <Text fontSize="sm" color="gray.500" mb={4}>Comparing awarded vs paid amounts across rounds (higher % = faster disbursement)</Text>
-                  <Box h="350px" minH="350px">
-                    <ResponsiveContainer width="100%" height={350}>
-                      <ComposedChart data={fundingEfficiencyData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis 
-                          dataKey="round" 
-                          tick={{ fill: '#4A5568', fontSize: 10 }}
-                          interval={2}
-                        />
-                        <YAxis 
-                          yAxisId="left"
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                          tickFormatter={(value) => formatCurrency(value)}
-                        />
-                        <YAxis 
-                          yAxisId="right"
-                          orientation="right"
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                          tickFormatter={(value) => `${value}%`}
-                          domain={[0, 120]}
-                        />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                          formatter={(value: number, name: string) => {
-                            if (name === 'Payment Rate') return [`${value}%`, name];
-                            return [formatCurrency(value), name];
-                          }}
-                        />
-                        <Legend />
-                        <Bar yAxisId="left" dataKey="awarded" name="Awarded" fill={brandColors.olive} fillOpacity={0.6} radius={[2, 2, 0, 0]} />
-                        <Bar yAxisId="left" dataKey="paid" name="Paid" fill={brandColors.teal} radius={[2, 2, 0, 0]} />
-                        <Line yAxisId="right" type="monotone" dataKey="paymentRate" name="Payment Rate" stroke={brandColors.burgundy} strokeWidth={2} dot={false} />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
+
+                <ChartCard
+                  title="Payment Rate by Round"
+                  subtitle="Comparing awarded vs paid amounts across rounds (higher % = faster disbursement)"
+                  height="350px"
+                >
+                  <ComposedChart
+                    data={fundingEfficiencyData}
+                    xKey="round"
+                    series={[
+                      { type: 'bar', dataKey: 'awarded', name: 'Awarded', color: brandColors.olive, yAxisId: 'left', fillOpacity: 0.6 },
+                      { type: 'bar', dataKey: 'paid', name: 'Paid', color: brandColors.teal, yAxisId: 'left' },
+                      { type: 'line', dataKey: 'paymentRate', name: 'Payment Rate', color: brandColors.burgundy, yAxisId: 'right', strokeWidth: 2, dot: false },
+                    ]}
+                    yAxes={[
+                      { id: 'left', tickFormatter: (v: number) => formatCurrency(v) },
+                      { id: 'right', orientation: 'right', tickFormatter: (v: number) => `${v}%`, domain: [0, 120] },
+                    ]}
+                    height={350}
+                    tooltipFormatter={(value: number, name: string) => {
+                      if (name === 'Payment Rate') return [`${value}%`, name];
+                      return [formatCurrency(value), name];
+                    }}
+                    xAxisInterval={2}
+                  />
+                </ChartCard>
 
                 <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Category Performance</Text>
 
@@ -499,10 +435,10 @@ export default function SCFPage() {
                     {categoryPerfData.map((cat, idx) => (
                       <HStack key={cat.category} justify="space-between" align="center">
                         <HStack gap={3}>
-                          <Box 
-                            w="12px" 
-                            h="12px" 
-                            borderRadius="full" 
+                          <Box
+                            w="12px"
+                            h="12px"
+                            borderRadius="full"
                             bg={CATEGORY_COLORS[idx % CATEGORY_COLORS.length]}
                           />
                           <Text fontSize="md" fontWeight="medium">{cat.category}</Text>
@@ -515,59 +451,24 @@ export default function SCFPage() {
 
                 <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Trend Analysis</Text>
 
-                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={2}>Average Grant Size Trend</Text>
-                  <Text fontSize="sm" color="gray.500" mb={4}>How average grant size has evolved over rounds</Text>
-                  <Box h="250px">
-                    <ResponsiveContainer width="100%" height={250}>
-                      <LineChart data={avgGrantTrendData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis 
-                          dataKey="round" 
-                          tick={{ fill: '#4A5568', fontSize: 10 }}
-                          interval={4}
-                        />
-                        <YAxis 
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                          tickFormatter={(value) => formatCurrency(value)}
-                        />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                          formatter={(value: number) => [formatCurrency(value), 'Avg Grant']}
-                        />
-                        <Line type="monotone" dataKey="avgGrant" stroke={brandColors.olive} strokeWidth={2} dot={{ r: 3 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
+                <ChartCard
+                  title="Average Grant Size Trend"
+                  subtitle="How average grant size has evolved over rounds"
+                  height="250px"
+                >
+                  <LineChart
+                    data={avgGrantTrendData}
+                    xKey="round"
+                    lines={[{ dataKey: 'avgGrant', color: brandColors.olive, strokeWidth: 2, dot: { r: 3 } }]}
+                    height={250}
+                    yTickFormatter={(v: number) => formatCurrency(v)}
+                    tooltipFormatter={(value: number) => [formatCurrency(value), 'Avg Grant']}
+                    xTickSize="sm"
+                    xAxisInterval={4}
+                  />
+                </ChartCard>
 
-                {/* Voter Participation Trend - commented out for now
-                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={2}>Voter Participation Trend</Text>
-                  <Text fontSize="sm" color="gray.500" mb={4}>Community engagement over rounds</Text>
-                  <Box h="250px">
-                    <ResponsiveContainer width="100%" height={250}>
-                      <ComposedChart data={avgGrantTrendData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis 
-                          dataKey="round" 
-                          tick={{ fill: '#4A5568', fontSize: 10 }}
-                          interval={4}
-                        />
-                        <YAxis 
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                        />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                        />
-                        <Legend />
-                        <Bar dataKey="voters" name="Voters" fill={brandColors.teal} radius={[4, 4, 0, 0]} />
-                        <Line type="monotone" dataKey="projects" name="Projects Funded" stroke={brandColors.burgundy} strokeWidth={2} />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
-                */}
+                {/* Voter Participation Trend - commented out for now */}
 
                 <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Cohort Analysis</Text>
 
@@ -611,69 +512,37 @@ export default function SCFPage() {
                   </Box>
                 </SimpleGrid>
 
-                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={2}>Cohort Analysis: Repeat-Funded Projects by Round</Text>
-                  <Text fontSize="sm" color="gray.500" mb={4}>Which grant rounds had the highest number of repeat-funded projects?</Text>
-                  <Box h="300px">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={(data?.cohortAnalysis || []).map(r => ({
-                        round: `#${r.round_num}`,
-                        repeatFunded: Number(r.repeat_funded_projects),
-                        totalFunded: Number(r.total_funded_in_round)
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis 
-                          dataKey="round" 
-                          tick={{ fill: '#4A5568', fontSize: 10 }}
-                          interval={2}
-                        />
-                        <YAxis 
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                        />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                          formatter={(value: number, name: string) => [value, name === 'repeatFunded' ? 'Repeat-Funded' : 'Total Funded']}
-                        />
-                        <Legend formatter={(value) => value === 'repeatFunded' ? 'Repeat-Funded Projects' : 'Total Funded in Round'} />
-                        <Bar dataKey="repeatFunded" name="repeatFunded" fill={brandColors.olive} radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="totalFunded" name="totalFunded" fill={brandColors.teal} fillOpacity={0.5} radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
+                <ChartCard
+                  title="Cohort Analysis: Repeat-Funded Projects by Round"
+                  subtitle="Which grant rounds had the highest number of repeat-funded projects?"
+                >
+                  <BarChart
+                    data={cohortChartData}
+                    xKey="round"
+                    bars={[
+                      { dataKey: 'repeatFunded', name: 'repeatFunded', color: brandColors.olive },
+                      { dataKey: 'totalFunded', name: 'totalFunded', color: brandColors.teal, fillOpacity: 0.5 },
+                    ]}
+                    height={300}
+                    showLegend
+                    legendFormatter={(value: string) => value === 'repeatFunded' ? 'Repeat-Funded Projects' : 'Total Funded in Round'}
+                    tooltipFormatter={(value: number, name: string) => [String(value), name === 'repeatFunded' ? 'Repeat-Funded' : 'Total Funded']}
+                    tickSize="sm"
+                    xAxisInterval={2}
+                  />
+                </ChartCard>
 
-                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={4}>Quarterly Funding Distribution</Text>
-                  <Box h="300px" minH="300px">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={quarterlyChartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis 
-                          dataKey="quarter" 
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                          angle={-45}
-                          textAnchor="end"
-                          height={60}
-                        />
-                        <YAxis 
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                          tickFormatter={(value) => formatCurrency(value)}
-                        />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                          formatter={(value: number) => [formatCurrency(value), 'Funding']}
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="funding" 
-                          stroke={brandColors.olive} 
-                          fill={brandColors.olive}
-                          fillOpacity={0.3}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
+                <ChartCard title="Quarterly Funding Distribution">
+                  <AreaChart
+                    data={quarterlyChartData}
+                    xKey="quarter"
+                    areas={[{ dataKey: 'funding', color: brandColors.olive, fillOpacity: 0.3 }]}
+                    height={300}
+                    rotateLabels
+                    yTickFormatter={(v: number) => formatCurrency(v)}
+                    tooltipFormatter={(value: number) => [formatCurrency(value), 'Funding']}
+                  />
+                </ChartCard>
               </VStack>
             </Tabs.Content>
 
@@ -704,13 +573,13 @@ export default function SCFPage() {
                   <Text fontSize="sm" color="gray.500" mb={6}>
                     SCF projects receive funding in tranches tied to milestone completion. This shows the current status of all funded projects.
                   </Text>
-                  
+
                   {(data?.trancheByStatus || []).length > 0 ? (
                     <VStack align="stretch" gap={4}>
                       {(data?.trancheByStatus || []).slice(0, 10).map((status, idx) => (
                         <HStack key={idx} justify="space-between" py={3} borderBottomWidth="1px" borderColor="gray.100">
                           <HStack gap={3}>
-                            <Badge 
+                            <Badge
                               bg={status.tranche_status?.includes('Complete') ? brandColors.olive : status.tranche_status?.includes('Progress') ? brandColors.teal : 'gray.400'}
                               color="white"
                               px={2}
@@ -809,16 +678,16 @@ export default function SCFPage() {
                     Showing {Math.min(visibleRounds, data?.rounds?.length || 0)} of {data?.rounds?.length || 0} rounds
                   </Text>
                 </HStack>
-                
+
                 {(data?.rounds || []).slice(0, visibleRounds).map((round, idx) => {
                   const roundNum = round.round_name?.match(/#(\d+)/)?.[1];
                   return (
                     <Link key={idx} href={roundNum ? `/system/scf/${roundNum}` : '#'} style={{ textDecoration: 'none' }}>
-                      <Box 
-                        p={6} 
-                        bg="white" 
-                        borderRadius="lg" 
-                        borderWidth="1px" 
+                      <Box
+                        p={6}
+                        bg="white"
+                        borderRadius="lg"
+                        borderWidth="1px"
                         borderColor="gray.100"
                         _hover={{ borderColor: 'gray.300', shadow: 'sm', cursor: 'pointer' }}
                         transition="all 0.2s"
@@ -863,7 +732,7 @@ export default function SCFPage() {
 
                 {visibleRounds < (data?.rounds?.length || 0) && (
                   <Center>
-                    <Button 
+                    <Button
                       onClick={loadMoreRounds}
                       variant="outline"
                       colorPalette="gray"

@@ -72,4 +72,4 @@ dbt_project/dbt_packages/
 .env.local
 docker-compose.prod.yml
 
-.claude
+Today.md

@@ -9,22 +9,13 @@ import {
   Spinner,
   Center,
 } from "@chakra-ui/react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from "recharts";
+import { Legend } from "recharts";
 import { brandColors } from "../theme/colors";
 import { Navigation } from "../components/Navigation";
 import { SystemHeader } from "../components/SystemHeader";
 import { MetricCard } from "../components/MetricCard";
+import { BarChart, LineChart, ChartCard } from "../components/charts";
+import { formatCurrency } from "@/lib/formatters";
 
 interface PlatformData {
   platform: string;
@@ -89,13 +80,6 @@ export default function Ecosystem() {
     );
   }
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    }
-    return `$${(value / 1000).toFixed(0)}K`;
-  };
-
   const totalFunding = (data?.platforms || []).reduce(
     (sum, p) => sum + (parseFloat(String(p.total_funding_usd)) || 0),
     0,
@@ -135,12 +119,6 @@ export default function Ecosystem() {
     projects: Number(item.project_count) || 0,
   }));
 
-  const platformColorMap: { [key: string]: string } = {
-    'Stellar Community Fund': brandColors.olive,
-    'Giveth': brandColors.deepPurple,
-    'Privote (GG24 Privacy)': brandColors.teal,
-  };
-
   const fundingDistChartData = (() => {
     const scfData = (data?.fundingDistribution || []).filter(d => d.platform === 'SCF').map(d => ({
       rank: Number(d.rank),
@@ -154,7 +132,7 @@ export default function Ecosystem() {
       rank: Number(d.rank),
       privote: Number(d.funding) || 0,
     }));
-    
+
     const ranks = Array.from({ length: 20 }, (_, i) => i + 1);
     return ranks.map(rank => ({
       rank,
@@ -211,91 +189,53 @@ export default function Ecosystem() {
             </Text>
 
             <Box h="400px">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 20, right: 60, left: 60, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fill: "#4A5568", fontSize: 12 }}
-                    angle={-25}
-                    textAnchor="end"
-                    height={80}
-                    interval={0}
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    tick={{ fill: "#4A5568", fontSize: 12 }}
-                    tickFormatter={(value) => {
-                      if (value >= 1000000)
-                        return `$${(value / 1000000).toFixed(1)}M`;
-                      if (value >= 1000)
-                        return `$${(value / 1000).toFixed(0)}K`;
+              <BarChart
+                data={chartData}
+                xKey="name"
+                bars={[
+                  { dataKey: 'funding', name: 'Total Funding', color: '#800020', yAxisId: 'left', maxBarSize: 60 },
+                  { dataKey: 'applications', name: 'Applications', color: '#006E7F', yAxisId: 'right', maxBarSize: 60 },
+                ]}
+                height={400}
+                rotateLabels="gentle"
+                yAxes={[
+                  {
+                    id: 'left',
+                    tickFormatter: (value: number) => {
+                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
                       return `$${value}`;
-                    }}
-                    label={{
-                      value: "Total Funding",
+                    },
+                    label: {
+                      value: 'Total Funding',
                       angle: -90,
-                      position: "insideLeft",
+                      position: 'insideLeft',
                       offset: -40,
-                      style: {
-                        textAnchor: "middle",
-                        fill: "#4A5568",
-                        fontSize: 12,
-                      },
-                    }}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tick={{ fill: "#4A5568", fontSize: 12 }}
-                    label={{
-                      value: "Applications",
+                      style: { textAnchor: 'middle', fill: '#4A5568', fontSize: 12 },
+                    },
+                  },
+                  {
+                    id: 'right',
+                    orientation: 'right',
+                    label: {
+                      value: 'Applications',
                       angle: 90,
-                      position: "insideRight",
+                      position: 'insideRight',
                       offset: 0,
-                      style: {
-                        textAnchor: "middle",
-                        fill: "#4A5568",
-                        fontSize: 12,
-                      },
-                    }}
-                  />
-                  <Tooltip
-                    formatter={(value: number, name: string) => {
-                      if (name === "Total Funding") {
-                        return [formatCurrency(value), name];
-                      }
-                      return [value.toLocaleString(), name];
-                    }}
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #E2E8F0",
-                      borderRadius: "8px",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    }}
-                  />
-                  <Legend wrapperStyle={{ paddingTop: "20px" }} />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="funding"
-                    name="Total Funding"
-                    fill="#800020"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={60}
-                  />
-                  <Bar
-                    yAxisId="right"
-                    dataKey="applications"
-                    name="Applications"
-                    fill="#006E7F"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={60}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+                      style: { textAnchor: 'middle', fill: '#4A5568', fontSize: 12 },
+                    },
+                  },
+                ]}
+                xAxisInterval={0}
+                showLegend
+                tooltipFormatter={(value: number, name: string) => {
+                  if (name === 'Total Funding') {
+                    return [formatCurrency(value), name];
+                  }
+                  return [value.toLocaleString(), name];
+                }}
+                margin={{ top: 20, right: 60, left: 60, bottom: 60 }}
+              />
             </Box>
           </Box>
 
@@ -406,124 +346,40 @@ export default function Ecosystem() {
             </HStack>
 
             <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-              <Box
-                p={6}
-                bg="white"
-                borderRadius="lg"
-                borderWidth="1px"
-                borderColor="gray.100"
+              <ChartCard
+                title="Average Grant Size by Platform"
+                subtitle="Comparing typical grant amounts across ecosystems"
               >
-                <Text fontSize="md" fontWeight="semibold" mb={2}>
-                  Average Grant Size by Platform
-                </Text>
-                <Text fontSize="sm" color="gray.500" mb={4}>
-                  Comparing typical grant amounts across ecosystems
-                </Text>
-                <Box h="300px">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={avgGrantChartData} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                      <XAxis
-                        type="number"
-                        tick={{ fill: "#4A5568", fontSize: 11 }}
-                        tickFormatter={(value) => formatCurrency(value)}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="platform"
-                        tick={{ fill: "#4A5568", fontSize: 11 }}
-                        width={140}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #E2E8F0",
-                          borderRadius: "8px",
-                        }}
-                        formatter={(value: number) => [
-                          formatCurrency(value),
-                          "Avg Grant",
-                        ]}
-                      />
-                      <Bar
-                        dataKey="avgGrant"
-                        name="Average Grant"
-                        fill={brandColors.burgundy}
-                        radius={[0, 4, 4, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Box>
-              </Box>
+                <BarChart
+                  data={avgGrantChartData}
+                  xKey="platform"
+                  bars={[{ dataKey: 'avgGrant', name: 'Average Grant', color: brandColors.burgundy }]}
+                  layout="vertical"
+                  height={300}
+                  yAxisWidth={140}
+                  tooltipFormatter={(value: number) => [formatCurrency(value), 'Avg Grant']}
+                />
+              </ChartCard>
 
-              <Box
-                p={6}
-                bg="white"
-                borderRadius="lg"
-                borderWidth="1px"
-                borderColor="gray.100"
+              <ChartCard
+                title="Funding Distribution Curve"
+                subtitle="How funding is distributed across top 20 projects per platform"
               >
-                <Text fontSize="md" fontWeight="semibold" mb={2}>
-                  Funding Distribution Curve
-                </Text>
-                <Text fontSize="sm" color="gray.500" mb={4}>
-                  How funding is distributed across top 20 projects per platform
-                </Text>
-                <Box h="300px">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={fundingDistChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                      <XAxis
-                        dataKey="rank"
-                        tick={{ fill: "#4A5568", fontSize: 11 }}
-                        label={{
-                          value: "Project Rank",
-                          position: "insideBottom",
-                          offset: -5,
-                          style: { fill: "#4A5568", fontSize: 11 },
-                        }}
-                      />
-                      <YAxis
-                        tick={{ fill: "#4A5568", fontSize: 11 }}
-                        tickFormatter={(value) => formatCurrency(value)}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #E2E8F0",
-                          borderRadius: "8px",
-                        }}
-                        formatter={(value: number, name: string) => [
-                          formatCurrency(value),
-                          name,
-                        ]}
-                      />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="SCF"
-                        stroke={brandColors.olive}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="Giveth"
-                        stroke={brandColors.deepPurple}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="Privote"
-                        stroke={brandColors.teal}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </Box>
-              </Box>
+                <LineChart
+                  data={fundingDistChartData}
+                  xKey="rank"
+                  lines={[
+                    { dataKey: 'SCF', color: brandColors.olive, strokeWidth: 2, dot: { r: 3 } },
+                    { dataKey: 'Giveth', color: brandColors.deepPurple, strokeWidth: 2, dot: { r: 3 } },
+                    { dataKey: 'Privote', color: brandColors.teal, strokeWidth: 2, dot: { r: 3 } },
+                  ]}
+                  height={300}
+                  showLegend
+                  yTickFormatter={(value: number) => formatCurrency(value)}
+                  tooltipFormatter={(value: number, name: string) => [formatCurrency(value), name]}
+                  xLabel={{ value: 'Project Rank', position: 'insideBottom', offset: -5, style: { fill: '#4A5568', fontSize: 11 } }}
+                />
+              </ChartCard>
             </SimpleGrid>
           </Box>
         </Container>
