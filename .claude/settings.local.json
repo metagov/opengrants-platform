@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(docker compose:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(__NEW_LINE_44e17a2939ae9c63__ echo -e \"\\\\n=== Sample SDL \\(first 80 lines\\) ===\")",
+      "Bash(yamale:*)",
+      "Bash(find /home/torch/opengrants-platform/og_dagster/assets/silver -type d -exec sh -c 'echo \"\"=== {} ===\"\" && ls -la \"\"{}\"\"' ;)",
+      "Bash(python:*)",
+      "Bash(docker exec dagster python -c \"\nimport traceback\nfiles = [\n    ''./jobs/etl_giveth_job.py'',\n    ''./jobs/etl_silver_job.py'', \n    ''./jobs/etl_privote_job.py'',\n    ''./assets/gold/assets.py''\n]\nfor f in files:\n    print\\(f''=== {f} ===''\\)\n    try:\n        exec\\(open\\(f\\).read\\(\\)\\)\n        print\\(''OK''\\)\n    except Exception as e:\n        traceback.print_exc\\(\\)\n    print\\(\\)\n\")",
+      "Bash(docker exec dagster bash -c:*)",
+      "Bash(docker exec dagster python3:*)",
+      "Bash(docker stats:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)"
+    ]
+  }
+}
