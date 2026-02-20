@@ -13,23 +13,12 @@ import {
   Badge,
   Button,
 } from '@chakra-ui/react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from 'recharts';
 import { Navigation } from '../../components/Navigation';
 import { SystemHeader } from '../../components/SystemHeader';
 import { MetricCard } from '../../components/MetricCard';
 import { ProgramProfile } from '../../components/ProgramProfile';
+import { BarChart, PieChart, ChartCard } from '../../components/charts';
+import { formatCurrency } from '@/lib/formatters';
 import { brandColors } from '../../theme/colors';
 
 interface GivethRound {
@@ -119,16 +108,6 @@ export default function GivethPage() {
       </>
     );
   }
-
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    }
-    if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`;
-    }
-    return `$${value?.toFixed(0) || 0}`;
-  };
 
   const getRoundDisplayName = (r: GivethRound) => {
     const name = r.title || r.round_name || r.slug?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Round';
@@ -245,59 +224,30 @@ export default function GivethPage() {
                 />
 
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={4}>Funding by Round</Text>
-                    <Box h="300px" minH="300px">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={roundsChartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                          <XAxis 
-                            dataKey="name" 
-                            tick={{ fill: '#4A5568', fontSize: 9 }}
-                            angle={-45}
-                            textAnchor="end"
-                            height={80}
-                          />
-                          <YAxis 
-                            tick={{ fill: '#4A5568', fontSize: 11 }}
-                            tickFormatter={(value) => formatCurrency(value)}
-                          />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                            formatter={(value: number, name: string) => [formatCurrency(value), name === 'donations' ? 'Donations' : 'Matching']}
-                          />
-                          <Legend />
-                          <Bar dataKey="donations" name="Donations" fill={brandColors.deepPurple} radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="matching" name="Matching" fill={brandColors.teal} radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
+                  <ChartCard title="Funding by Round">
+                    <BarChart
+                      data={roundsChartData}
+                      xKey="name"
+                      bars={[
+                        { dataKey: 'donations', name: 'Donations', color: brandColors.deepPurple },
+                        { dataKey: 'matching', name: 'Matching', color: brandColors.teal },
+                      ]}
+                      height={300}
+                      rotateLabels
+                      tickSize="xs"
+                      showLegend
+                      tooltipFormatter={(value: number, name: string) => [formatCurrency(value), name === 'donations' ? 'Donations' : 'Matching']}
+                    />
+                  </ChartCard>
 
-                  <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="md" fontWeight="semibold" mb={4}>Project Verification Status</Text>
-                    <Box h="300px" minH="300px">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={verificationData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            dataKey="value"
-                            nameKey="name"
-                            label={({ name, percent }) => `${name?.substring(0, 10)} ${(percent * 100).toFixed(0)}%`}
-                            labelLine={false}
-                          >
-                            {verificationData.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value: number) => [value, 'Projects']} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </Box>
-                  </Box>
+                  <ChartCard title="Project Verification Status">
+                    <PieChart
+                      data={verificationData}
+                      colors={COLORS}
+                      height={300}
+                      tooltipFormatter={(value: number) => [String(value), 'Projects']}
+                    />
+                  </ChartCard>
                 </SimpleGrid>
               </VStack>
             </Tabs.Content>
@@ -352,8 +302,8 @@ export default function GivethPage() {
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                   <Text fontSize="md" fontWeight="semibold" mb={2}>About Giveth QF Rounds</Text>
                   <Text fontSize="sm" color="gray.600" lineHeight="tall">
-                    Giveth runs Quadratic Funding rounds that match community donations with additional funds from sponsors. 
-                    The QF mechanism ensures that projects with broader community support receive proportionally more matching funds, 
+                    Giveth runs Quadratic Funding rounds that match community donations with additional funds from sponsors.
+                    The QF mechanism ensures that projects with broader community support receive proportionally more matching funds,
                     democratizing grant allocation. Projects must be verified to participate, ensuring legitimacy and impact.
                   </Text>
                 </Box>
@@ -367,14 +317,14 @@ export default function GivethPage() {
                     Showing {Math.min(visibleRounds, data?.rounds?.length || 0)} of {data?.rounds?.length || 0} rounds
                   </Text>
                 </HStack>
-                
+
                 {(data?.rounds || []).slice(0, visibleRounds).map((round, idx) => (
-                  <Box 
+                  <Box
                     key={idx}
-                    p={6} 
-                    bg="white" 
-                    borderRadius="lg" 
-                    borderWidth="1px" 
+                    p={6}
+                    bg="white"
+                    borderRadius="lg"
+                    borderWidth="1px"
                     borderColor="gray.100"
                   >
                     <HStack justify="space-between" mb={4}>
@@ -419,7 +369,7 @@ export default function GivethPage() {
 
                 {visibleRounds < (data?.rounds?.length || 0) && (
                   <Center>
-                    <Button 
+                    <Button
                       onClick={loadMoreRounds}
                       variant="outline"
                       colorPalette="gray"

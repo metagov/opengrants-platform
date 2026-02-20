@@ -12,19 +12,12 @@ import {
   Badge,
   Table,
 } from '@chakra-ui/react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 import { Navigation } from '../../components/Navigation';
 import { SystemHeader } from '../../components/SystemHeader';
 import { MetricCard } from '../../components/MetricCard';
 import { ProgramProfile } from '../../components/ProgramProfile';
+import { BarChart, ChartCard } from '../../components/charts';
+import { formatETH, formatCurrency } from '@/lib/formatters';
 import { brandColors } from '../../theme/colors';
 
 interface PrivoteData {
@@ -100,21 +93,6 @@ export default function PrivotePage() {
       </>
     );
   }
-
-  const formatETH = (value: number | undefined | null) => {
-    const num = Number(value) || 0;
-    return `${num.toFixed(4)} ETH`;
-  };
-
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(2)}M`;
-    }
-    if (value >= 1000) {
-      return `$${(value / 1000).toFixed(0)}K`;
-    }
-    return `$${value?.toFixed(0) || 0}`;
-  };
 
   const getMedalEmoji = (medal: string) => {
     const medals: { [key: string]: string } = {
@@ -227,35 +205,24 @@ export default function PrivotePage() {
                   dataSource={data?.metadata?.data_source}
                 />
 
-                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                  <Text fontSize="md" fontWeight="semibold" mb={4}>Allocation Distribution (Top 15 Projects)</Text>
-                  <Box h="350px" minH="350px">
-                    <ResponsiveContainer width="100%" height={350}>
-                      <BarChart data={allocationChartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                        <XAxis 
-                          dataKey="name" 
-                          tick={{ fill: '#4A5568', fontSize: 9 }}
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                        />
-                        <YAxis 
-                          tick={{ fill: '#4A5568', fontSize: 11 }}
-                          tickFormatter={(value) => `${value.toFixed(2)}`}
-                        />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-                          formatter={(value: number, name: string) => [
-                            name === 'allocation' ? formatETH(value) : value.toLocaleString(),
-                            name === 'allocation' ? 'Allocation' : 'Votes'
-                          ]}
-                        />
-                        <Bar dataKey="allocation" name="Allocation (ETH)" fill={brandColors.teal} radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Box>
-                </Box>
+                <ChartCard title="Allocation Distribution (Top 15 Projects)" height="350px">
+                  <BarChart
+                    data={allocationChartData}
+                    xKey="name"
+                    bars={[{ dataKey: 'allocation', name: 'Allocation (ETH)', color: brandColors.teal }]}
+                    height={350}
+                    rotateLabels
+                    tickSize="xs"
+                    tooltipFormatter={(value: number, name: string) => [
+                      name === 'allocation' ? formatETH(value) : value.toLocaleString(),
+                      name === 'allocation' ? 'Allocation' : 'Votes'
+                    ]}
+                    yAxes={[{
+                      id: 'left',
+                      tickFormatter: (value: number) => `${value.toFixed(2)}`,
+                    }]}
+                  />
+                </ChartCard>
               </VStack>
             </Tabs.Content>
 
@@ -317,9 +284,9 @@ export default function PrivotePage() {
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                   <Text fontSize="md" fontWeight="semibold" mb={2}>About Privacy-Preserving Voting</Text>
                   <Text fontSize="sm" color="gray.600" lineHeight="tall">
-                    Privote uses MACI (Minimum Anti-Collusion Infrastructure) to enable private voting in quadratic funding. 
-                    MACI ensures that voters cannot prove how they voted, preventing bribery and vote-buying. 
-                    The system uses zero-knowledge proofs to verify vote tallies without revealing individual votes, 
+                    Privote uses MACI (Minimum Anti-Collusion Infrastructure) to enable private voting in quadratic funding.
+                    MACI ensures that voters cannot prove how they voted, preventing bribery and vote-buying.
+                    The system uses zero-knowledge proofs to verify vote tallies without revealing individual votes,
                     combining the democratic benefits of quadratic funding with strong privacy guarantees.
                   </Text>
                 </Box>
