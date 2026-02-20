@@ -272,6 +272,49 @@ query GetAggregates {
 # ======================
 # BATCH HELPERS
 # ======================
+def _fetch_all_rows(
+    query: str,
+    entity_name: str,
+    page_size: int = PAGE_SIZE,
+    max_pages: int = MAX_PAGES,
+) -> List[dict]:
+    """Fetch all pages from the API and return flattened rows."""
+    all_rows: List[dict] = []
+    offset = 0
+
+    for page in range(max_pages):
+        try:
+            variables = {"limit": page_size, "offset": offset}
+            logger.info(f"Fetching {entity_name} - offset={offset}, limit={page_size}")
+
+            response = run_query(query, variables, endpoint=GRANTSSTACK_ENDPOINT)
+            items = response.get(entity_name, [])
+
+            if not items:
+                logger.info(f"No more {entity_name} records")
+                break
+
+            for item in items:
+                all_rows.append(flatten_dict(item))
+
+            logger.info(
+                f"{entity_name} page {page + 1}: {len(items)} records "
+                f"(total fetched: {len(all_rows)})"
+            )
+
+            if len(items) < page_size:
+                break
+
+            offset += page_size
+            time.sleep(REQUEST_DELAY)
+
+        except Exception as e:
+            logger.error(f"Error fetching {entity_name} at offset {offset}: {e}")
+            raise
+
+    return all_rows
+
+
 def _fetch_and_write(
     query: str,
     entity_name: str,
@@ -279,18 +322,33 @@ def _fetch_and_write(
     page_size: int = PAGE_SIZE,
     max_pages: int = MAX_PAGES,
     batch_size: int = WRITE_BATCH_SIZE,
+    collect_first: bool = True,
 ) -> int:
     """
-    Fetch an entity with pagination and write to Postgres in batches.
+    Fetch an entity with pagination and write to Postgres.
 
-    Instead of accumulating all records in memory, this flushes to the DB
-    every `batch_size` rows so that:
-    - Memory stays bounded even for millions of rows (donations).
-    - If a later batch fails, earlier batches are already persisted.
-    - The job can be retried with if_table_exists="append" for resumption.
+    When collect_first=True (default), all rows are fetched into memory first
+    so that align_columns sees every column across the full dataset. This
+    prevents schema-drift errors when later pages introduce new fields.
+    Suitable for small-to-medium entities (rounds, projects, applications, payouts).
+
+    When collect_first=False, rows are flushed to the DB every `batch_size`
+    rows to keep memory bounded. New columns discovered in later batches are
+    added to the table via ALTER TABLE. Use this for very large entities
+    (donations).
 
     Returns the total number of rows written.
     """
+    if collect_first:
+        all_rows = _fetch_all_rows(query, entity_name, page_size, max_pages)
+        if not all_rows:
+            logger.info(f"No {entity_name} records found")
+            return 0
+        total_written = _flush_buffer(all_rows, table_name, replace=True)
+        logger.info(f"Total {entity_name} written: {total_written}")
+        return total_written
+
+    # --- Streaming batched mode (collect_first=False) ---
     buffer: List[dict] = []
     total_written = 0
     first_write = True
@@ -344,11 +402,40 @@ def _fetch_and_write(
     return total_written
 
 
+def _ensure_columns_exist(table_name: str, df_columns: List[str]) -> None:
+    """ALTER TABLE to add any columns present in the DataFrame but missing from the DB table."""
+    from sqlalchemy import inspect as sa_inspect, text
+
+    inspector = sa_inspect(engine)
+    existing_cols = {col["name"] for col in inspector.get_columns(table_name)}
+    new_cols = [c for c in df_columns if c not in existing_cols]
+
+    if new_cols:
+        logger.info(f"Schema evolution: adding {len(new_cols)} new column(s) to {table_name}: {new_cols}")
+        with engine.begin() as conn:
+            for col in new_cols:
+                conn.execute(text(f'ALTER TABLE {table_name} ADD COLUMN "{col}" TEXT'))
+
+
 def _flush_buffer(buffer: List[dict], table_name: str, replace: bool) -> int:
     """Convert a list of dicts to a Polars DataFrame and write to Postgres."""
+    import polars as pl
+
     df = align_columns(buffer)
     df = sanitize_for_sql(df)
     mode = "replace" if replace else "append"
+
+    if not replace:
+        # Schema evolution: add new columns to the table, and pad the
+        # DataFrame with any columns the table has but this batch lacks.
+        _ensure_columns_exist(table_name, df.columns)
+
+        from sqlalchemy import inspect as sa_inspect
+        existing_cols = {col["name"] for col in sa_inspect(engine).get_columns(table_name)}
+        missing_in_df = [c for c in existing_cols if c not in df.columns]
+        if missing_in_df:
+            df = df.with_columns([pl.lit(None).alias(c) for c in missing_in_df])
+
     df.write_database(
         table_name=table_name,
         connection=engine,
@@ -417,18 +504,23 @@ def fetch_grantsstack_data():
     # ======================
     # 2. FETCH & WRITE EACH ENTITY IN BATCHES
     # ======================
+    # (query, entity_name, table_name, collect_first)
+    # collect_first=True  -> fetch all rows, then write once (safe for schema drift)
+    # collect_first=False -> stream in batches (memory-safe for large tables like donations)
     entities = [
-        (ROUNDS_QUERY, "rounds", "bronze_grantsstack_rounds"),
-        (PROJECTS_QUERY, "projects", "bronze_grantsstack_projects"),
-        (APPLICATIONS_QUERY, "applications", "bronze_grantsstack_applications"),
-        (DONATIONS_QUERY, "donations", "bronze_grantsstack_donations"),
-        (PAYOUTS_QUERY, "applicationsPayouts", "bronze_grantsstack_payouts"),
+        (ROUNDS_QUERY, "rounds", "bronze_grantsstack_rounds", True),
+        (PROJECTS_QUERY, "projects", "bronze_grantsstack_projects", True),
+        (APPLICATIONS_QUERY, "applications", "bronze_grantsstack_applications", True),
+        (DONATIONS_QUERY, "donations", "bronze_grantsstack_donations", False),
+        (PAYOUTS_QUERY, "applicationsPayouts", "bronze_grantsstack_payouts", True),
     ]
 
     counts = {}
-    for query, entity_name, table_name in entities:
-        logger.info(f"Processing {entity_name}...")
-        counts[entity_name] = _fetch_and_write(query, entity_name, table_name)
+    for query, entity_name, table_name, collect_first in entities:
+        logger.info(f"Processing {entity_name} (collect_first={collect_first})...")
+        counts[entity_name] = _fetch_and_write(
+            query, entity_name, table_name, collect_first=collect_first,
+        )
 
     # ======================
     # 3. READ BACK FINAL TABLES FOR DAGSTER OUTPUTS
