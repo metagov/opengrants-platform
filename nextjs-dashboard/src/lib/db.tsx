@@ -4,31 +4,29 @@ import { Pool, PoolConfig } from "pg";
 
 const connectionString = process.env.DATABASE_URL;
 const isProduction = process.env.NODE_ENV === "production";
+//const isProduction = true; // Force production mode for testing SSL config locally
 
 // Determine SSL config
 let sslConfig: any = false;
 if (isProduction) {
   // Try reading CA cert from file in repo root
-  const certPath = path.join(process.cwd(), "ca-certificate.crt");
+  const certPath = path.join(process.cwd(), "ca.crt");
   let caCert: string | null = null;
 
   try {
     caCert = fs.readFileSync(certPath, "utf-8");
+    console.log("NODE_ENV:", process.env.NODE_ENV);
+    console.log("isProduction:", isProduction);
     console.log("✅ Using CA certificate from", certPath);
   } catch {
     console.warn("⚠️ CA certificate not found at", certPath);
   }
 
-  // Fallback: try env variable
-  if (!caCert && process.env.DATABASE_CA_CERT) {
-    caCert = process.env.DATABASE_CA_CERT.replace(/\\n/g, "\n");
-    console.log("✅ Using CA certificate from DATABASE_CA_CERT env variable");
-  }
 
   if (caCert) {
     sslConfig = {
       ca: caCert,
-      rejectUnauthorized: true,
+      rejectUnauthorized: true
     };
   } else {
     sslConfig = { rejectUnauthorized: false };
