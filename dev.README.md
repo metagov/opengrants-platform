@@ -48,6 +48,7 @@ free -h
 ### Dashboard reboot
 # 1. Go to the app
 cd ~/opengrants-platform/nextjs-dashboard
+NODE_EXTRA_CA_CERTS=./ca.crt pnpm run dev 
 
 # 2. Pull latest code
 git pull

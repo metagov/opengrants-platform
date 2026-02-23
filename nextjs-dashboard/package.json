@@ -1,9 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "dev": "next dev -p 5000 -H 0.0.0.0",
-    "build": "next build",
-    "start": "next start -p 5000 -H 0.0.0.0"
+    "dev": "NODE_EXTRA_CA_CERTS=./ca-certificate.crt next dev -p 5000 -H 0.0.0.0",
+    "build": "NODE_EXTRA_CA_CERTS=./ca-certificate.crt next build",
+    "start": "NODE_EXTRA_CA_CERTS=./ca-certificate.crt next start -p 5000 -H 0.0.0.0"
   },
   "dependencies": {
     "@chakra-ui/charts": "^3.30.0",
