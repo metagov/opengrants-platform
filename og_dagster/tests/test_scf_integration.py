@@ -13,42 +13,16 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from configs.scf_airtable import SCF_BASE_ID, SCF_TABLES, SCF_REQUIRED_COLUMNS
 from utils.airtable_helpers import fetch_airtable_table
 
-SCF_BASE_ID = "app8tLjMIDrjeloWN"
-
-# Table IDs and expected column names (from CSV headers / YAML schema)
-SCF_TABLES = {
-    "bronze_scf_projects": {
-        "table_id": "tblQFNVNhCxfzUgbF",
-        "required_columns": [
-            "Title",
-            "Description",
-            "Category",
-            "Website",
-            "Total Awarded",
-            "Total Paid",
-        ],
-    },
-    "bronze_scf_submissions": {
-        "table_id": "tbl57OROvn0qQTuiP",
-        "required_columns": [
-            "Submission / Project",
-            "Submission Title",
-            "Round",
-            "Total Awarded (USD)",
-            "Total Paid (USD)",
-        ],
-    },
-    "bronze_scf_rounds": {
-        "table_id": "tbl9nsqJMzoACJVE0",
-        "required_columns": [
-            "Name",
-            "Quarter, Year",
-            "Total Awarded (USD)",
-            "Total Paid (USD)",
-        ],
-    },
+# Build test config from shared constants
+SCF_TEST_TABLES = {
+    table_name: {
+        "table_id": table_id,
+        "required_columns": SCF_REQUIRED_COLUMNS[table_name],
+    }
+    for table_name, table_id in SCF_TEST_TABLES.items()
 }
 
 
@@ -65,8 +39,8 @@ class TestSCFAirtableIntegration:
 
     @pytest.mark.parametrize(
         "table_name,config",
-        SCF_TABLES.items(),
-        ids=SCF_TABLES.keys(),
+        SCF_TEST_TABLES.items(),
+        ids=SCF_TEST_TABLES.keys(),
     )
     def test_table_returns_records(self, api_key, table_name, config):
         """Each table returns at least one record."""
@@ -79,8 +53,8 @@ class TestSCFAirtableIntegration:
 
     @pytest.mark.parametrize(
         "table_name,config",
-        SCF_TABLES.items(),
-        ids=SCF_TABLES.keys(),
+        SCF_TEST_TABLES.items(),
+        ids=SCF_TEST_TABLES.keys(),
     )
     def test_required_columns_present(self, api_key, table_name, config):
         """
@@ -110,8 +84,8 @@ class TestSCFAirtableIntegration:
 
     @pytest.mark.parametrize(
         "table_name,config",
-        SCF_TABLES.items(),
-        ids=SCF_TABLES.keys(),
+        SCF_TEST_TABLES.items(),
+        ids=SCF_TEST_TABLES.keys(),
     )
     def test_cellformat_returns_strings(self, api_key, table_name, config):
         """
@@ -137,7 +111,7 @@ class TestSCFAirtableIntegration:
         """Projects 'Total Awarded' field returns a parseable currency string."""
         records = fetch_airtable_table(
             base_id=SCF_BASE_ID,
-            table_id=SCF_TABLES["bronze_scf_projects"]["table_id"],
+            table_id=SCF_TEST_TABLES["bronze_scf_projects"]["table_id"],
             api_key=api_key,
         )
 
@@ -163,7 +137,7 @@ class TestSCFAirtableIntegration:
         """
         records = fetch_airtable_table(
             base_id=SCF_BASE_ID,
-            table_id=SCF_TABLES["bronze_scf_rounds"]["table_id"],
+            table_id=SCF_TEST_TABLES["bronze_scf_rounds"]["table_id"],
             api_key=api_key,
         )
 

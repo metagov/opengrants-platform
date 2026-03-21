@@ -155,6 +155,36 @@ class TestFetchAirtableTable:
         with pytest.raises(Exception, match="Unauthorized"):
             fetch_airtable_table("base123", "tbl456", "key789")
 
+    @patch("utils.airtable_helpers.requests.get")
+    @patch("utils.airtable_helpers.time.sleep")
+    def test_timeout_retry(self, mock_sleep, mock_get):
+        """Retries on request timeout with exponential backoff."""
+        import requests as req
+
+        success = MagicMock()
+        success.status_code = 200
+        success.json.return_value = {
+            "records": [{"id": "rec1", "fields": {"Name": "A"}}]
+        }
+
+        mock_get.side_effect = [req.exceptions.Timeout("timed out"), success]
+
+        records = fetch_airtable_table("base123", "tbl456", "key789")
+
+        assert len(records) == 1
+        mock_sleep.assert_called_once_with(1)  # 2^0 = 1
+
+    @patch("utils.airtable_helpers.requests.get")
+    @patch("utils.airtable_helpers.time.sleep")
+    def test_timeout_max_retries_exceeded(self, mock_sleep, mock_get):
+        """Raises RuntimeError after all retries exhausted by timeouts."""
+        import requests as req
+
+        mock_get.side_effect = req.exceptions.Timeout("timed out")
+
+        with pytest.raises(RuntimeError, match="failed after 3 retries"):
+            fetch_airtable_table("base123", "tbl456", "key789")
+
 
 # ============================================================
 # Webhook tests

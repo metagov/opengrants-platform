@@ -16,14 +16,13 @@ from dagster import (
     SkipReason,
     sensor,
 )
+from configs.scf_airtable import SCF_BASE_ID
 from utils.airtable_helpers import (
     create_webhook,
     list_webhooks,
     poll_webhook,
     refresh_webhook,
 )
-
-SCF_BASE_ID = "app8tLjMIDrjeloWN"
 
 
 def _get_or_create_webhook(api_key: str, cursor_state: dict) -> dict:
@@ -42,8 +41,6 @@ def _get_or_create_webhook(api_key: str, cursor_state: dict) -> dict:
     # No valid webhook — check if one already exists on the base
     existing = list_webhooks(SCF_BASE_ID, api_key)
     for wh in existing:
-        if not wh.get("isHook", True):
-            continue
         cursor_state["webhook_id"] = wh["id"]
         # Reset cursor to start fresh with this webhook
         cursor_state["cursor"] = None
@@ -88,41 +85,47 @@ def airtable_scf_sensor(context: SensorEvaluationContext):
         yield SkipReason("No webhook ID available.")
         return
 
-    # Poll for changes
-    try:
-        result = poll_webhook(
-            base_id=SCF_BASE_ID,
-            webhook_id=webhook_id,
-            cursor=state.get("cursor"),
-            api_key=api_key,
-        )
-    except Exception as e:
-        context.log.error(f"Webhook poll failed: {e}")
-        yield SkipReason(f"Poll failed: {e}")
-        return
+    # Poll for changes, draining all pages if mightHaveMore is set
+    all_payloads = []
+    max_poll_pages = 10  # Guard against infinite loops
+    for _ in range(max_poll_pages):
+        try:
+            result = poll_webhook(
+                base_id=SCF_BASE_ID,
+                webhook_id=webhook_id,
+                cursor=state.get("cursor"),
+                api_key=api_key,
+            )
+        except Exception as e:
+            context.log.error(f"Webhook poll failed: {e}")
+            yield SkipReason(f"Poll failed: {e}")
+            return
 
-    # Webhook expired — clear and re-register next tick
-    if result.get("expired"):
-        context.log.info("Webhook expired. Will re-register on next tick.")
-        state.pop("webhook_id", None)
-        state.pop("cursor", None)
-        context.update_cursor(json.dumps(state))
-        yield SkipReason("Webhook expired. Re-registering on next tick.")
-        return
+        # Webhook expired — clear and re-register next tick
+        if result.get("expired"):
+            context.log.info("Webhook expired. Will re-register on next tick.")
+            state.pop("webhook_id", None)
+            state.pop("cursor", None)
+            context.update_cursor(json.dumps(state))
+            yield SkipReason("Webhook expired. Re-registering on next tick.")
+            return
 
-    payloads = result.get("payloads", [])
-    new_cursor = result.get("cursor")
+        all_payloads.extend(result.get("payloads", []))
+        new_cursor = result.get("cursor")
 
-    # Always update cursor to avoid re-processing
-    if new_cursor is not None:
-        state["cursor"] = new_cursor
+        # Always advance cursor to avoid re-processing
+        if new_cursor is not None:
+            state["cursor"] = new_cursor
+
+        if not result.get("mightHaveMore", False):
+            break
 
     context.update_cursor(json.dumps(state))
 
-    if payloads:
+    if all_payloads:
         context.log.info(
-            f"Detected {len(payloads)} change(s). Triggering SCF pipeline."
+            f"Detected {len(all_payloads)} change(s). Triggering SCF pipeline."
         )
-        yield RunRequest(run_key=f"scf-webhook-{new_cursor}")
+        yield RunRequest(run_key=f"scf-webhook-{state.get('cursor')}")
     else:
         yield SkipReason("No changes detected.")

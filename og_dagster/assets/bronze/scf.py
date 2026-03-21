@@ -4,33 +4,24 @@
 import os
 
 import polars as pl
-from dagster import asset, get_dagster_logger
+from dagster import asset
+from configs.scf_airtable import SCF_BASE_ID, SCF_TABLES
 from utils.airtable_helpers import fetch_airtable_table
-from utils.db import get_pg_engine
 from utils.graphql_helpers import sanitize_for_sql
-
-logger = get_dagster_logger()
-
-# Airtable SCF Base and Table IDs
-SCF_BASE_ID = "app8tLjMIDrjeloWN"
-SCF_TABLES = {
-    "bronze_scf_projects": "tblQFNVNhCxfzUgbF",       # Awarded Projects [Build only]
-    "bronze_scf_submissions": "tbl57OROvn0qQTuiP",     # Awarded Submissions [Build only]
-    "bronze_scf_rounds": "tbl9nsqJMzoACJVE0",          # Build Award Rounds
-}
 
 
 @asset(
     name="bronze_scf_airtable_ingest",
     description="Ingest SCF data from Airtable API into Postgres bronze layer.",
     group_name="bronze",
+    required_resource_keys={"database_engine"},
 )
 def bronze_scf_airtable_ingest(context):
     api_key = os.getenv("AIRTABLE_API_KEY")
     if not api_key:
         raise RuntimeError("AIRTABLE_API_KEY environment variable is not set.")
 
-    engine = get_pg_engine()
+    engine = context.resources.database_engine
     context.log.info(f"Fetching SCF data from Airtable base {SCF_BASE_ID}")
 
     for table_name, table_id in SCF_TABLES.items():
@@ -53,10 +44,11 @@ def bronze_scf_airtable_ingest(context):
                 df = df.drop("_airtable_id")
 
             df = sanitize_for_sql(df)
-            pdf = df.to_pandas()
-
-            with engine.begin() as conn:
-                pdf.to_sql(table_name, conn, if_exists="replace", index=False)
+            df.write_database(
+                table_name=table_name,
+                connection=engine,
+                if_table_exists="replace",
+            )
 
             context.log.info(f"Loaded {len(df)} records into {table_name}")
 

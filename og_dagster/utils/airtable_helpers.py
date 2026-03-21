@@ -2,13 +2,13 @@
 """Reusable Airtable API helpers with pagination, retry, and webhook support."""
 
 import json
+import logging
 import time
 from typing import Any, Dict, List, Optional
 
 import requests
-from dagster import get_dagster_logger
 
-logger = get_dagster_logger()
+logger = logging.getLogger(__name__)
 
 AIRTABLE_API_BASE = "https://api.airtable.com/v0"
 AIRTABLE_META_BASE = "https://api.airtable.com/v0/meta"
@@ -77,9 +77,15 @@ def _request_with_retry(
     params: Dict[str, str],
     max_retries: int = 3,
 ) -> requests.Response:
-    """Make an HTTP GET with exponential backoff on 429 and 5xx errors."""
+    """Make an HTTP GET with exponential backoff on 429, 5xx, and timeouts."""
     for attempt in range(max_retries):
-        response = requests.get(url, headers=headers, params=params, timeout=30)
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+        except requests.exceptions.Timeout:
+            wait = 2 ** attempt
+            logger.warning(f"Request timed out. Retrying in {wait}s...")
+            time.sleep(wait)
+            continue
 
         if response.status_code == 200:
             return response
