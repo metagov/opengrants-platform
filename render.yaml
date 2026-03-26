@@ -1,0 +1,118 @@
+## render.yaml — OpenGrants Platform
+## Docs: https://render.com/docs/blueprint-spec
+##
+## Database: DigitalOcean Postgres (external — not managed by Render)
+## Secrets marked `sync: false` must be set manually in the Render dashboard.
+
+services:
+  # ---------------------------------------------------------------------------
+  # Next.js Dashboard — Analytics frontend
+  # Existing prod service: https://opengrants-platform.onrender.com
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: opengrants-platform
+    env: node
+    rootDir: nextjs-dashboard
+    buildCommand: yarn install && yarn build
+    startCommand: yarn start
+    plan: starter
+    region: oregon
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # postgresql://...@do-host:25060/defaultdb?sslmode=require
+      - key: NODE_ENV
+        value: production
+      - key: NODE_EXTRA_CA_CERTS
+        value: ./ca-certificate.crt
+
+  # ---------------------------------------------------------------------------
+  # Dagster — Full pipeline orchestrator (writable UI + sensor runner)
+  # Runs: bronze -> silver -> gold SCF pipeline triggered by Airtable sensor
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: dagster
+    env: docker
+    dockerfilePath: ./og_dagster/Dockerfile
+    dockerContext: .
+    plan: standard
+    region: oregon
+    healthCheckPath: /server_info
+    envVars:
+      - key: DAGSTER_HOME
+        value: /app
+      - key: DBT_TARGET
+        value: prod_postgres
+      - key: DATABASE_URL
+        sync: false  # postgresql+psycopg2://...@do-host:25060/defaultdb?sslmode=require
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: POSTGRES_HOST
+        sync: false
+      - key: POSTGRES_PORT
+        sync: false
+      - key: POSTGRES_DB
+        sync: false
+      - key: AIRTABLE_API_KEY
+        sync: false
+    command: >-
+      /bin/sh -c "
+        dbt parse --project-dir /app/dbt_project --profiles-dir /app/dbt_project || echo 'dbt parse skipped (non-fatal)';
+        exec dagster dev -h 0.0.0.0 -p 3000 -w workspace.yaml
+      "
+
+  # ---------------------------------------------------------------------------
+  # Dagster Read-Only — Public-facing read-only Dagster UI
+  # Shares Postgres-backed run/event storage with the writable dagster service
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: dagster-readonly
+    env: docker
+    dockerfilePath: ./og_dagster/Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    healthCheckPath: /server_info
+    envVars:
+      - key: DAGSTER_HOME
+        value: /app
+      - key: DATABASE_URL
+        sync: false  # same DATABASE_URL as dagster service
+      - key: AIRTABLE_API_KEY
+        sync: false
+    command: >-
+      /bin/sh -c "
+        exec dagster-webserver --read-only -h 0.0.0.0 -p 3000 -w workspace.yaml
+      "
+
+  # ---------------------------------------------------------------------------
+  # DLT Worker — Privote subgraph data loader
+  # ---------------------------------------------------------------------------
+  - type: worker
+    name: dlt-privote
+    env: docker
+    dockerfilePath: ./dlt_pipelines/Dockerfile
+    dockerContext: ./dlt_pipelines
+    plan: starter
+    region: oregon
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__HOST
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__PORT
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__DATABASE
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__USERNAME
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__PASSWORD
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__SSLMODE
+        value: require
+      - key: DLT_DEFAULT_DATASET
+        value: public
+      - key: DLT_DEFAULT_DESTINATION
+        value: postgres

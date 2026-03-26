@@ -7,7 +7,7 @@
 manifest:
   schema_name: daoip5_scf
   version: "1.0.10"
-  source_system: "Stellar Community Fund (Airtable CSV)"
+  source_system: "Stellar Community Fund (Airtable API)"
   last_updated: "2025-11-20T00:00:00Z"
   description: >
     DAOIP-5 compliant mapping for SCF grants. Exact bronze column names used. Awarded amounts (USD) are canonical for DAOIP fields; XLM payment amounts are kept in extensions for auditing / separate conversion later.

@@ -14,7 +14,23 @@
       "Bash(docker exec dagster python3:*)",
       "Bash(docker stats:*)",
       "Bash(find:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(source /home/torch/opengrants-platform/.env)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-review-read)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Skill(ship)",
+      "Bash(render --version)",
+      "Bash(npm show:*)",
+      "Bash(brew info:*)",
+      "Bash(git filter-repo:*)",
+      "Bash(render services:*)",
+      "Bash(render service:*)",
+      "Bash(render --help)",
+      "Bash(render workspaces:*)",
+      "Bash(echo $RENDER_API_KEY)",
+      "Read(//home/torch/.render/**)",
+      "Read(//home/torch/.config/render/**)"
     ]
   }
 }

@@ -1,11 +1,14 @@
-from dagster import asset
+from dagster import AssetKey, asset
 from utils.translate_to_silver import build_silver
 from utils.graphql_helpers import sanitize_for_sql
 
 SCHEMA_PATH = "/app/configs/schema_maps/active/daoip5_scf.yaml"
 
 
-@asset(required_resource_keys={"database_engine"})
+@asset(
+    required_resource_keys={"database_engine"},
+    deps=[AssetKey("bronze_scf_airtable_ingest")],
+)
 def silver_scf_projects(context):
     df_silver = build_silver(
         engine=context.resources.database_engine,
@@ -23,7 +26,10 @@ def silver_scf_projects(context):
     return df_silver
 
 
-@asset(required_resource_keys={"database_engine"})
+@asset(
+    required_resource_keys={"database_engine"},
+    deps=[AssetKey("bronze_scf_airtable_ingest")],
+)
 def silver_scf_grant_applications(context):
     df_silver = build_silver(
         engine=context.resources.database_engine,
@@ -41,7 +47,10 @@ def silver_scf_grant_applications(context):
     return df_silver
 
 
-@asset(required_resource_keys={"database_engine"})
+@asset(
+    required_resource_keys={"database_engine"},
+    deps=[AssetKey("bronze_scf_airtable_ingest")],
+)
 def silver_scf_grant_pools(context):
     df_silver = build_silver(
         engine=context.resources.database_engine,

@@ -13,7 +13,7 @@ from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 # --- Bronze Assets ---
 from assets.bronze.giveth import fetch_giveth_data
 from assets.bronze.privote import fetch_privote_data
-from assets.bronze.scf import bronze_scf_csv_ingest
+from assets.bronze.scf import bronze_scf_airtable_ingest
 from assets.bronze.grantsstack import fetch_grantsstack_data
 
 # --- Silver Assets ---
@@ -32,6 +32,9 @@ from assets.silver.grantsstack.grantsstack import (
     silver_grantsstack_donations,
     silver_grantsstack_payouts,
 )
+
+# --- Sensors ---
+from sensors.scf_sensor import airtable_scf_sensor
 
 # --- Resources ---
 from resources.database import database_engine_resource
@@ -73,8 +76,8 @@ bronze_privote_job = define_asset_job(
 
 bronze_scf_job = define_asset_job(
     name="bronze_scf_job",
-    selection=AssetSelection.keys("bronze_scf_csv_ingest"),
-    description="ETL job to ingest SCF CSV data into the Bronze layer.",
+    selection=AssetSelection.keys("bronze_scf_airtable_ingest"),
+    description="Ingest SCF Airtable data into the Bronze layer.",
 )
 
 bronze_grantsstack_job = define_asset_job(
@@ -137,6 +140,21 @@ gold_dbt_job = define_asset_job(
 )
 
 # =============================================================================
+# Full SCF Pipeline Job (bronze -> silver, triggered by sensor)
+# =============================================================================
+
+etl_scf_full_job = define_asset_job(
+    name="etl_scf_full_job",
+    selection=AssetSelection.assets(
+        bronze_scf_airtable_ingest,
+        silver_scf_projects,
+        silver_scf_grant_applications,
+        silver_scf_grant_pools,
+    ) | AssetSelection.assets(gold_dbt_assets),
+    description="Full SCF pipeline: Airtable -> Bronze -> Silver -> Gold (dbt).",
+)
+
+# =============================================================================
 # Unified Definitions
 # =============================================================================
 
@@ -145,7 +163,7 @@ defs = Definitions(
         # Bronze
         fetch_giveth_data,
         fetch_privote_data,
-        bronze_scf_csv_ingest,
+        bronze_scf_airtable_ingest,
         fetch_grantsstack_data,
         # Silver
         silver_giveth_projects,
@@ -179,5 +197,10 @@ defs = Definitions(
         silver_grantsstack_etl_job,
         # Gold
         gold_dbt_job,
+        # Full pipeline
+        etl_scf_full_job,
+    ],
+    sensors=[
+        airtable_scf_sensor,
     ],
 )

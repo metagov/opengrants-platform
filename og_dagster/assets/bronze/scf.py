@@ -1,54 +1,59 @@
 # og_dagster/assets/bronze/scf.py
+"""Bronze layer: Ingest SCF data from Airtable API into Postgres."""
+
 import os
 
 import polars as pl
-from dagster import asset, get_dagster_logger
-from utils.db import get_pg_engine
+from dagster import asset
+from configs.scf_airtable import SCF_BASE_ID, SCF_TABLES
+from utils.airtable_helpers import fetch_airtable_table
 from utils.graphql_helpers import sanitize_for_sql
-
-logger = get_dagster_logger()
 
 
 @asset(
-    name="bronze_scf_csv_ingest",
-    description="Ingest raw SCF CSVs into Postgres bronze layer.",
+    name="bronze_scf_airtable_ingest",
+    description="Ingest SCF data from Airtable API into Postgres bronze layer.",
     group_name="bronze",
+    required_resource_keys={"database_engine"},
 )
-def bronze_scf_csv_ingest(context):
-    base_dir = os.getenv("RAW_DATA_PATH", "/app/raw_data/SCF/11_November_2025")
-    engine = get_pg_engine()
-    context.log.info(f"📂 Loading CSVs from: {base_dir}")
+def bronze_scf_airtable_ingest(context):
+    api_key = os.getenv("AIRTABLE_API_KEY")
+    if not api_key:
+        raise RuntimeError("AIRTABLE_API_KEY environment variable is not set.")
 
-    csv_files = {
-        "bronze_scf_projects": "Awarded Projects [Build only]-By Active _ Category 11_November_2025.csv",
-        "bronze_scf_submissions": "Awarded Submissions [Build only]-By Round 11_November_2025.csv",
-        "bronze_scf_rounds": "Build Award Rounds-By Year - 11_November_2025.csv",
-    }
+    engine = context.resources.database_engine
+    context.log.info(f"Fetching SCF data from Airtable base {SCF_BASE_ID}")
 
-    for table_name, filename in csv_files.items():
-        file_path = os.path.join(base_dir, filename)
-        # ✅ Normalize and escape path for Polars
-        safe_path = (
-            file_path.replace("[", "\\[").replace("]", "\\]").replace(" ", "\\ ")
-        )
-        context.log.info(f"🔍 Attempting to read: {safe_path}")
-
-        if not os.path.exists(file_path):
-            context.log.warning(f"⚠️ File not found at {file_path}")
-            continue
+    for table_name, table_id in SCF_TABLES.items():
+        context.log.info(f"Fetching {table_name} (table: {table_id})")
 
         try:
-            # ✅ Use `glob=False` to disable wildcard expansion
-            df = pl.read_csv(file_path, has_header=True, glob=False)
+            records = fetch_airtable_table(
+                base_id=SCF_BASE_ID,
+                table_id=table_id,
+                api_key=api_key,
+            )
+
+            if not records:
+                context.log.warning(f"No records returned for {table_name}")
+                continue
+
+            df = pl.DataFrame(records)
+            # Drop internal Airtable record ID before writing to bronze
+            if "_airtable_id" in df.columns:
+                df = df.drop("_airtable_id")
+
             df = sanitize_for_sql(df)
-            pdf = df.to_pandas()
+            df.write_database(
+                table_name=table_name,
+                connection=engine,
+                if_table_exists="replace",
+            )
 
-            with engine.begin() as conn:
-                pdf.to_sql(table_name, conn, if_exists="replace", index=False)
-
-            context.log.info(f"✅ Loaded {len(df)} records into {table_name}")
+            context.log.info(f"Loaded {len(df)} records into {table_name}")
 
         except Exception as e:
-            context.log.error(f"❌ Failed reading {file_path}: {e}")
+            context.log.error(f"Failed fetching {table_name}: {e}")
+            raise
 
-    context.log.info("🎯 Bronze SCF ingest complete.")
+    context.log.info("Bronze SCF Airtable ingest complete.")

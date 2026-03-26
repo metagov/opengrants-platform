@@ -20,14 +20,11 @@ services:
     env_file:
       - .env
     command:
-      - dagster
-      - dev
-      - '-h'
-      - 0.0.0.0
-      - '-p'
-      - '3000'
-      - '-w'
-      - workspace.yaml
+      - /bin/sh
+      - -c
+      - |
+        dbt parse --project-dir /app/dbt_project --profiles-dir /app/dbt_project 2>/dev/null || echo "dbt parse skipped (non-fatal)"
+        exec dagster dev -h 0.0.0.0 -p 3000 -w workspace.yaml
 
   dagster-readonly:
     container_name: dagster-readonly
