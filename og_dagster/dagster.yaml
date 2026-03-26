@@ -1,20 +1,4 @@
-run_storage:
-  module: dagster_postgres.run_storage
-  class: PostgresRunStorage
-  config:
-    postgres_url:
-      env: DATABASE_URL
-
-event_log_storage:
-  module: dagster_postgres.event_log
-  class: PostgresEventLogStorage
-  config:
-    postgres_url:
-      env: DATABASE_URL
-
-schedule_storage:
-  module: dagster_postgres.schedules
-  class: PostgresScheduleStorage
-  config:
+storage:
+  postgres:
     postgres_url:
       env: DATABASE_URL
