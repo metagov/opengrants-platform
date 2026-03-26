@@ -29,6 +29,7 @@ COPY --from=base /usr/local/bin /usr/local/bin
 
 # Bake in DigitalOcean Postgres CA cert for SSL connections
 COPY nextjs-dashboard/ca.crt /usr/local/share/ca-certificates/do-postgres.crt
+COPY nextjs-dashboard/ca.crt /app/ca.crt
 RUN update-ca-certificates
 
 # Copy application code (build context = repo root)
