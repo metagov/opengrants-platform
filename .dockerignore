@@ -8,7 +8,8 @@ __pycache__/
 .env.local
 raw_data/
 duckdb/
-dbt_project/
+dbt_project/target/
 dlt_pipelines/
 nextjs-dashboard/
+!nextjs-dashboard/ca.crt
 node_modules/
