@@ -22,22 +22,12 @@ from utils.graphql_helpers import (
 )
 
 MACI_GRAPHQL_ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT")
-if not MACI_GRAPHQL_ENDPOINT:
-    raise ValueError("MACI_GRAPHQL_ENDPOINT environment variable not set!")
 
 # ======================
 # DATABASE CONFIG
 # ======================
 DB_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 engine = create_engine(DB_URL)
-
-# ======================
-# GRAPHQL ENDPOINT
-# ======================
-
-MACI_GRAPHQL_ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT")
-if not MACI_GRAPHQL_ENDPOINT:
-    raise ValueError("MACI_GRAPHQL_ENDPOINT environment variable not set!")
 
 # ======================
 # CONFIGURATION
@@ -449,6 +439,8 @@ def safe_write_to_database(df: pl.DataFrame, table_name: str):
     }
 )
 def fetch_privote_data():
+    if not MACI_GRAPHQL_ENDPOINT:
+        raise ValueError("MACI_GRAPHQL_ENDPOINT environment variable not set!")
 
     # Create privote schema first
     create_privote_schema()
