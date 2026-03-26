@@ -71,5 +71,5 @@ dbt_project/dbt_packages/
 #--- Production environment --- Log Locally Ignored Files ---
 .env.local
 docker-compose.prod.yml
-
+.claude/settings.local.json
 Today.md
