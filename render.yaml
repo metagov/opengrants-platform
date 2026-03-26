@@ -1,0 +1,124 @@
+## render.yaml — OpenGrants Platform
+## Defines all services deployed on Render.
+## Docs: https://render.com/docs/blueprint-spec
+
+databases:
+  - name: opengrants-db
+    plan: starter
+    databaseName: opengrants
+    user: postgres
+    region: oregon
+
+services:
+  # ---------------------------------------------------------------------------
+  # Dagster — Full pipeline orchestrator (writable)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: dagster
+    env: docker
+    dockerfilePath: ./og_dagster/Dockerfile
+    dockerContext: .
+    plan: standard
+    region: oregon
+    healthCheckPath: /server_info
+    disk:
+      name: dagster-storage
+      mountPath: /app/storage
+      sizeGB: 10
+    envVars:
+      - key: DAGSTER_HOME
+        value: /app
+      - key: DBT_TARGET
+        value: prod_postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: opengrants-db
+          property: connectionString
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: opengrants-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: opengrants-db
+          property: password
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: opengrants-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: opengrants-db
+          property: port
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: opengrants-db
+          property: database
+      - key: AIRTABLE_API_KEY
+        sync: false   # set manually in Render dashboard
+    command: >-
+      /bin/sh -c "
+        dbt parse --project-dir /app/dbt_project --profiles-dir /app/dbt_project 2>/dev/null || echo 'dbt parse skipped';
+        exec dagster dev -h 0.0.0.0 -p 3000 -w workspace.yaml
+      "
+
+  # ---------------------------------------------------------------------------
+  # Dagster Read-Only — Public-facing read-only view of the Dagster UI
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: dagster-readonly
+    env: docker
+    dockerfilePath: ./og_dagster/Dockerfile
+    dockerContext: .
+    plan: starter
+    region: oregon
+    healthCheckPath: /server_info
+    envVars:
+      - key: DAGSTER_HOME
+        value: /app
+      - key: DATABASE_URL
+        fromDatabase:
+          name: opengrants-db
+          property: connectionString
+      - key: AIRTABLE_API_KEY
+        sync: false
+    command: >-
+      /bin/sh -c "
+        exec dagster-webserver --read-only -h 0.0.0.0 -p 3000 -w workspace.yaml
+      "
+
+  # ---------------------------------------------------------------------------
+  # Next.js Dashboard — Analytics frontend
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: nextjs-dashboard
+    env: node
+    rootDir: nextjs-dashboard
+    buildCommand: pnpm install && pnpm run build
+    startCommand: pnpm run start
+    plan: starter
+    region: oregon
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: opengrants-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+
+  # ---------------------------------------------------------------------------
+  # DLT Worker — Privote data loader (runs once on deploy, restarts on failure)
+  # ---------------------------------------------------------------------------
+  - type: worker
+    name: dlt-privote
+    env: docker
+    dockerfilePath: ./dlt_pipelines/Dockerfile
+    dockerContext: ./dlt_pipelines
+    plan: starter
+    region: oregon
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: opengrants-db
+          property: connectionString

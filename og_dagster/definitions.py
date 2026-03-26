@@ -150,8 +150,8 @@ etl_scf_full_job = define_asset_job(
         silver_scf_projects,
         silver_scf_grant_applications,
         silver_scf_grant_pools,
-    ),
-    description="Full SCF pipeline: Airtable -> Bronze -> Silver (auto-chained via deps).",
+    ) | AssetSelection.assets(gold_dbt_assets),
+    description="Full SCF pipeline: Airtable -> Bronze -> Silver -> Gold (dbt).",
 )
 
 # =============================================================================
