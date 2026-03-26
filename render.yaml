@@ -1,17 +1,34 @@
 ## render.yaml — OpenGrants Platform
-## Defines all services deployed on Render.
 ## Docs: https://render.com/docs/blueprint-spec
-
-databases:
-  - name: opengrants-db
-    plan: starter
-    databaseName: opengrants
-    user: postgres
-    region: oregon
+##
+## Database: DigitalOcean Postgres (external — not managed by Render)
+## Secrets marked `sync: false` must be set manually in the Render dashboard.
 
 services:
   # ---------------------------------------------------------------------------
-  # Dagster — Full pipeline orchestrator (writable)
+  # Next.js Dashboard — Analytics frontend
+  # Existing prod service: https://opengrants-platform.onrender.com
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: opengrants-platform
+    env: node
+    rootDir: nextjs-dashboard
+    buildCommand: yarn install && yarn build
+    startCommand: yarn start
+    plan: starter
+    region: oregon
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # postgresql://...@do-host:25060/defaultdb?sslmode=require
+      - key: NODE_ENV
+        value: production
+      - key: NODE_EXTRA_CA_CERTS
+        value: ./ca-certificate.crt
+
+  # ---------------------------------------------------------------------------
+  # Dagster — Full pipeline orchestrator (writable UI + sensor runner)
+  # Runs: bronze -> silver -> gold SCF pipeline triggered by Airtable sensor
   # ---------------------------------------------------------------------------
   - type: web
     name: dagster
@@ -21,49 +38,34 @@ services:
     plan: standard
     region: oregon
     healthCheckPath: /server_info
-    disk:
-      name: dagster-storage
-      mountPath: /app/storage
-      sizeGB: 10
     envVars:
       - key: DAGSTER_HOME
         value: /app
       - key: DBT_TARGET
         value: prod_postgres
       - key: DATABASE_URL
-        fromDatabase:
-          name: opengrants-db
-          property: connectionString
+        sync: false  # postgresql+psycopg2://...@do-host:25060/defaultdb?sslmode=require
       - key: POSTGRES_USER
-        fromDatabase:
-          name: opengrants-db
-          property: user
+        sync: false
       - key: POSTGRES_PASSWORD
-        fromDatabase:
-          name: opengrants-db
-          property: password
+        sync: false
       - key: POSTGRES_HOST
-        fromDatabase:
-          name: opengrants-db
-          property: host
+        sync: false
       - key: POSTGRES_PORT
-        fromDatabase:
-          name: opengrants-db
-          property: port
+        sync: false
       - key: POSTGRES_DB
-        fromDatabase:
-          name: opengrants-db
-          property: database
+        sync: false
       - key: AIRTABLE_API_KEY
-        sync: false   # set manually in Render dashboard
+        sync: false
     command: >-
       /bin/sh -c "
-        dbt parse --project-dir /app/dbt_project --profiles-dir /app/dbt_project 2>/dev/null || echo 'dbt parse skipped';
+        dbt parse --project-dir /app/dbt_project --profiles-dir /app/dbt_project || echo 'dbt parse skipped (non-fatal)';
         exec dagster dev -h 0.0.0.0 -p 3000 -w workspace.yaml
       "
 
   # ---------------------------------------------------------------------------
-  # Dagster Read-Only — Public-facing read-only view of the Dagster UI
+  # Dagster Read-Only — Public-facing read-only Dagster UI
+  # Shares Postgres-backed run/event storage with the writable dagster service
   # ---------------------------------------------------------------------------
   - type: web
     name: dagster-readonly
@@ -77,9 +79,7 @@ services:
       - key: DAGSTER_HOME
         value: /app
       - key: DATABASE_URL
-        fromDatabase:
-          name: opengrants-db
-          property: connectionString
+        sync: false  # same DATABASE_URL as dagster service
       - key: AIRTABLE_API_KEY
         sync: false
     command: >-
@@ -88,27 +88,7 @@ services:
       "
 
   # ---------------------------------------------------------------------------
-  # Next.js Dashboard — Analytics frontend
-  # ---------------------------------------------------------------------------
-  - type: web
-    name: nextjs-dashboard
-    env: node
-    rootDir: nextjs-dashboard
-    buildCommand: pnpm install && pnpm run build
-    startCommand: pnpm run start
-    plan: starter
-    region: oregon
-    healthCheckPath: /
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: opengrants-db
-          property: connectionString
-      - key: NODE_ENV
-        value: production
-
-  # ---------------------------------------------------------------------------
-  # DLT Worker — Privote data loader (runs once on deploy, restarts on failure)
+  # DLT Worker — Privote subgraph data loader
   # ---------------------------------------------------------------------------
   - type: worker
     name: dlt-privote
@@ -119,6 +99,20 @@ services:
     region: oregon
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: opengrants-db
-          property: connectionString
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__HOST
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__PORT
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__DATABASE
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__USERNAME
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__PASSWORD
+        sync: false
+      - key: DESTINATION__POSTGRES__CREDENTIALS__SSLMODE
+        value: require
+      - key: DLT_DEFAULT_DATASET
+        value: public
+      - key: DLT_DEFAULT_DESTINATION
+        value: postgres

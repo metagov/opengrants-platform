@@ -23,6 +23,7 @@ opengrants:
       port: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PORT') | int }}"
       schema: public
       sslmode: require
+      sslrootcert: /app/ca.crt
       threads: 4
 
     gold_duckdb:

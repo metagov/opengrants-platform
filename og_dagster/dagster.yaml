@@ -1,15 +1,20 @@
 run_storage:
-  module: dagster._core.storage.runs
-  class: SqliteRunStorage
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
   config:
-    base_dir: /app/storage/runs
+    postgres_url:
+      env: DATABASE_URL
+
 event_log_storage:
-  module: dagster._core.storage.event_log
-  class: SqliteEventLogStorage
+  module: dagster_postgres.event_log
+  class: PostgresEventLogStorage
   config:
-    base_dir: /app/storage/event_logs
+    postgres_url:
+      env: DATABASE_URL
+
 schedule_storage:
-  module: dagster._core.storage.schedules
-  class: SqliteScheduleStorage
+  module: dagster_postgres.schedules
+  class: PostgresScheduleStorage
   config:
-    base_dir: /app/storage/schedules
+    postgres_url:
+      env: DATABASE_URL

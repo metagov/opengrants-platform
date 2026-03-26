@@ -3,6 +3,7 @@ dlt
 dagster
 dagster-webserver
 dagster-dbt
+dagster-postgres
 dbt-core
 dbt-postgres
 duckdb
