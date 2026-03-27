@@ -356,13 +356,7 @@ def validate_row(row: dict, schema_fields: dict):
             allowed = config.get("allowed")
 
             if source in (None, "null"):
-                if transform:
-                    try:
-                        validated[field] = eval(transform)(None)
-                    except Exception:
-                        validated[field] = None
-                else:
-                    validated[field] = None
+                validated[field] = None
                 continue
 
             if isinstance(source, list):
@@ -502,5 +496,16 @@ def build_silver(engine, schema_path: str, section: str) -> pl.DataFrame:
             merged[f"{ns}.{k}"] = v
 
     df_silver = transform_dataframe(df, merged)
+
+    # Warn on any columns with null values
+    total = len(df_silver)
+    if total > 0:
+        for col in df_silver.columns:
+            null_count = df_silver[col].null_count()
+            if null_count > 0:
+                pct = round(100 * null_count / total, 1)
+                logger.warning(
+                    f"⚠️ NULL values in '{col}': {null_count}/{total} rows ({pct}%)"
+                )
 
     return df_silver
