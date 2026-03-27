@@ -26,7 +26,7 @@ SELECT
     "image" as image_url,
     "email" as contact_email,
     NULL as is_verified,
-    "io.scf.totalAwardedUSD" as total_donations_usd,
+    "org.stellar.communityfund.totalAwardedUSD" as total_donations_usd,
     NULL as unique_donors
 FROM {{ source('silver', 'silver_scf_projects') }}
 
