@@ -215,6 +215,14 @@ schemas:
           source: qfRound_hubCardImage
           type: string
           required: false
+        isActive:
+          source: qfRound_isActive
+          type: boolean
+          required: false
+        roundName:
+          source: qfRound_name
+          type: string
+          required: false
 
         # -------------------------
         # ROUND HISTORY (getQfRoundHistory, flattened)

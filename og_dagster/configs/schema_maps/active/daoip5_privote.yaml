@@ -82,6 +82,130 @@ schemas:
           type: boolean
           required: false
 
+        # -------------------------
+        # RECIPIENT IDENTIFIERS
+        # -------------------------
+        recipientId:
+          source: recipient_id
+          type: string
+          required: false
+        payout:
+          source: payout
+          type: string
+          required: false
+        deleted:
+          source: deleted
+          type: boolean
+          required: false
+
+        # -------------------------
+        # REGISTRY CONTEXT
+        # -------------------------
+        registryId:
+          source: registry_id
+          type: string
+          required: false
+        registryMetadataUrl:
+          source: registry_metadata_url
+          type: string
+          required: false
+        registryPollId:
+          source: registry_poll_id
+          type: string
+          required: false
+        registryPollPollId:
+          source: registry_poll_pollId
+          type: string
+          required: false
+
+        # -------------------------
+        # METADATA (fetched from IPFS/URL)
+        # -------------------------
+        metadataShortBio:
+          source: metadata_shortBio
+          type: string
+          required: false
+        metadataBannerImageUrl:
+          source: metadata_bannerImageUrl
+          type: string
+          required: false
+        metadataGithub:
+          source: metadata_github
+          type: string
+          required: false
+        metadataTwitter:
+          source: metadata_twitter
+          type: string
+          required: false
+        metadataContributionDescription:
+          source: metadata_contributionDescription
+          type: string
+          required: false
+        metadataImpactDescription:
+          source: metadata_impactDescription
+          type: string
+          required: false
+        metadataSubmittedAt:
+          source: metadata_submittedAt
+          type: datetime
+          required: false
+        metadataCreator:
+          source: metadata_creator
+          type: string
+          required: false
+        metadataPayoutAddress:
+          source: metadata_payoutAddress
+          type: string
+          required: false
+        metadataPayout:
+          source: metadata_payout
+          type: string
+          required: false
+        metadataImpactCategoryJson:
+          source: metadata_impactCategory_json
+          type: json
+          required: false
+        metadataContributionLinksJson:
+          source: metadata_contributionLinks_json
+          type: json
+          required: false
+        metadataFundingSourcesJson:
+          source: metadata_fundingSources_json
+          type: json
+          required: false
+        metadataRawJson:
+          source: metadata_raw_json
+          type: json
+          required: false
+
+        # -------------------------
+        # DERIVED FLAGS
+        # -------------------------
+        hasMetadataUrl:
+          source: has_metadata_url
+          type: boolean
+          required: false
+        hasRegistryMetadata:
+          source: has_registry_metadata
+          type: boolean
+          required: false
+        hasPayout:
+          source: has_payout
+          type: boolean
+          required: false
+        isNotDeleted:
+          source: is_not_deleted
+          type: boolean
+          required: false
+        isInitialized:
+          source: is_initialized
+          type: boolean
+          required: false
+        isApprovedApplicant:
+          source: is_approved_applicant
+          type: boolean
+          required: false
+
   # ------------------------------------------------------------
   # GRANT POOLS
   # ------------------------------------------------------------
@@ -168,6 +292,14 @@ schemas:
       io.privote:
         chain:
           source: "arbitrum-one"
+          type: string
+          required: false
+        pollId:
+          source: poll_id
+          type: string
+          required: false
+        pollPollId:
+          source: poll_pollId
           type: string
           required: false
 
