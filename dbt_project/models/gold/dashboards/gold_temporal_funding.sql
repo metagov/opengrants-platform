@@ -2,26 +2,26 @@
 
 WITH grant_round_timeline AS (
     -- Giveth Rounds
-    SELECT 
+    SELECT
         'giveth' as platform,
         name as round_name,
         "closeDate" as round_date,
-        "totalGrantPoolSizeInUSD" as total_pool_size,
-        (SELECT COUNT(*) FROM {{ source('silver', 'silver_giveth_projects') }} WHERE "io.giveth.totalDonations" > 0) as projects_funded,
-        (SELECT AVG("io.giveth.totalDonations") FROM {{ source('silver', 'silver_giveth_projects') }} WHERE "io.giveth.totalDonations" > 0) as avg_funding_per_project
+        "totalGrantPoolSizeInUSD"::numeric as total_pool_size,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_giveth_projects') }} WHERE "io.giveth.totalDonations"::numeric > 0) as projects_funded,
+        (SELECT AVG("io.giveth.totalDonations"::numeric) FROM {{ source('silver', 'silver_giveth_projects') }} WHERE "io.giveth.totalDonations"::numeric > 0) as avg_funding_per_project
     FROM {{ source('silver', 'silver_giveth_grant_pools') }}
     WHERE "closeDate" IS NOT NULL
-    
+
     UNION ALL
-    
+
     -- SCF Rounds
-    SELECT 
+    SELECT
         'scf' as platform,
         gp.name as round_name,
         gp."closeDate" as round_date,
-        gp."totalGrantPoolSizeInUSD" as total_pool_size,
+        gp."totalGrantPoolSizeInUSD"::numeric as total_pool_size,
         COUNT(ga.id) as projects_funded,
-        AVG(ga."fundsApprovedInUSD") as avg_funding_per_project
+        AVG(ga."fundsApprovedInUSD"::numeric) as avg_funding_per_project
     FROM {{ source('silver', 'silver_scf_grant_pools') }} gp
     LEFT JOIN {{ source('silver', 'silver_scf_grant_applications') }} ga ON gp.id = ga."grantPoolId"
     WHERE gp."closeDate" IS NOT NULL AND ga."fundsApprovedInUSD" IS NOT NULL
@@ -32,11 +32,11 @@ WITH grant_round_timeline AS (
     -- Privote Rounds
     SELECT
         'privote' as platform,
-        gp.name as round_name,  -- Fixed: use gp.name instead of grantPoolName
+        gp.name as round_name,
         gp."closeDate" as round_date,
-        gp."totalGrantPoolSizeInUSD" as total_pool_size,
+        gp."totalGrantPoolSizeInUSD"::numeric as total_pool_size,
         COUNT(*) as projects_funded,
-        AVG(ga."fundsApprovedInUSD") as avg_funding_per_project
+        AVG(ga."fundsApprovedInUSD"::numeric) as avg_funding_per_project
     FROM {{ source('silver', 'silver_privote_grant_applications') }} ga
     JOIN {{ source('silver', 'silver_privote_grant_pools') }} gp ON ga."grantPoolId" = gp.id
     WHERE gp."closeDate" IS NOT NULL
