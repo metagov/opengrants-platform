@@ -101,22 +101,32 @@ def _load_and_write_small(csv_path: Path, table_name: str) -> int:
 
 
 def _load_and_write_large(csv_path: Path, table_name: str) -> int:
-    """Stream CSV in batches to keep memory bounded."""
+    """Stream CSV in batches to keep memory bounded.
+
+    pl.read_csv_batched returns a BatchedCsvReader; next_batches(n) returns
+    the next n DataFrames as a list (or None when exhausted).
+    """
     total = 0
     first = True
 
-    for batch_df in pl.read_csv_batched(
+    reader = pl.read_csv_batched(
         csv_path,
         infer_schema_length=0,
         truncate_ragged_lines=True,
         ignore_errors=True,
         batch_size=STREAM_BATCH_SIZE,
-    ).next_batches(10_000):  # iterate up to 10k batches
-        if batch_df is None or len(batch_df) == 0:
+    )
+
+    while True:
+        batches = reader.next_batches(5)  # fetch up to 5 chunks at once
+        if not batches:
             break
-        df = _sanitize_df(batch_df)
-        total += _write_df(df, table_name, replace=first)
-        first = False
+        for batch_df in batches:
+            if len(batch_df) == 0:
+                continue
+            df = _sanitize_df(batch_df)
+            total += _write_df(df, table_name, replace=first)
+            first = False
 
     logger.info(f"Total streamed to {table_name}: {total} rows")
     return total

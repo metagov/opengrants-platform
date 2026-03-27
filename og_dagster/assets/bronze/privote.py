@@ -17,7 +17,7 @@ from utils.graphql_helpers import (
     sanitize_for_sql,
 )
 
-MACI_GRAPHQL_ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT")
+MACI_GRAPHQL_ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT", "")
 
 # ======================
 # CONFIGURATION

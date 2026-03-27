@@ -56,6 +56,7 @@ services:
       - ./dbt_project:/app/dbt_project
       - ./duckdb:/data/duckdb
       - ./raw_data:/app/raw_data
+      - /home/torch/opengrants-platform/raw_data/Gitcoin:/app/raw_data/Gitcoin
     environment:
       - DAGSTER_HOME=/app
       - DUCKDB_CACHE_PATH=/app/duckdb/data/local.duckdb
@@ -65,6 +66,12 @@ services:
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/opengrants
+      - GITCOIN2_RAW_DATA_DIR=/app/raw_data/Gitcoin/17_March_2026
+      - DESTINATION__POSTGRES__CREDENTIALS__HOST=postgres
+      - DESTINATION__POSTGRES__CREDENTIALS__USERNAME=postgres
+      - DESTINATION__POSTGRES__CREDENTIALS__PASSWORD=postgres
+      - DESTINATION__POSTGRES__CREDENTIALS__DATABASE=opengrants
+      - DESTINATION__POSTGRES__CREDENTIALS__PORT=5432
     env_file:
       - .env.local
     command:
