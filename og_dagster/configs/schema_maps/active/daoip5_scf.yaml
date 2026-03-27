@@ -520,9 +520,9 @@ schemas:
           lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
 
       isOpen:
-        source: null
+        source: "Submission Close Date"
         type: boolean
-        transform: "lambda _: False"
+        transform: "lambda v: __import__('datetime').datetime.strptime(v.strip(), '%B %d, %Y').date() >= __import__('datetime').date.today() if v and str(v).strip() else False"
 
       closeDate:
         source: "Submission Close Date"
