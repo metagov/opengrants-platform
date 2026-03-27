@@ -46,3 +46,18 @@ SELECT
     NULL as unique_donors
 FROM {{ source('silver', 'silver_privote_projects') }}
 
+UNION ALL
+
+-- Gitcoin 2.0 Projects
+SELECT
+    'gitcoin2' as platform,
+    id,
+    name,
+    description,
+    "contentURI" as content_uri,
+    "image" as image_url,
+    "email" as contact_email,
+    NULL as is_verified,
+    NULL as total_donations_usd,
+    NULL as unique_donors
+FROM {{ source('silver', 'silver_gitcoin2_projects') }}

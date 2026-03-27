@@ -35,6 +35,18 @@ WITH platform_metrics AS (
         'Quadratic Funding' as primary_mechanism
     FROM {{ source('silver', 'silver_privote_grant_applications') }}
 
+    UNION ALL
+
+    -- Gitcoin 2.0
+    SELECT
+        'gitcoin2' as platform,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_projects') }}) as total_projects,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_grant_pools,
+        COUNT(*) as total_applications,
+        SUM(COALESCE("fundsApprovedInUSD", 0)) as total_funding_usd,
+        'Quadratic Funding' as primary_mechanism
+    FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }}
+
 )
 
 SELECT 
