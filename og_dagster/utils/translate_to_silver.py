@@ -356,7 +356,13 @@ def validate_row(row: dict, schema_fields: dict):
             allowed = config.get("allowed")
 
             if source in (None, "null"):
-                validated[field] = None
+                if transform:
+                    try:
+                        validated[field] = eval(transform)(None)
+                    except Exception:
+                        validated[field] = None
+                else:
+                    validated[field] = None
                 continue
 
             if isinstance(source, list):
