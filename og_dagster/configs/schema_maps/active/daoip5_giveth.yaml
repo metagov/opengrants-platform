@@ -614,6 +614,34 @@ schemas:
           source: projectUrl
           type: string
           required: false
+        organizationId:
+          source: organization_id
+          type: string
+          required: false
+        organizationName:
+          source: organization_name
+          type: string
+          required: false
+        organizationWebsite:
+          source: organization_website
+          type: string
+          required: false
+        qfRoundIsActive:
+          source: qfRound_isActive
+          type: boolean
+          required: false
+        qfRoundName:
+          source: qfRound_name
+          type: string
+          required: false
+        statusId:
+          source: status_id
+          type: string
+          required: false
+        statusName:
+          source: status_name
+          type: string
+          required: false
 
 meta:
   daoip_version: 5

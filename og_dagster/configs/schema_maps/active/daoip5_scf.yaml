@@ -206,6 +206,19 @@ schemas:
           source: "Thumbnail"
           type: string
 
+        isActive:
+          source: "Active"
+          type: boolean
+          transform: "lambda v: str(v).lower() in ['yes','true','1','active'] if v else False"
+
+        projectURL:
+          source: "Project URL"
+          type: string
+
+        roundFromSubmissions2:
+          source: "Round (from Submissions) 2"
+          type: string
+
   # ------------------------------------------------------------
   # GRANT APPLICATIONS (bronze_scf_submissions)
   # ------------------------------------------------------------
@@ -481,6 +494,15 @@ schemas:
           source: "Tranche Completion"
           type: string
 
+        yearFromRound:
+          source: "Year (from Round)"
+          type: integer
+          transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else None"
+
+        quarterYearFromRound:
+          source: "Quarter, Year (from Round)"
+          type: string
+
   # ------------------------------------------------------------
   # GRANT POOLS (bronze_scf_rounds)
   # ------------------------------------------------------------
@@ -677,6 +699,58 @@ schemas:
           source: "Year"
           type: integer
           transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else 2025"
+
+        communityVoteOpenDate:
+          source: "Community Vote Open Date"
+          type: string
+
+        communityVoteCloseDate:
+          source: "Community Vote Close Date"
+          type: string
+
+        projectPitches:
+          source: "Project Pitches"
+          type: string
+
+        initialReviewOpenDate:
+          source: "Initial Review Open Date"
+          type: string
+
+        initialReviewCloseDate:
+          source: "Initial Review Close Date"
+          type: string
+
+        awardSubmissionOpenDate:
+          source: "Award Submission Open Date"
+          type: string
+
+        awardSubmissionCloseDate:
+          source: "Award Submission Close Date"
+          type: string
+
+        panelReviewOpenDate:
+          source: "Panel Review Open Date"
+          type: string
+
+        panelReviewCloseDate:
+          source: "Panel Review Close Date"
+          type: string
+
+        notificationOpenDate:
+          source: "Notification and Award Distribution Open Date"
+          type: string
+
+        notificationCloseDate:
+          source: "Notification and Award Distribution Close Date"
+          type: string
+
+        cohortOpenDate:
+          source: "Cohort Open Date"
+          type: string
+
+        cohortCloseDate:
+          source: "Cohort Close Date"
+          type: string
 
 meta:
   daoip_version: 5
