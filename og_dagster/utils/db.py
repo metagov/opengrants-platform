@@ -38,8 +38,16 @@ def get_duckdb_connection():
 def get_pg_engine():
     """
     Build and return a SQLAlchemy engine using environment variables.
-    This keeps DB connection logic consistent across assets.
+    Prefers DATABASE_URL if set (production/Render), otherwise falls back
+    to individual POSTGRES_* vars (local Docker Compose).
     """
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        # Ensure psycopg2 driver prefix
+        if database_url.startswith("postgresql://"):
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        logger.info("Connecting to PostgreSQL via DATABASE_URL")
+        return create_engine(database_url)
 
     pg_user = os.getenv("POSTGRES_USER", "postgres")
     pg_pass = os.getenv("POSTGRES_PASSWORD", "postgres")
@@ -49,6 +57,5 @@ def get_pg_engine():
 
     conn_str = f"postgresql+psycopg2://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
 
-    logger.info(f"📦 Connecting to PostgreSQL at {pg_host}:{pg_port}/{pg_db}")
-    engine = create_engine(conn_str)
-    return engine
+    logger.info(f"Connecting to PostgreSQL at {pg_host}:{pg_port}/{pg_db}")
+    return create_engine(conn_str)
