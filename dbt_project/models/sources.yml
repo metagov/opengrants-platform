@@ -13,9 +13,3 @@ sources:
       - name: silver_privote_projects
       - name: silver_privote_grant_pools
       - name: silver_privote_grant_applications
-      # GrantStack (Gitcoin Grants Stack)
-      - name: silver_grantsstack_grant_pools
-      - name: silver_grantsstack_projects
-      - name: silver_grantsstack_grant_applications
-      - name: silver_grantsstack_donations
-      - name: silver_grantsstack_payouts

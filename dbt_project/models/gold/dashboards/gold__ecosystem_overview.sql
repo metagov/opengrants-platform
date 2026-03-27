@@ -35,19 +35,6 @@ WITH platform_metrics AS (
         'Quadratic Funding' as primary_mechanism
     FROM {{ source('silver', 'silver_privote_grant_applications') }}
 
-    UNION ALL
-
-    -- GrantStack (Gitcoin Grants Stack)
-    SELECT
-        'grantsstack' as platform,
-        (SELECT COUNT(*) FROM {{ source('silver', 'silver_grantsstack_projects') }}) as total_projects,
-        (SELECT COUNT(*) FROM {{ source('silver', 'silver_grantsstack_grant_pools') }}) as total_grant_pools,
-        COUNT(*) as total_applications,
-        -- Total funding = donations + matching pool
-        COALESCE((SELECT SUM("amountInUsd"::numeric) FROM {{ source('silver', 'silver_grantsstack_donations') }}), 0) +
-        COALESCE((SELECT SUM("totalGrantPoolSizeInUSD"::numeric) FROM {{ source('silver', 'silver_grantsstack_grant_pools') }}), 0) as total_funding_usd,
-        'Quadratic Funding' as primary_mechanism
-    FROM {{ source('silver', 'silver_grantsstack_grant_applications') }}
 )
 
 SELECT 
