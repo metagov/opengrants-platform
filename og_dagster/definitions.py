@@ -32,7 +32,8 @@ from sensors.scf_sensor import airtable_scf_sensor
 from resources.database import database_engine_resource
 
 # --- Gold (dbt) Assets ---
-from dagster import AssetExecutionContext
+from dagster import AssetExecutionContext, AssetKey
+from dagster_dbt import DagsterDbtTranslator
 
 DBT_PROJECT_DIR = Path("/app/dbt_project")
 MANIFEST_PATH = DBT_PROJECT_DIR / "target" / "manifest.json"
@@ -44,7 +45,22 @@ dbt_resource = DbtCliResource(
 )
 
 
-@dbt_assets(manifest=MANIFEST_PATH, select="tag:gold")
+class _DbtTranslator(DagsterDbtTranslator):
+    """Map dbt source nodes to the same asset keys as the upstream Python assets.
+
+    By default dagster-dbt prefixes source keys with the source schema name,
+    e.g. source('silver', 'silver_scf_projects') → AssetKey(['silver', 'silver_scf_projects']).
+    Our Python assets use single-part keys (AssetKey(['silver_scf_projects'])),
+    so the lineage edge is never drawn.  This translator strips the prefix.
+    """
+
+    def get_asset_key(self, dbt_resource_props: dict) -> AssetKey:
+        if dbt_resource_props.get("resource_type") == "source":
+            return AssetKey([dbt_resource_props["name"]])
+        return super().get_asset_key(dbt_resource_props)
+
+
+@dbt_assets(manifest=MANIFEST_PATH, select="tag:gold", dagster_dbt_translator=_DbtTranslator())
 def gold_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     """Run dbt models tagged with 'gold' for analytics layer."""
     yield from dbt.cli(["build"], context=context).stream()

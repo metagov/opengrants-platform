@@ -50,6 +50,7 @@ def _parse_iso_dt(value: str | None) -> datetime | None:
 # MAIN DAGSTER ASSET
 # ======================
 @multi_asset(
+    group_name="bronze",
     outs={
         "bronze__giveth_qf_rounds": AssetOut(
             metadata={"description": "Raw Giveth Inactive Rounds (ENDED) with Stats + History"},

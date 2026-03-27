@@ -410,6 +410,7 @@ def safe_write_to_database(df: pl.DataFrame, table_name: str):
 # MAIN DAGSTER ASSET
 # ======================
 @multi_asset(
+    group_name="bronze",
     outs={
         "bronze_privote_recipients": AssetOut(
             metadata={"description": "Raw Privote Recipients (Projects)"}

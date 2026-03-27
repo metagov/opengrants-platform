@@ -5,6 +5,7 @@ from utils.translate_to_silver import build_silver
 
 @asset(
     name="silver__giveth_projects",
+    group_name="silver",
     description="DAOIP-5 compliant Project schema for Giveth",
     required_resource_keys={"database_engine"},
 )
