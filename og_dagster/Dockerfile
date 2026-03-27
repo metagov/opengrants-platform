@@ -38,4 +38,4 @@ COPY dbt_project/ /app/dbt_project/
 
 EXPOSE 3000
 
-CMD ["/bin/sh", "-c", "dbt parse --project-dir /app/dbt_project --profiles-dir /app/dbt_project 2>/dev/null || echo 'dbt parse skipped'; exec dagster dev -h 0.0.0.0 -p 3000 -w workspace.yaml"]
+CMD ["/bin/sh", "-c", "dbt parse --project-dir /app/dbt_project --profiles-dir /app/dbt_project --target parse_only && exec dagster dev -h 0.0.0.0 -p 3000 -w workspace.yaml"]

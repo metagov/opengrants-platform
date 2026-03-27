@@ -31,3 +31,9 @@ opengrants:
       path: "{{ env_var('DUCKDB_GOLD_PATH') }}"
       schema: gold
       threads: 4
+
+    parse_only:
+      type: duckdb
+      path: ":memory:"
+      schema: public
+      threads: 1
