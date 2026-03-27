@@ -19,22 +19,22 @@ WITH grant_round_timeline AS (
         'scf' as platform,
         gp.name as round_name,
         gp."closeDate" as round_date,
-        gp."totalGrantPoolSizeInUSD"::numeric as total_pool_size,
+        gp."totalGrantPoolSizeInUSD" as total_pool_size,
         COUNT(ga.id) as projects_funded,
-        AVG(ga."fundsApprovedInUSD"::numeric) as avg_funding_per_project
+        AVG(ga."fundsApprovedInUSD") as avg_funding_per_project
     FROM {{ source('silver', 'silver_scf_grant_pools') }} gp
     LEFT JOIN {{ source('silver', 'silver_scf_grant_applications') }} ga ON gp.id = ga."grantPoolId"
     WHERE gp."closeDate" IS NOT NULL AND ga."fundsApprovedInUSD" IS NOT NULL
     GROUP BY gp.id, gp.name, gp."closeDate", gp."totalGrantPoolSizeInUSD"
-    
+
     UNION ALL
-    
+
     -- Privote Rounds
-    SELECT 
+    SELECT
         'privote' as platform,
         gp.name as round_name,  -- Fixed: use gp.name instead of grantPoolName
         gp."closeDate" as round_date,
-        gp."totalGrantPoolSizeInUSD"::numeric as total_pool_size,
+        gp."totalGrantPoolSizeInUSD" as total_pool_size,
         COUNT(*) as projects_funded,
         AVG(ga."fundsApprovedInUSD") as avg_funding_per_project
     FROM {{ source('silver', 'silver_privote_grant_applications') }} ga

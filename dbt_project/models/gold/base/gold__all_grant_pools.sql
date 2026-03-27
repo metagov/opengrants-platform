@@ -21,9 +21,9 @@ SELECT
     name,
     description,
     "grantFundingMechanism" as funding_mechanism,
-    "isOpen"::boolean as is_open,
+    "isOpen" as is_open,
     "closeDate" as close_date,
-    "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
+    "totalGrantPoolSizeInUSD" as total_pool_size_usd
 FROM {{ source('silver', 'silver_scf_grant_pools') }}
 
 UNION ALL
@@ -35,8 +35,8 @@ SELECT
     name,
     description,
     "grantFundingMechanism" as funding_mechanism,
-    "isOpen"::boolean as is_open,
+    "isOpen" as is_open,
     "closeDate" as close_date,
-    "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
+    "totalGrantPoolSizeInUSD" as total_pool_size_usd
 FROM {{ source('silver', 'silver_privote_grant_pools') }}
 

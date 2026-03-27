@@ -18,7 +18,7 @@ WITH all_projects AS (
         'scf' as platform,
         ga.name,
         LOWER(TRIM(ga.name)) as normalized_name,
-        ga."fundsApprovedInUSD"::numeric as total_funding,
+        ga."fundsApprovedInUSD" as total_funding,
         gp.name as grant_rounds
     FROM {{ source('silver', 'silver_scf_grant_applications') }} ga
     JOIN {{ source('silver', 'silver_scf_grant_pools') }} gp ON ga."grantPoolId" = gp.id

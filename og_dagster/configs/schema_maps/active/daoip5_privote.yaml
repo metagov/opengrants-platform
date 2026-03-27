@@ -234,12 +234,12 @@ schemas:
       totalGrantPoolSizeInUSD:
         source: null
         type: float
-        transform: "lambda: 3500.0 * 3.1145" # ETH price * total ETH
+        transform: "lambda _: 3500.0 * 3.1145" # ETH price * total ETH
         required: true
       totalGrantPoolSize:
         source: null
         type: json
-        transform: "lambda: {'currency': 'USD', 'amount': 3500.0 * 3.1145}"
+        transform: "lambda _: json.dumps({'currency': 'USD', 'amount': 3500.0 * 3.1145})"
         required: true
       isOpen:
         source: null

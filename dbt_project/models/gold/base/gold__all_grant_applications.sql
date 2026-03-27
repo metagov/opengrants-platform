@@ -8,7 +8,7 @@ SELECT
     "grantPoolName" as grant_pool_name,
     "projectId" as project_id,
     "grantPoolId" as grant_pool_id,
-    "fundsApprovedInUSD"::numeric as funds_approved_usd
+    "fundsApprovedInUSD" as funds_approved_usd
 FROM {{ source('silver', 'silver_scf_grant_applications') }}
 
 UNION ALL

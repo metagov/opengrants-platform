@@ -19,7 +19,7 @@ WITH platform_metrics AS (
         (SELECT COUNT(*) FROM {{ source('silver', 'silver_scf_projects') }}) as total_projects,
         (SELECT COUNT(*) FROM {{ source('silver', 'silver_scf_grant_pools') }}) as total_grant_pools,
         COUNT(*) as total_applications,
-        SUM(COALESCE("fundsApprovedInUSD"::numeric, 0)) as total_funding_usd,
+        SUM(COALESCE("fundsApprovedInUSD", 0)) as total_funding_usd,
         'Community Voting' as primary_mechanism
     FROM {{ source('silver', 'silver_scf_grant_applications') }}
 
