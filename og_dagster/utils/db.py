@@ -10,23 +10,15 @@ logger = get_dagster_logger()
 # utils/db.py
 
 
-def drop_dependent_views(engine, table_name, context):
-    """Drop views that depend on a table before replacing it."""
-    # Map table names to their dependent views
-    view_mapping = {
-        "silver_giveth_grant_pools": "gold__all_grant_pools",
-        "silver_giveth_projects": "gold__all_projects",
-    }
-
-    dependent_view = view_mapping.get(table_name)
-    if dependent_view:
-        with engine.connect() as conn:
-            try:
-                conn.execute(text(f"DROP VIEW IF EXISTS {dependent_view} CASCADE"))
-                conn.commit()
-                context.log.info(f"Dropped dependent view {dependent_view}")
-            except Exception as e:
-                context.log.warning(f"Could not drop view {dependent_view}: {e}")
+def drop_table_cascade(engine, table_name, context):
+    """Drop a table with CASCADE to remove any dependent views first."""
+    with engine.connect() as conn:
+        try:
+            conn.execute(text(f'DROP TABLE IF EXISTS "{table_name}" CASCADE'))
+            conn.commit()
+            context.log.info(f"Dropped table {table_name} (CASCADE)")
+        except Exception as e:
+            context.log.warning(f"Could not drop table {table_name}: {e}")
 
 
 def get_duckdb_connection():

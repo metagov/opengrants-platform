@@ -59,23 +59,20 @@ services:
     environment:
       - DAGSTER_HOME=/app
       - DUCKDB_CACHE_PATH=/app/duckdb/data/local.duckdb
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-opengrants}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=opengrants
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-opengrants}
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/opengrants
     env_file:
       - .env.local
     command:
-      - dagster
-      - dev
-      - '-h'
-      - 0.0.0.0
-      - '-p'
-      - '3000'
-      - '-w'
-      - workspace.yaml
+      - /bin/sh
+      - -c
+      - |
+        dbt parse --project-dir /app/dbt_project --profiles-dir /app/dbt_project 2>/dev/null || echo 'dbt parse skipped'
+        exec dagster dev -h 0.0.0.0 -p 3000 -w workspace.yaml
 
   dlt:
     container_name: dlt
