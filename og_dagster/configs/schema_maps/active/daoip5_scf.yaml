@@ -1,12 +1,12 @@
 # ============================================================
 # DAOIP-5 Unified Schema Map — Stellar Community Fund (SCF)
-# Version: 1.0.10 — Exact bronze mappings, funding mapped + XLM preserved
+# Version: 1.0.11 — Fix image URL extraction; NULL for empty attestationIssuersURI/relevantTo; unify all extensions to org.stellar.communityfund
 # Generated: 2025-11-20
 # ============================================================
 
 manifest:
   schema_name: daoip5_scf
-  version: "1.0.10"
+  version: "1.0.11"
   source_system: "Stellar Community Fund (Airtable API)"
   last_updated: "2025-11-20T00:00:00Z"
   description: >
@@ -48,6 +48,8 @@ schemas:
       image:
         source: "Thumbnail"
         type: string
+        transform: |
+          lambda v: v.split('(', 1)[1].split(')')[0].strip() if v and '(' in str(v) else (v if v else None)
 
       coverImage:
         source: null
@@ -87,15 +89,13 @@ schemas:
 
       attestationIssuersURI:
         source: null
-        type: json
-        required: true
-        transform: "lambda _: []"
+        type: string
+        transform: "lambda _: None"
 
       relevantTo:
         source: null
-        type: json
-        required: true
-        transform: "lambda _: []"
+        type: string
+        transform: "lambda _: None"
 
       licenseURI:
         source: null
@@ -104,7 +104,7 @@ schemas:
         transform: "lambda _: ''"
 
     extensions:
-      io.scf:
+      org.stellar.communityfund:
         integrationStatus:
           source: "Integration Status"
           type: string
@@ -353,7 +353,7 @@ schemas:
           lambda v: "approved" if v and str(v).strip() and v.strip() not in ["0","$0",""] else "pending"
 
     extensions:
-      io.scf:
+      org.stellar.communityfund:
         submissionProject:
           source: "Submission / Project"
           type: string
@@ -553,6 +553,8 @@ schemas:
       image:
         source: "Image"
         type: string
+        transform: |
+          lambda v: v.split('(', 1)[1].split(')')[0].strip() if v and '(' in str(v) else (v if v else None)
 
       coverImage:
         source: null
@@ -686,6 +688,8 @@ schemas:
         image:
           source: "Image"
           type: string
+          transform: |
+            lambda v: v.split('(', 1)[1].split(')')[0].strip() if v and '(' in str(v) else (v if v else None)
 
         scfVersion:
           source: "SCF Version"

@@ -26,3 +26,6 @@
 **Context:** Identified during eng review of SCF Airtable migration. This is a cross-cutting refactor — should cover all schema maps at once, not just SCF, to avoid inconsistency.
 **Depends on:** Nothing — can be done independently.
 **Added:** 2026-03-21
+
+
+## Add a Grants System Init Json/yaml file to source the initial Grant system data like url for extensions and also which funind mechanism
