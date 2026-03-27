@@ -4,14 +4,9 @@ import time
 from datetime import datetime, timezone
 
 from dagster import AssetOut, Output, multi_asset
-from sqlalchemy import create_engine
 
+from utils.db import get_pg_engine
 from utils.graphql_helpers import (
-    POSTGRES_DB,
-    POSTGRES_HOST,
-    POSTGRES_PASSWORD,
-    POSTGRES_PORT,
-    POSTGRES_USER,
     align_columns,
     flatten_dict,
     logger,
@@ -22,15 +17,6 @@ from utils.graphql_helpers import (
 GIVETH_ENDPOINT = os.getenv(
     "GIVETH_GRAPHQL_ENDPOINT", "https://mainnet.serve.giveth.io/graphql"
 )
-
-# ======================
-# DATABASE CONFIG
-# ======================
-DB_URL = (
-    f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}"
-    f"@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-)
-engine = create_engine(DB_URL)
 
 
 def _parse_iso_dt(value: str | None) -> datetime | None:
@@ -76,6 +62,7 @@ def fetch_giveth_data():
         * getQfRoundHistory(qfRoundId)
       and merge them into a single bronze row per round.
     """
+    engine = get_pg_engine()
 
     logger.info("🚀 Fetching QF rounds (including inactive)...")
 

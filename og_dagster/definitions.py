@@ -130,7 +130,7 @@ gold_dbt_job = define_asset_job(
 )
 
 # =============================================================================
-# Full SCF Pipeline Job (bronze -> silver, triggered by sensor)
+# Full Pipeline Jobs (bronze -> silver -> gold)
 # =============================================================================
 
 etl_scf_full_job = define_asset_job(
@@ -142,6 +142,25 @@ etl_scf_full_job = define_asset_job(
         silver_scf_grant_pools,
     ) | AssetSelection.assets(gold_dbt_assets),
     description="Full SCF pipeline: Airtable -> Bronze -> Silver -> Gold (dbt).",
+)
+
+etl_giveth_full_job = define_asset_job(
+    name="etl_giveth_full_job",
+    selection=AssetSelection.assets(
+        fetch_giveth_data,
+        silver_giveth_projects,
+        silver_giveth_grant_pools,
+    ) | AssetSelection.assets(gold_dbt_assets),
+    description="Full Giveth pipeline: API -> Bronze -> Silver -> Gold (dbt).",
+)
+
+etl_privote_full_job = define_asset_job(
+    name="etl_privote_full_job",
+    selection=AssetSelection.assets(
+        fetch_privote_data,
+        silver_privote_transform,
+    ) | AssetSelection.assets(gold_dbt_assets),
+    description="Full Privote pipeline: Subgraph -> Bronze -> Silver -> Gold (dbt).",
 )
 
 # =============================================================================
@@ -181,6 +200,8 @@ defs = Definitions(
         gold_dbt_job,
         # Full pipeline
         etl_scf_full_job,
+        etl_giveth_full_job,
+        etl_privote_full_job,
     ],
     sensors=[
         airtable_scf_sensor,
