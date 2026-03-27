@@ -9,6 +9,15 @@
 **Depends on:** Dagster deployment having a public URL with HTTPS.
 **Added:** 2026-03-21
 
+## Fix silver type inconsistencies across platforms so gold doesn't need normalizing casts
+**What:** Ensure silver tables emit consistent native Postgres types for shared fields (`isOpen`, `totalGrantPoolSizeInUSD`, `fundsApprovedInUSD`, etc.) so gold UNION queries don't require explicit `::boolean`/`::numeric` casts to avoid "UNION types X and Y cannot be matched" errors.
+**Why:** Current workaround (casts in gold SQL) papers over the real issue: silver tables produce different native types for the same logical field depending on the platform (e.g. `isOpen` is `boolean` for Giveth/Privote but `text` for SCF). This caused a production outage (2026-03-28) when casts were mistakenly removed as "redundant".
+**Pros:** Gold SQL becomes genuinely redundant-cast-free. Type mismatches caught at silver layer where they belong. Audit script (`audit_type_translations.py`) MISMATCH flags would go to zero.
+**Cons:** Requires touching silver transform logic for each platform. Must run audit script to verify no regressions.
+**Context:** The `source:null` fix (2026-03-27) correctly wires up null fields, but some non-null fields still land as `text` due to missing or broken lambda transforms in the YAML schema maps. Root cause verified via `DagsterDbtCliRuntimeError` in prod on 2026-03-28.
+**Depends on:** `Extract YAML schema lambda transforms into reusable helpers` (related but not blocking).
+**Added:** 2026-03-28
+
 ## Extract YAML schema lambda transforms into reusable helpers
 **What:** Replace duplicated inline lambdas in YAML schema maps (e.g., currency parsing `float(v.replace('$','').replace('USD','').replace(',','').strip())`) with references to shared Python helper functions.
 **Why:** The same currency/integer/boolean parsing lambdas are duplicated 6+ times per schema map. If the data format changes, every instance needs updating — risk of inconsistent fixes and silent drift.
@@ -17,3 +26,6 @@
 **Context:** Identified during eng review of SCF Airtable migration. This is a cross-cutting refactor — should cover all schema maps at once, not just SCF, to avoid inconsistency.
 **Depends on:** Nothing — can be done independently.
 **Added:** 2026-03-21
+
+
+## Add a Grants System Init Json/yaml file to source the initial Grant system data like url for extensions and also which funind mechanism

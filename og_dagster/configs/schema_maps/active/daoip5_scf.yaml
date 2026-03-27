@@ -1,12 +1,12 @@
 # ============================================================
 # DAOIP-5 Unified Schema Map — Stellar Community Fund (SCF)
-# Version: 1.0.10 — Exact bronze mappings, funding mapped + XLM preserved
+# Version: 1.0.11 — Fix image URL extraction; NULL for empty attestationIssuersURI/relevantTo; unify all extensions to org.stellar.communityfund
 # Generated: 2025-11-20
 # ============================================================
 
 manifest:
   schema_name: daoip5_scf
-  version: "1.0.10"
+  version: "1.0.11"
   source_system: "Stellar Community Fund (Airtable API)"
   last_updated: "2025-11-20T00:00:00Z"
   description: >
@@ -48,6 +48,8 @@ schemas:
       image:
         source: "Thumbnail"
         type: string
+        transform: |
+          lambda v: v.split('(', 1)[1].split(')')[0].strip() if v and '(' in str(v) else (v if v else None)
 
       coverImage:
         source: null
@@ -87,15 +89,13 @@ schemas:
 
       attestationIssuersURI:
         source: null
-        type: json
-        required: true
-        transform: "lambda _: []"
+        type: string
+        transform: "lambda _: None"
 
       relevantTo:
         source: null
-        type: json
-        required: true
-        transform: "lambda _: []"
+        type: string
+        transform: "lambda _: None"
 
       licenseURI:
         source: null
@@ -104,7 +104,7 @@ schemas:
         transform: "lambda _: ''"
 
     extensions:
-      io.scf:
+      org.stellar.communityfund:
         integrationStatus:
           source: "Integration Status"
           type: string
@@ -204,6 +204,19 @@ schemas:
 
         thumbnail:
           source: "Thumbnail"
+          type: string
+
+        isActive:
+          source: "Active"
+          type: boolean
+          transform: "lambda v: str(v).lower() in ['yes','true','1','active'] if v else False"
+
+        projectURL:
+          source: "Project URL"
+          type: string
+
+        roundFromSubmissions2:
+          source: "Round (from Submissions) 2"
           type: string
 
   # ------------------------------------------------------------
@@ -340,7 +353,7 @@ schemas:
           lambda v: "approved" if v and str(v).strip() and v.strip() not in ["0","$0",""] else "pending"
 
     extensions:
-      io.scf:
+      org.stellar.communityfund:
         submissionProject:
           source: "Submission / Project"
           type: string
@@ -385,7 +398,7 @@ schemas:
         totalPaidXLM:
           source: "Total Paid (XLM)"
           type: float
-          transform: "lambda v: float(v) if v is not None else 0.0"
+          transform: "lambda v: float(str(v).replace(',', '')) if v is not None and str(v).strip() else 0.0"
 
         mostRecentPaymentDate:
           source: "Most Recent Payment Date"
@@ -481,6 +494,15 @@ schemas:
           source: "Tranche Completion"
           type: string
 
+        yearFromRound:
+          source: "Year (from Round)"
+          type: integer
+          transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else None"
+
+        quarterYearFromRound:
+          source: "Quarter, Year (from Round)"
+          type: string
+
   # ------------------------------------------------------------
   # GRANT POOLS (bronze_scf_rounds)
   # ------------------------------------------------------------
@@ -520,9 +542,9 @@ schemas:
           lambda v: float(v.replace('$','').replace('USD','').replace(',','').strip()) if v and str(v).strip() else 0.0
 
       isOpen:
-        source: null
+        source: "Submission Close Date"
         type: boolean
-        transform: "lambda _: False"
+        transform: "lambda v: __import__('datetime').datetime.strptime(v.strip(), '%B %d, %Y').date() >= __import__('datetime').date.today() if v and str(v).strip() else False"
 
       closeDate:
         source: "Submission Close Date"
@@ -531,6 +553,8 @@ schemas:
       image:
         source: "Image"
         type: string
+        transform: |
+          lambda v: v.split('(', 1)[1].split(')')[0].strip() if v and '(' in str(v) else (v if v else None)
 
       coverImage:
         source: null
@@ -625,8 +649,8 @@ schemas:
 
         totalPaidXLM:
           source: "Total Paid (XLM)"
-          type: integer
-          transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else 0"
+          type: float
+          transform: "lambda v: float(str(v).replace(',', '')) if v is not None and str(v).strip() else 0.0"
 
         averageAwardedUSD:
           source: "Average Awarded in USD"
@@ -664,6 +688,8 @@ schemas:
         image:
           source: "Image"
           type: string
+          transform: |
+            lambda v: v.split('(', 1)[1].split(')')[0].strip() if v and '(' in str(v) else (v if v else None)
 
         scfVersion:
           source: "SCF Version"
@@ -677,6 +703,58 @@ schemas:
           source: "Year"
           type: integer
           transform: "lambda v: int(v) if v is not None and str(v).strip().isdigit() else 2025"
+
+        communityVoteOpenDate:
+          source: "Community Vote Open Date"
+          type: string
+
+        communityVoteCloseDate:
+          source: "Community Vote Close Date"
+          type: string
+
+        projectPitches:
+          source: "Project Pitches"
+          type: string
+
+        initialReviewOpenDate:
+          source: "Initial Review Open Date"
+          type: string
+
+        initialReviewCloseDate:
+          source: "Initial Review Close Date"
+          type: string
+
+        awardSubmissionOpenDate:
+          source: "Award Submission Open Date"
+          type: string
+
+        awardSubmissionCloseDate:
+          source: "Award Submission Close Date"
+          type: string
+
+        panelReviewOpenDate:
+          source: "Panel Review Open Date"
+          type: string
+
+        panelReviewCloseDate:
+          source: "Panel Review Close Date"
+          type: string
+
+        notificationOpenDate:
+          source: "Notification and Award Distribution Open Date"
+          type: string
+
+        notificationCloseDate:
+          source: "Notification and Award Distribution Close Date"
+          type: string
+
+        cohortOpenDate:
+          source: "Cohort Open Date"
+          type: string
+
+        cohortCloseDate:
+          source: "Cohort Close Date"
+          type: string
 
 meta:
   daoip_version: 5

@@ -48,7 +48,8 @@ from sensors.scf_sensor import airtable_scf_sensor
 from resources.database import database_engine_resource
 
 # --- Gold (dbt) Assets ---
-from dagster import AssetExecutionContext
+from dagster import AssetExecutionContext, AssetKey
+from dagster_dbt import DagsterDbtTranslator
 
 DBT_PROJECT_DIR = Path("/app/dbt_project")
 MANIFEST_PATH = DBT_PROJECT_DIR / "target" / "manifest.json"
@@ -60,7 +61,22 @@ dbt_resource = DbtCliResource(
 )
 
 
-@dbt_assets(manifest=MANIFEST_PATH, select="tag:gold")
+class _DbtTranslator(DagsterDbtTranslator):
+    """Map dbt source nodes to the same asset keys as the upstream Python assets.
+
+    By default dagster-dbt prefixes source keys with the source schema name,
+    e.g. source('silver', 'silver_scf_projects') → AssetKey(['silver', 'silver_scf_projects']).
+    Our Python assets use single-part keys (AssetKey(['silver_scf_projects'])),
+    so the lineage edge is never drawn.  This translator strips the prefix.
+    """
+
+    def get_asset_key(self, dbt_resource_props: dict) -> AssetKey:
+        if dbt_resource_props.get("resource_type") == "source":
+            return AssetKey([dbt_resource_props["name"]])
+        return super().get_asset_key(dbt_resource_props)
+
+
+@dbt_assets(manifest=MANIFEST_PATH, select="tag:gold", dagster_dbt_translator=_DbtTranslator())
 def gold_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     """Run dbt models tagged with 'gold' for analytics layer."""
     yield from dbt.cli(["build"], context=context).stream()
@@ -99,6 +115,7 @@ bronze_gitcoin2_job = define_asset_job(
     selection=AssetSelection.assets(load_gitcoin2_csv_data),
     description="Load Gitcoin 2.0 historical CSV snapshot into Bronze layer.",
 )
+
 
 # =============================================================================
 # Silver Jobs
@@ -155,6 +172,7 @@ silver_gitcoin2_etl_job = define_asset_job(
     description="Transform Gitcoin 2.0 CSV data into the Silver layer (DAOIP-5 compliant).",
 )
 
+
 # =============================================================================
 # Gold Jobs
 # =============================================================================
@@ -166,7 +184,7 @@ gold_dbt_job = define_asset_job(
 )
 
 # =============================================================================
-# Full SCF Pipeline Job (bronze -> silver, triggered by sensor)
+# Full Pipeline Jobs (bronze -> silver -> gold)
 # =============================================================================
 
 etl_scf_full_job = define_asset_job(
@@ -178,6 +196,25 @@ etl_scf_full_job = define_asset_job(
         silver_scf_grant_pools,
     ) | AssetSelection.assets(gold_dbt_assets),
     description="Full SCF pipeline: Airtable -> Bronze -> Silver -> Gold (dbt).",
+)
+
+etl_giveth_full_job = define_asset_job(
+    name="etl_giveth_full_job",
+    selection=AssetSelection.assets(
+        fetch_giveth_data,
+        silver_giveth_projects,
+        silver_giveth_grant_pools,
+    ) | AssetSelection.assets(gold_dbt_assets),
+    description="Full Giveth pipeline: API -> Bronze -> Silver -> Gold (dbt).",
+)
+
+etl_privote_full_job = define_asset_job(
+    name="etl_privote_full_job",
+    selection=AssetSelection.assets(
+        fetch_privote_data,
+        silver_privote_transform,
+    ) | AssetSelection.assets(gold_dbt_assets),
+    description="Full Privote pipeline: Subgraph -> Bronze -> Silver -> Gold (dbt).",
 )
 
 # =============================================================================
@@ -233,6 +270,8 @@ defs = Definitions(
         gold_dbt_job,
         # Full pipeline
         etl_scf_full_job,
+        etl_giveth_full_job,
+        etl_privote_full_job,
     ],
     sensors=[
         airtable_scf_sensor,

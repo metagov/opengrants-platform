@@ -25,7 +25,7 @@ WITH project_funding_history AS (
         SELECT 
             ga.name,
             'scf' as platform, 
-            ga."fundsApprovedInUSD"::numeric as total_funding,
+            ga."fundsApprovedInUSD" as total_funding,
             gp.name as grant_round,
             gp."closeDate"::timestamp as funding_date
         FROM {{ source('silver', 'silver_scf_grant_applications') }} ga

@@ -6,6 +6,7 @@ SCHEMA_PATH = "/app/configs/schema_maps/active/daoip5_scf.yaml"
 
 
 @asset(
+    group_name="silver",
     required_resource_keys={"database_engine"},
     deps=[AssetKey("bronze_scf_airtable_ingest")],
 )
@@ -27,6 +28,7 @@ def silver_scf_projects(context):
 
 
 @asset(
+    group_name="silver",
     required_resource_keys={"database_engine"},
     deps=[AssetKey("bronze_scf_airtable_ingest")],
 )
@@ -48,6 +50,7 @@ def silver_scf_grant_applications(context):
 
 
 @asset(
+    group_name="silver",
     required_resource_keys={"database_engine"},
     deps=[AssetKey("bronze_scf_airtable_ingest")],
 )

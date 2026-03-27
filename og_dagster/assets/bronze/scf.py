@@ -7,6 +7,7 @@ import polars as pl
 from dagster import asset
 from configs.scf_airtable import SCF_BASE_ID, SCF_TABLES
 from utils.airtable_helpers import fetch_airtable_table
+from utils.db import drop_table_cascade
 from utils.graphql_helpers import sanitize_for_sql
 
 
@@ -44,6 +45,7 @@ def bronze_scf_airtable_ingest(context):
                 df = df.drop("_airtable_id")
 
             df = sanitize_for_sql(df)
+            drop_table_cascade(engine, table_name, context)
             df.write_database(
                 table_name=table_name,
                 connection=engine,

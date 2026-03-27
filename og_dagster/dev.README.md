@@ -7,6 +7,10 @@
 docker compose build dagster
 docker compose up dagster
 
+### Local
+ docker compose -f docker-compose.local.yml build dagster
+docker compose -f docker-compose.local.yml up dagster
+
 # Verbose mode for debugging
 docker compose --verbose up dagster
 

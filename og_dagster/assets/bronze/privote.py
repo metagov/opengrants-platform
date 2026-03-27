@@ -7,13 +7,9 @@ from typing import Any, Dict, List, Optional
 import polars as pl
 import requests
 from dagster import AssetOut, Output, multi_asset
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
+from utils.db import get_pg_engine
 from utils.graphql_helpers import (
-    POSTGRES_DB,
-    POSTGRES_HOST,
-    POSTGRES_PASSWORD,
-    POSTGRES_PORT,
-    POSTGRES_USER,
     align_columns,
     flatten_dict,
     logger,
@@ -22,22 +18,6 @@ from utils.graphql_helpers import (
 )
 
 MACI_GRAPHQL_ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT")
-if not MACI_GRAPHQL_ENDPOINT:
-    raise ValueError("MACI_GRAPHQL_ENDPOINT environment variable not set!")
-
-# ======================
-# DATABASE CONFIG
-# ======================
-DB_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-engine = create_engine(DB_URL)
-
-# ======================
-# GRAPHQL ENDPOINT
-# ======================
-
-MACI_GRAPHQL_ENDPOINT = os.getenv("MACI_GRAPHQL_ENDPOINT")
-if not MACI_GRAPHQL_ENDPOINT:
-    raise ValueError("MACI_GRAPHQL_ENDPOINT environment variable not set!")
 
 # ======================
 # CONFIGURATION
@@ -359,7 +339,7 @@ def try_int(v):
             return None
 
 
-def create_privote_schema():
+def create_privote_schema(engine):
     """Create the privote schema if it doesn't exist."""
     try:
         with engine.connect() as conn:
@@ -373,7 +353,7 @@ def create_privote_schema():
 # ======================
 # DATABASE WRITING
 # ======================
-def safe_write_to_database(df: pl.DataFrame, table_name: str):
+def safe_write_to_database(df: pl.DataFrame, table_name: str, engine):
     """Safely write DataFrame to database with proper handling for large numbers."""
     if df.is_empty():
         logger.warning(f"⚠️ Table {table_name} empty — skipping")
@@ -420,6 +400,7 @@ def safe_write_to_database(df: pl.DataFrame, table_name: str):
 # MAIN DAGSTER ASSET
 # ======================
 @multi_asset(
+    group_name="bronze",
     outs={
         "bronze_privote_recipients": AssetOut(
             metadata={"description": "Raw Privote Recipients (Projects)"}
@@ -449,9 +430,12 @@ def safe_write_to_database(df: pl.DataFrame, table_name: str):
     }
 )
 def fetch_privote_data():
+    engine = get_pg_engine()
+    if not MACI_GRAPHQL_ENDPOINT:
+        raise ValueError("MACI_GRAPHQL_ENDPOINT environment variable not set!")
 
     # Create privote schema first
-    create_privote_schema()
+    create_privote_schema(engine)
 
     # 1) Recipients
     logger.info("🏢 Step 1: Fetching recipients...")
@@ -512,7 +496,7 @@ def fetch_privote_data():
         if df is None or df.is_empty():
             logger.warning(f"⚠️ Table {table} empty — skipping")
             continue
-        safe_write_to_database(df, table)
+        safe_write_to_database(df, table, engine)
 
     # 7) Log summary
     logger.info("📊 Extraction Summary:")
