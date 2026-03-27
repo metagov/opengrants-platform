@@ -11,7 +11,7 @@ Transforms bronze CSV tables to DAOIP-5 compliant silver tables:
 """
 
 from dagster import Output, asset
-from utils.db import drop_dependent_views
+from utils.db import drop_table_cascade
 from utils.translate_to_silver import build_silver
 
 SCHEMA_PATH = "/app/configs/schema_maps/active/daoip5_gitcoin2.yaml"
@@ -36,7 +36,7 @@ def silver_gitcoin2_grant_pools(context):
         section="grant_pools",
     )
 
-    drop_dependent_views(engine, "silver_gitcoin2_grant_pools", context)
+    drop_table_cascade(engine, "silver_gitcoin2_grant_pools", context)
 
     df_silver.write_database(
         table_name="silver_gitcoin2_grant_pools",
@@ -67,7 +67,7 @@ def silver_gitcoin2_projects(context):
         section="projects",
     )
 
-    drop_dependent_views(engine, "silver_gitcoin2_projects", context)
+    drop_table_cascade(engine, "silver_gitcoin2_projects", context)
 
     df_silver.write_database(
         table_name="silver_gitcoin2_projects",
@@ -98,7 +98,7 @@ def silver_gitcoin2_grant_applications(context):
         section="grant_applications",
     )
 
-    drop_dependent_views(engine, "silver_gitcoin2_grant_applications", context)
+    drop_table_cascade(engine, "silver_gitcoin2_grant_applications", context)
 
     df_silver.write_database(
         table_name="silver_gitcoin2_grant_applications",
@@ -129,7 +129,7 @@ def silver_gitcoin2_donations(context):
         section="donations",
     )
 
-    drop_dependent_views(engine, "silver_gitcoin2_donations", context)
+    drop_table_cascade(engine, "silver_gitcoin2_donations", context)
 
     df_silver.write_database(
         table_name="silver_gitcoin2_donations",
@@ -160,7 +160,7 @@ def silver_gitcoin2_payouts(context):
         section="payouts",
     )
 
-    drop_dependent_views(engine, "silver_gitcoin2_payouts", context)
+    drop_table_cascade(engine, "silver_gitcoin2_payouts", context)
 
     df_silver.write_database(
         table_name="silver_gitcoin2_payouts",
