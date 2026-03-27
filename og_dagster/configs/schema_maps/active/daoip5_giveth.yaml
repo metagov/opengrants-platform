@@ -17,7 +17,7 @@ schemas:
   # ----------------------------------------------------------
   grant_pools:
     table: bronze_giveth_qf_rounds
-    target_table: silver_giveth_rounds
+    target_table: silver_giveth_grant_pools
 
     fields:
       id:

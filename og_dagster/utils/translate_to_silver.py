@@ -356,7 +356,19 @@ def validate_row(row: dict, schema_fields: dict):
             allowed = config.get("allowed")
 
             if source in (None, "null"):
-                validated[field] = None
+                # Run the transform even when there is no source column — the
+                # transform is the value (e.g. "lambda _: False" for constants).
+                # Without this, declared types are silently lost: Polars writes
+                # an all-null column as TEXT regardless of the declared type.
+                if transform:
+                    try:
+                        val = eval(transform)(None)
+                        validated[field] = normalize_type(val, dtype)
+                    except Exception as e:
+                        logger.warning(f"⚠️ Transform failed for null-source field '{field}': {e}")
+                        validated[field] = None
+                else:
+                    validated[field] = None
                 continue
 
             if isinstance(source, list):
@@ -376,20 +388,18 @@ def validate_row(row: dict, schema_fields: dict):
                     except Exception as e:
                         logger.warning(f"⚠️ Transform failed for {field}: {e}")
 
-            # ENHANCED: Special handling for money fields with backward compatibility
+            # Special handling for float fields: parse money strings (e.g. "$1,500 USD").
+            # _currency side-channel is opt-in via store_currency: true in the schema field.
             if dtype in ("float", "number"):
                 if val and isinstance(val, str):
-                    # Try enhanced parsing first
                     amount, token = parse_money_amount_and_token(val)
                     if amount is not None:
                         val = amount
-                        # Store currency token if needed for future use
-                        validated[f"{field}_currency"] = token
+                        if config.get("store_currency"):
+                            validated[f"{field}_currency"] = token
                     else:
-                        # Fall back to original normalization
                         val = normalize_type(val, dtype)
                 else:
-                    # Original behavior for non-string values
                     val = normalize_type(val, dtype)
             else:
                 # Original behavior for non-numeric fields
