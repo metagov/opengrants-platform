@@ -124,7 +124,7 @@ schemas:
         # -------------------------
         chainId:
           source: chain_id
-          type: integer
+          type: string
           required: true
         createdAtBlock:
           source: created_at_block
@@ -341,7 +341,7 @@ schemas:
         # -------------------------
         chainId:
           source: chain_id
-          type: integer
+          type: string
           required: true
         createdAtBlock:
           source: created_at_block
@@ -536,7 +536,7 @@ schemas:
         # -------------------------
         chainId:
           source: chain_id
-          type: integer
+          type: string
           required: true
         createdAtBlock:
           source: created_at_block
@@ -685,7 +685,7 @@ schemas:
       co.gitcoin:
         chainId:
           source: chain_id
-          type: integer
+          type: string
           required: false
         blockNumber:
           source: block_number
@@ -774,7 +774,7 @@ schemas:
       co.gitcoin:
         chainId:
           source: chain_id
-          type: integer
+          type: string
           required: false
         transactionHash:
           source: transaction_hash
@@ -836,7 +836,7 @@ schemas:
       co.gitcoin:
         chainId:
           source: chain_id
-          type: integer
+          type: string
           required: false
         fee:
           source: fee

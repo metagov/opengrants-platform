@@ -63,7 +63,7 @@ def _enrich_grant_pools(engine, context):
                 GROUP BY round_id, chain_id
             ) r
             WHERE gp.id = 'daoip-5:gitcoin2:grantPool:' || r.round_id
-              AND gp."co.gitcoin.chainId" = r.chain_id
+              AND gp."co.gitcoin.chainId"::text = r.chain_id
         """))
 
         # pending_round_roles: aggregate by chain_id (no direct round_id link)
@@ -80,7 +80,7 @@ def _enrich_grant_pools(engine, context):
                 FROM bronze_gitcoin2_pending_round_roles
                 GROUP BY chain_id
             ) pr
-            WHERE gp."co.gitcoin.chainId" = pr.chain_id
+            WHERE gp."co.gitcoin.chainId"::text = pr.chain_id
         """))
 
         # strategy_timings: join on strategy_id or strategy_address
@@ -122,7 +122,7 @@ def _enrich_projects(engine, context):
                 GROUP BY project_id, chain_id
             ) r
             WHERE sp.id = 'daoip-5:gitcoin2:project:' || r.project_id
-              AND sp."co.gitcoin.chainId" = r.chain_id
+              AND sp."co.gitcoin.chainId"::text = r.chain_id
         """))
 
         # legacy_projects: v2_project_id -> v1_project_id + v1_chain_id
@@ -152,7 +152,7 @@ def _enrich_attestations(engine, context):
             SET "co.gitcoin.txHash" = at.txn_hash
             FROM bronze_gitcoin2_attestation_txns at
             WHERE sa.id = 'daoip-5:gitcoin2:attestation:' || at.attestation_uid
-              AND sa."co.gitcoin.chainId" = at.attestation_chain_id::text
+              AND sa."co.gitcoin.chainId"::text = at.attestation_chain_id::text
         """))
 
         conn.commit()
