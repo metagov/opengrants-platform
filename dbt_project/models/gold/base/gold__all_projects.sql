@@ -1,7 +1,23 @@
 {{ config(materialized='table') }}
 
+-- ENS Projects
+SELECT
+    'ens' as platform,
+    id,
+    name,
+    description,
+    "contentURI" as content_uri,
+    "image" as image_url,
+    "email" as contact_email,
+    NULL as is_verified,
+    NULL as total_donations_usd,
+    NULL as unique_donors
+FROM {{ source('silver', 'silver_ens_projects') }}
+
+UNION ALL
+
 -- Giveth Projects
-SELECT 
+SELECT
     'giveth' as platform,
     id,
     name,

@@ -1,6 +1,18 @@
 {{ config(materialized='table') }}
 
 WITH all_projects AS (
+    -- ENS Projects
+    SELECT
+        'ens' as platform,
+        name,
+        LOWER(TRIM(name)) as normalized_name,
+        NULL as total_funding,
+        "io.ens.proposalTitle" as grant_rounds
+    FROM {{ source('silver', 'silver_ens_projects') }}
+    WHERE "io.ens.score" IS NOT NULL
+
+    UNION ALL
+
     -- Giveth Projects
     SELECT
         'giveth' as platform,
@@ -68,6 +80,9 @@ project_details AS (
 
         -- Get funding breakdown by platform
         (SELECT SUM(total_funding) FROM all_projects ap
+         WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'ens') as ens_funding,
+
+        (SELECT SUM(total_funding) FROM all_projects ap
          WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'giveth') as giveth_funding,
 
         (SELECT SUM(total_funding) FROM all_projects ap
@@ -86,16 +101,19 @@ SELECT
     total_grant_rounds,
     cross_platform_funding as total_funding_across_platforms,
     highest_single_funding,
+    ens_funding,
     giveth_funding,
     scf_funding,
     privote_funding,
 
     -- Funding diversity indicator
     CASE
-        WHEN (CASE WHEN giveth_funding > 0 THEN 1 ELSE 0 END +
+        WHEN (CASE WHEN ens_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN giveth_funding > 0 THEN 1 ELSE 0 END +
               CASE WHEN scf_funding > 0 THEN 1 ELSE 0 END +
               CASE WHEN privote_funding > 0 THEN 1 ELSE 0 END) >= 3 THEN 'High Diversity'
-        WHEN (CASE WHEN giveth_funding > 0 THEN 1 ELSE 0 END +
+        WHEN (CASE WHEN ens_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN giveth_funding > 0 THEN 1 ELSE 0 END +
               CASE WHEN scf_funding > 0 THEN 1 ELSE 0 END +
               CASE WHEN privote_funding > 0 THEN 1 ELSE 0 END) = 2 THEN 'Medium Diversity'
         ELSE 'Low Diversity'

@@ -1,0 +1,288 @@
+# ============================================================
+# DAOIP-5 Unified Schema Map — ENS Small Grants (Snapshot)
+# Version: 1.0.0
+# Generated: 2026-03-28
+# ============================================================
+
+manifest:
+  schema_name: daoip5_ens
+  version: "1.0.0"
+  source_system: "ENS DAO Small Grants (Snapshot: small-grants.eth)"
+  last_updated: "2026-03-28T00:00:00Z"
+  description: >
+    DAOIP-5 compliant mapping for ENS Small Grants. Grant pools correspond to
+    Snapshot proposals (voting rounds). Projects correspond to individual
+    applicants/choices within each round, identified by a sequential choice number.
+    Voting power (ENS tokens) is the primary metric; no USD funding amounts are available.
+
+schemas:
+
+  # ------------------------------------------------------------
+  # GRANT POOLS (bronze_ens_proposals)
+  # ------------------------------------------------------------
+  grant_pools:
+    table: bronze_ens_proposals
+    target_table: silver_ens_grant_pools
+
+    fields:
+      id:
+        source: "id"
+        type: string
+        required: true
+        transform: |
+          lambda v: f"daoip-5:ens:grantPool:{v}" if v else None
+
+      name:
+        source: "title"
+        type: string
+        required: true
+
+      description:
+        source: "title"
+        type: string
+        required: false
+        transform: |
+          lambda v: f"ENS Small Grants — {v}" if v else "ENS Small Grants Round"
+
+      applicationsURI:
+        source: "body"
+        type: string
+
+      totalGrantPoolSizeInUSD:
+        source: null
+        type: float
+        required: false
+        transform: "lambda _: 0.0"
+
+      isOpen:
+        source: "state"
+        type: boolean
+        required: false
+        transform: "lambda v: v == 'active' if v else False"
+
+      closeDate:
+        source: "end_ts"
+        type: datetime
+        required: false
+        transform: |
+          lambda v: __import__('datetime').datetime.fromtimestamp(int(v), tz=__import__('datetime').timezone.utc).isoformat() if v else None
+
+      image:
+        source: null
+        type: string
+        required: false
+
+      coverImage:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: ''"
+
+      email:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: ''"
+
+      grantFundingMechanism:
+        source: null
+        type: enum
+        allowed:
+        - Ranked Choice Voting
+        transform: "lambda _: 'Ranked Choice Voting'"
+
+      governanceURI:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: ''"
+
+      attestationIssuersURI:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: None"
+
+      requiredCredentials:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      totalGrantPoolSize:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: [{'amount': 0, 'denomination': 'ENS'}]"
+
+    extensions:
+      io.ens:
+        proposalId:
+          source: "id"
+          type: string
+
+        author:
+          source: "author"
+          type: string
+
+        totalVotes:
+          source: "votes"
+          type: float
+
+        scoringTotal:
+          source: "scores_total"
+          type: float
+
+        startTs:
+          source: "start_ts"
+          type: float
+
+        endTs:
+          source: "end_ts"
+          type: float
+
+        voteType:
+          source: "vote_type"
+          type: string
+
+        totalChoices:
+          source: "total_choices"
+          type: float
+
+  # ------------------------------------------------------------
+  # PROJECTS (bronze_ens_project_choices)
+  # ------------------------------------------------------------
+  projects:
+    table: bronze_ens_project_choices
+    target_table: silver_ens_projects
+
+    fields:
+      id:
+        source:
+        - "proposal_id"
+        - "choice_number"
+        type: string
+        required: true
+        transform: |
+          lambda pid, cnum: f"daoip-5:ens:project:{pid}:{cnum}" if pid and cnum else None
+
+      name:
+        source: "choice_name"
+        type: string
+        required: true
+
+      description:
+        source: "proposal_title"
+        type: string
+        required: false
+        transform: |
+          lambda v: f"ENS Small Grants applicant in: {v}" if v else "ENS Small Grants applicant"
+
+      contentURI:
+        source: null
+        type: string
+        required: false
+
+      image:
+        source: null
+        type: string
+        required: false
+
+      coverImage:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: ''"
+
+      email:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: ''"
+
+      socials:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      membersURI:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: ''"
+
+      attestationIssuersURI:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      relevantTo:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      licenseURI:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: ''"
+
+    extensions:
+      io.ens:
+        choiceText:
+          source: "choice_text"
+          type: string
+
+        choiceNumber:
+          source: "choice_number"
+          type: float
+
+        score:
+          source: "score"
+          type: float
+
+        scoringTotal:
+          source: "scores_total"
+          type: float
+
+        proposalId:
+          source: "proposal_id"
+          type: string
+
+        proposalTitle:
+          source: "proposal_title"
+          type: string
+
+        roundType:
+          source: "round_type"
+          type: string
+
+        roundNumber:
+          source: "round_number"
+          type: float
+
+        startTs:
+          source: "start_ts"
+          type: float
+
+        endTs:
+          source: "end_ts"
+          type: float
+
+        proposalState:
+          source: "proposal_state"
+          type: string
+
+meta:
+  daoip_version: 5
+  author: "OpenGrants <team@opengrants.io>"
+  mapping_strategy: "DAOIP-5 compliant; ENS Small Grants Snapshot voting; voting power as proxy metric; no USD amounts"
+  validation_rules:
+    json_fields_must_parse: true
+    id_format: "daoip-5:ens"
+    required_fields:
+    - id
+    - name

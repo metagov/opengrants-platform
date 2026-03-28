@@ -1,6 +1,19 @@
 {{ config(materialized='table') }}
 
 WITH grant_round_timeline AS (
+    -- ENS Rounds
+    SELECT
+        'ens' as platform,
+        name as round_name,
+        "closeDate" as round_date,
+        0::numeric as total_pool_size,
+        CAST("io.ens.totalChoices" AS numeric) as projects_funded,
+        NULL as avg_funding_per_project
+    FROM {{ source('silver', 'silver_ens_grant_pools') }}
+    WHERE "closeDate" IS NOT NULL
+
+    UNION ALL
+
     -- Giveth Rounds
     SELECT
         'giveth' as platform,

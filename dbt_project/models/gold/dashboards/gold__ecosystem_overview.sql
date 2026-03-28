@@ -1,6 +1,18 @@
 {{ config(materialized='table') }}
 
 WITH platform_metrics AS (
+    -- ENS
+    SELECT
+        'ens' as platform,
+        COUNT(*) as total_projects,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_ens_grant_pools') }}) as total_grant_pools,
+        COUNT(*) as total_applications,
+        0::numeric as total_funding_usd,
+        'Ranked Choice Voting' as primary_mechanism
+    FROM {{ source('silver', 'silver_ens_projects') }}
+
+    UNION ALL
+
     -- Giveth
     SELECT
         'giveth' as platform,

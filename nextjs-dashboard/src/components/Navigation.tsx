@@ -56,6 +56,7 @@ export const Navigation = () => {
           </Link>
           <HStack gap={6}>
             <NavLink href="/ecosystem">Ecosystem</NavLink>
+            <NavLink href="/system/ens">ENS</NavLink>
             <NavLink href="/system/giveth">Giveth</NavLink>
             <NavLink href="/system/scf">SCF</NavLink>
             <NavLink href="/system/privote">Privote (GG24 Privacy)</NavLink>

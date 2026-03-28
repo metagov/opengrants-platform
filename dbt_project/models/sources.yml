@@ -5,6 +5,8 @@ sources:
   - name: silver
     schema: public
     tables:
+      - name: silver_ens_grant_pools
+      - name: silver_ens_projects
       - name: silver_giveth_projects
       - name: silver_giveth_grant_pools
       - name: silver_scf_projects

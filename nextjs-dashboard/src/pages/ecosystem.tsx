@@ -94,12 +94,14 @@ export default function Ecosystem() {
   );
 
   const platformColors: { [key: string]: string } = {
+    ens: "blue.500",
     giveth: "purple.500",
     scf: "orange.500",
     privote: "teal.500",
   };
 
   const platformDisplayNames: { [key: string]: string } = {
+    ens: "ENS Small Grants",
     scf: "Stellar Community Fund",
     giveth: "Giveth",
     privote: "Privote (GG24 Privacy)",

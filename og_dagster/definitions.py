@@ -11,11 +11,13 @@ from dagster import AssetSelection, Definitions, define_asset_job
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 
 # --- Bronze Assets ---
+from assets.bronze.ens import fetch_ens_data
 from assets.bronze.giveth import fetch_giveth_data
 from assets.bronze.privote import fetch_privote_data
 from assets.bronze.scf import bronze_scf_airtable_ingest
 
 # --- Silver Assets ---
+from assets.silver.ens.ens import silver_ens_grant_pools, silver_ens_projects
 from assets.silver.giveth.projects import silver_giveth_projects
 from assets.silver.giveth.rounds import silver_giveth_grant_pools
 from assets.silver.privote.privote import silver_privote_transform
@@ -70,6 +72,12 @@ def gold_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 # Bronze Jobs
 # =============================================================================
 
+bronze_ens_job = define_asset_job(
+    name="bronze_ens_job",
+    selection=AssetSelection.assets(fetch_ens_data),
+    description="Ingest ENS Small Grants JSON data into the Bronze layer.",
+)
+
 bronze_giveth_job = define_asset_job(
     name="bronze_giveth_job",
     selection=AssetSelection.assets(fetch_giveth_data),
@@ -91,6 +99,15 @@ bronze_scf_job = define_asset_job(
 # =============================================================================
 # Silver Jobs
 # =============================================================================
+
+silver_ens_etl_job = define_asset_job(
+    name="silver_ens_etl_job",
+    selection=AssetSelection.assets(
+        silver_ens_grant_pools,
+        silver_ens_projects,
+    ),
+    description="Transform ENS Small Grants data into the Silver layer.",
+)
 
 silver_giveth_etl_job = define_asset_job(
     name="silver_giveth_etl_job",
@@ -133,6 +150,16 @@ gold_dbt_job = define_asset_job(
 # Full Pipeline Jobs (bronze -> silver -> gold)
 # =============================================================================
 
+etl_ens_full_job = define_asset_job(
+    name="etl_ens_full_job",
+    selection=AssetSelection.assets(
+        fetch_ens_data,
+        silver_ens_grant_pools,
+        silver_ens_projects,
+    ) | AssetSelection.assets(gold_dbt_assets),
+    description="Full ENS pipeline: JSON files -> Bronze -> Silver -> Gold (dbt).",
+)
+
 etl_scf_full_job = define_asset_job(
     name="etl_scf_full_job",
     selection=AssetSelection.assets(
@@ -170,10 +197,13 @@ etl_privote_full_job = define_asset_job(
 defs = Definitions(
     assets=[
         # Bronze
+        fetch_ens_data,
         fetch_giveth_data,
         fetch_privote_data,
         bronze_scf_airtable_ingest,
         # Silver
+        silver_ens_grant_pools,
+        silver_ens_projects,
         silver_giveth_projects,
         silver_giveth_grant_pools,
         silver_privote_transform,
@@ -189,16 +219,19 @@ defs = Definitions(
     },
     jobs=[
         # Bronze
+        bronze_ens_job,
         bronze_giveth_job,
         bronze_privote_job,
         bronze_scf_job,
         # Silver
+        silver_ens_etl_job,
         silver_giveth_etl_job,
         silver_scf_etl_job,
         silver_privote_etl_job,
         # Gold
         gold_dbt_job,
         # Full pipeline
+        etl_ens_full_job,
         etl_scf_full_job,
         etl_giveth_full_job,
         etl_privote_full_job,

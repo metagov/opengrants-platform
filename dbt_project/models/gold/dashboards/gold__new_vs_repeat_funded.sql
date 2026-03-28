@@ -9,8 +9,20 @@ WITH project_funding_history AS (
         grant_round,
         funding_date
     FROM (
+        -- ENS (treat each round as a separate grant)
+        SELECT
+            name,
+            'ens' as platform,
+            NULL as total_funding,
+            "io.ens.proposalTitle" as grant_round,
+            TO_TIMESTAMP(CAST("io.ens.endTs" AS double precision)) as funding_date
+        FROM {{ source('silver', 'silver_ens_projects') }}
+        WHERE "io.ens.score" IS NOT NULL
+
+        UNION ALL
+
         -- Giveth (treat as single round)
-        SELECT 
+        SELECT
             name,
             'giveth' as platform,
             "io.giveth.totalDonations" as total_funding,

@@ -25,11 +25,12 @@ export default async function handler(
     `);
 
     const crossPlatform = await query(`
-      SELECT 
+      SELECT
         project_name,
         platforms_present,
         platforms_list,
         total_funding_across_platforms,
+        ens_funding,
         giveth_funding,
         scf_funding,
         privote_funding
