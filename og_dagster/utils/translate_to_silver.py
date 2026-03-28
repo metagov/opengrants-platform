@@ -111,7 +111,7 @@ def apply_transform(value: Any, transform_str: str):
 
 
 def normalize_type(value: Any, dtype: str):
-    if value is None:
+    if value is None or value == "":
         return None
     try:
         if dtype == "string":
