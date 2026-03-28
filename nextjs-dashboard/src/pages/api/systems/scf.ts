@@ -241,6 +241,134 @@ export default async function handler(
       ORDER BY rt.round_num
     `, []);
 
+    // Soroban adoption by quarter (Stellar-specific metric)
+    const sorobanAdoption = await query(`
+      SELECT
+        gp."org.stellar.communityfund.quarterYear" as quarter,
+        gp."org.stellar.communityfund.year" as year,
+        COUNT(DISTINCT a.id) as total_applications,
+        COUNT(DISTINCT a.id) FILTER (WHERE a."io.scf.useSoroban" = true) as soroban_count,
+        ROUND(
+          COUNT(DISTINCT a.id) FILTER (WHERE a."io.scf.useSoroban" = true)::numeric /
+          NULLIF(COUNT(DISTINCT a.id), 0) * 100, 1
+        ) as soroban_pct
+      FROM silver_scf_grant_applications a
+      JOIN silver_scf_grant_pools gp ON a."grantPoolId" = gp.id
+      WHERE a."io.scf.totalAwardedUSD" > 0
+        AND gp."org.stellar.communityfund.quarterYear" IS NOT NULL
+      GROUP BY gp."org.stellar.communityfund.quarterYear", gp."org.stellar.communityfund.year"
+      ORDER BY gp."org.stellar.communityfund.year", gp."org.stellar.communityfund.quarterYear"
+    `, []);
+
+    // Geographic distribution of funded projects
+    const geoDistribution = await query(`
+      SELECT
+        "org.stellar.communityfund.regionsOfOperation" as region,
+        COUNT(*) as project_count,
+        COALESCE(SUM("org.stellar.communityfund.totalAwardedUSD"), 0) as total_awarded_usd
+      FROM silver_scf_projects
+      WHERE "org.stellar.communityfund.regionsOfOperation" IS NOT NULL
+        AND "org.stellar.communityfund.regionsOfOperation" != ''
+        AND "org.stellar.communityfund.totalAwardedUSD" > 0
+      GROUP BY "org.stellar.communityfund.regionsOfOperation"
+      ORDER BY total_awarded_usd DESC
+    `, []);
+
+    // Award type distribution
+    const awardTypeDistribution = await query(`
+      SELECT
+        "io.scf.awardType" as award_type,
+        COUNT(*) as count,
+        COALESCE(SUM("io.scf.totalAwardedUSD"), 0) as total_awarded_usd,
+        COALESCE(SUM("io.scf.totalPaidUSD"), 0) as total_paid_usd,
+        ROUND(
+          COALESCE(SUM("io.scf.totalPaidUSD"), 0) / NULLIF(COALESCE(SUM("io.scf.totalAwardedUSD"), 0), 0) * 100,
+        1) as payment_rate_pct
+      FROM silver_scf_grant_applications
+      WHERE "io.scf.awardType" IS NOT NULL AND "io.scf.awardType" != ''
+        AND "io.scf.totalAwardedUSD" > 0
+      GROUP BY "io.scf.awardType"
+      ORDER BY total_awarded_usd DESC
+    `, []);
+
+    // Open source + Soroban scalar stats
+    const projectStats = await query(`
+      SELECT
+        COUNT(*) as total_projects,
+        COUNT(*) FILTER (WHERE "org.stellar.communityfund.openSource" = true) as open_source_count,
+        ROUND(
+          COUNT(*) FILTER (WHERE "org.stellar.communityfund.openSource" = true)::numeric /
+          NULLIF(COUNT(*), 0) * 100, 1
+        ) as open_source_pct,
+        COUNT(*) FILTER (WHERE "org.stellar.communityfund.sorobanUsed" = true) as soroban_project_count,
+        ROUND(
+          COUNT(*) FILTER (WHERE "org.stellar.communityfund.sorobanUsed" = true)::numeric /
+          NULLIF(COUNT(*), 0) * 100, 1
+        ) as soroban_project_pct,
+        COALESCE(SUM("org.stellar.communityfund.totalPaidXLM"), 0) as total_paid_xlm
+      FROM silver_scf_projects
+      WHERE "org.stellar.communityfund.totalAwardedUSD" > 0
+    `, []);
+
+    // Average phase durations across historical rounds (dates stored as 'Month DD, YYYY' strings)
+    const phaseDurations = await query(`
+      SELECT
+        ROUND(AVG(CASE
+          WHEN sub_close ~ E'^\\\\w+ \\\\d+, \\\\d{4}$' AND sub_open ~ E'^\\\\w+ \\\\d+, \\\\d{4}$'
+          THEN TO_DATE(sub_close, 'Month DD, YYYY') - TO_DATE(sub_open, 'Month DD, YYYY')
+          ELSE NULL END)) as avg_submission_days,
+        ROUND(AVG(CASE
+          WHEN review_close ~ E'^\\\\w+ \\\\d+, \\\\d{4}$' AND review_open ~ E'^\\\\w+ \\\\d+, \\\\d{4}$'
+          THEN TO_DATE(review_close, 'Month DD, YYYY') - TO_DATE(review_open, 'Month DD, YYYY')
+          ELSE NULL END)) as avg_initial_review_days,
+        ROUND(AVG(CASE
+          WHEN vote_close ~ E'^\\\\w+ \\\\d+, \\\\d{4}$' AND vote_open ~ E'^\\\\w+ \\\\d+, \\\\d{4}$'
+          THEN TO_DATE(vote_close, 'Month DD, YYYY') - TO_DATE(vote_open, 'Month DD, YYYY')
+          ELSE NULL END)) as avg_vote_days,
+        ROUND(AVG(CASE
+          WHEN panel_close ~ E'^\\\\w+ \\\\d+, \\\\d{4}$' AND panel_open ~ E'^\\\\w+ \\\\d+, \\\\d{4}$'
+          THEN TO_DATE(panel_close, 'Month DD, YYYY') - TO_DATE(panel_open, 'Month DD, YYYY')
+          ELSE NULL END)) as avg_panel_days,
+        COUNT(*) as rounds_with_dates
+      FROM (
+        SELECT
+          "org.stellar.communityfund.submissionOpenDate"   as sub_open,
+          "org.stellar.communityfund.submissionCloseDate"  as sub_close,
+          "org.stellar.communityfund.initialReviewOpenDate" as review_open,
+          "org.stellar.communityfund.initialReviewCloseDate" as review_close,
+          "org.stellar.communityfund.communityVoteOpenDate" as vote_open,
+          "org.stellar.communityfund.communityVoteCloseDate" as vote_close,
+          "org.stellar.communityfund.panelReviewOpenDate"  as panel_open,
+          "org.stellar.communityfund.panelReviewCloseDate" as panel_close
+        FROM silver_scf_grant_pools
+        WHERE "org.stellar.communityfund.totalPaidUSD" > 0
+      ) t
+    `, []);
+
+    // Round phase dates — all date fields per round for live phase computation
+    const roundPhases = await query(`
+      SELECT
+        id as round_id,
+        name as round_name,
+        "org.stellar.communityfund.phase" as phase_raw,
+        "org.stellar.communityfund.submissionOpenDate"         as submission_open,
+        "org.stellar.communityfund.submissionCloseDate"        as submission_close,
+        "org.stellar.communityfund.initialReviewOpenDate"      as initial_review_open,
+        "org.stellar.communityfund.initialReviewCloseDate"     as initial_review_close,
+        "org.stellar.communityfund.communityVoteOpenDate"      as vote_open,
+        "org.stellar.communityfund.communityVoteCloseDate"     as vote_close,
+        "org.stellar.communityfund.awardSubmissionOpenDate"    as award_sub_open,
+        "org.stellar.communityfund.awardSubmissionCloseDate"   as award_sub_close,
+        "org.stellar.communityfund.panelReviewOpenDate"        as panel_open,
+        "org.stellar.communityfund.panelReviewCloseDate"       as panel_close,
+        "org.stellar.communityfund.notificationOpenDate"       as notification_open,
+        "org.stellar.communityfund.notificationCloseDate"      as notification_close,
+        "org.stellar.communityfund.cohortOpenDate"             as cohort_open,
+        "org.stellar.communityfund.cohortCloseDate"            as cohort_close
+      FROM silver_scf_grant_pools
+      ORDER BY "org.stellar.communityfund.year" DESC, name DESC
+    `, []);
+
     res.status(200).json({
       metadata: metadata[0] || null,
       summary: summary,
@@ -254,7 +382,13 @@ export default async function handler(
       fundingEfficiency,
       categoryPerformance,
       repeatFundingStats: repeatFundingStats[0] || {},
-      cohortAnalysis
+      cohortAnalysis,
+      sorobanAdoption,
+      geoDistribution,
+      awardTypeDistribution,
+      projectStats: projectStats[0] || {},
+      phaseDurations: phaseDurations[0] || {},
+      roundPhases,
     });
   } catch (error) {
     console.error('Database error:', error);

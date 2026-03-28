@@ -11,32 +11,26 @@ SELECT
     gp."closeDate" as close_date,
     gp."totalGrantPoolSizeInUSD"::numeric as matching_pool_usd,
 
-    -- Chain info
-    gp."io.gitcoin2.chainId" as chain_id,
-    gp."io.gitcoin2.strategyName" as strategy_name,
+    -- Chain info (grant_pools uses co.gitcoin.* namespace)
+    gp."co.gitcoin.chainId" as chain_id,
+    gp."co.gitcoin.strategyName" as strategy_name,
 
-    -- Funding metrics from extensions (pre-aggregated in rounds table)
-    COALESCE(gp."io.gitcoin2.totalDonationsCount"::integer, 0) as total_donations_count,
-    COALESCE(gp."io.gitcoin2.uniqueDonorsCount"::integer, 0) as unique_donors_count,
-    COALESCE(gp."io.gitcoin2.totalAmountDonatedInUsd"::numeric, 0) as total_amount_donated_usd,
-    COALESCE(gp."io.gitcoin2.matchAmountInUsd"::numeric, 0) as match_amount_usd,
-    COALESCE(gp."io.gitcoin2.fundedAmountInUsd"::numeric, 0) as funded_amount_usd,
-    COALESCE(gp."io.gitcoin2.totalDistributed"::numeric, 0) as total_distributed_usd,
+    -- Funding metrics pre-aggregated in rounds table
+    COALESCE(gp."co.gitcoin.totalDonationsCount"::integer, 0) as total_donations_count,
+    COALESCE(gp."co.gitcoin.uniqueDonorsCount"::integer, 0) as unique_donors_count,
+    COALESCE(gp."co.gitcoin.totalAmountDonatedInUsd"::numeric, 0) as total_amount_donated_usd,
+    COALESCE(gp."co.gitcoin.matchAmount"::numeric, 0) as match_amount_usd,
+    COALESCE(gp."co.gitcoin.fundedAmountInUsd"::numeric, 0) as funded_amount_usd,
+    COALESCE(gp."co.gitcoin.totalDistributed"::numeric, 0) as total_distributed_usd,
 
-    -- Application counts (joined from applications table)
-    COALESCE(app_stats.total_applications, 0) as total_applications,
-    COALESCE(app_stats.approved_applications, 0) as approved_applications,
-    COALESCE(app_stats.rejected_applications, 0) as rejected_applications,
-    COALESCE(app_stats.pending_applications, 0) as pending_applications,
+    -- Application counts (0 until silver_gitcoin2_grant_applications is materialized)
+    0 as total_applications,
+    0 as approved_applications,
+    0 as rejected_applications,
+    0 as pending_applications,
+    0 as approval_rate_pct,
 
-    -- Approval rate
-    CASE
-        WHEN COALESCE(app_stats.total_applications, 0) > 0
-        THEN ROUND((COALESCE(app_stats.approved_applications, 0)::numeric / app_stats.total_applications) * 100, 2)
-        ELSE 0
-    END as approval_rate_pct,
-
-    -- Verified donation stats (from donations table)
+    -- Donation stats (donations table uses io.gitcoin2.* — stale namespace from pre-rename materialization)
     COALESCE(don_stats.donations_count, 0) as verified_donations_count,
     COALESCE(don_stats.donations_total_usd, 0) as verified_donations_usd,
     COALESCE(don_stats.unique_donors, 0) as verified_unique_donors,
@@ -47,47 +41,33 @@ SELECT
     COALESCE(pay_stats.payouts_total_usd, 0) as payouts_total_usd,
 
     -- Timing
-    gp."io.gitcoin2.applicationsStartTime" as applications_start,
-    gp."io.gitcoin2.applicationsEndTime" as applications_end,
-    gp."io.gitcoin2.donationsStartTime" as donations_start,
-    gp."io.gitcoin2.donationsEndTime" as donations_end,
+    gp."co.gitcoin.applicationsStartTime" as applications_start,
+    gp."co.gitcoin.applicationsEndTime" as applications_end,
+    gp."co.gitcoin.donationsStartTime" as donations_start,
+    gp."co.gitcoin.donationsEndTime" as donations_end,
 
     NOW() as calculated_at
 
 FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }} gp
 
--- Join application stats
 LEFT JOIN (
     SELECT
-        "io.gitcoin2.roundId_raw" as round_id,
-        COUNT(*) as total_applications,
-        COUNT(*) FILTER (WHERE status = 'approved') as approved_applications,
-        COUNT(*) FILTER (WHERE status = 'rejected') as rejected_applications,
-        COUNT(*) FILTER (WHERE status = 'pending') as pending_applications
-    FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }}
-    GROUP BY "io.gitcoin2.roundId_raw"
-) app_stats ON gp.id LIKE '%' || app_stats.round_id || '%'
-
--- Join donation stats
-LEFT JOIN (
-    SELECT
-        "io.gitcoin2.roundId_raw" as round_id,
+        "grantPoolId" as grant_pool_id,
         COUNT(*) as donations_count,
         COALESCE(SUM("amountInUsd"::numeric), 0) as donations_total_usd,
         COUNT(DISTINCT "donorAddress") as unique_donors,
         COALESCE(AVG("amountInUsd"::numeric), 0) as avg_donation_usd
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
-    GROUP BY "io.gitcoin2.roundId_raw"
-) don_stats ON gp.id LIKE '%' || don_stats.round_id || '%'
+    GROUP BY "grantPoolId"
+) don_stats ON gp.id = don_stats.grant_pool_id
 
--- Join payout stats
 LEFT JOIN (
     SELECT
-        "io.gitcoin2.roundId_raw" as round_id,
+        "grantPoolId" as grant_pool_id,
         COUNT(*) as payouts_count,
         COALESCE(SUM("amountInUsd"::numeric), 0) as payouts_total_usd
     FROM {{ source('silver', 'silver_gitcoin2_payouts') }}
-    GROUP BY "io.gitcoin2.roundId_raw"
-) pay_stats ON gp.id LIKE '%' || pay_stats.round_id || '%'
+    GROUP BY "grantPoolId"
+) pay_stats ON gp.id = pay_stats.grant_pool_id
 
 ORDER BY gp."totalGrantPoolSizeInUSD"::numeric DESC NULLS LAST

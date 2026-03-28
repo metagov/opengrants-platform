@@ -82,26 +82,29 @@ export default async function handler(
         "grantFundingMechanism" as mechanism,
         COUNT(*) as round_count,
         COALESCE(SUM("totalGrantPoolSizeInUSD"::numeric), 0) as total_pool_usd,
-        COALESCE(SUM("io.gitcoin2.totalAmountDonatedInUsd"::numeric), 0) as total_donated_usd
+        COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) as total_donated_usd
       FROM silver_gitcoin2_grant_pools
       WHERE "grantFundingMechanism" IS NOT NULL
       GROUP BY "grantFundingMechanism"
       ORDER BY total_pool_usd DESC
     `, []);
 
-    // Top projects by total donations received
+    // Top projects by total community donations — sourced from gold__gitcoin2_project_qf_scores
+    // (grant_applications not yet materialized; this uses actual donation records)
     const topProjects = await query(`
       SELECT
-        p.id,
-        p.name as project_name,
-        p."io.gitcoin2.chainId" as chain_id,
-        COUNT(DISTINCT a.id) as application_count,
-        COUNT(DISTINCT a."grantPoolId") as rounds_participated,
-        COALESCE(SUM(a."fundsApprovedInUSD"::numeric), 0) as total_funds_approved
-      FROM silver_gitcoin2_projects p
-      LEFT JOIN silver_gitcoin2_grant_applications a ON p.id = a."projectId"
-      GROUP BY p.id, p.name, p."io.gitcoin2.chainId"
-      ORDER BY total_funds_approved DESC
+        project_id as id,
+        project_name,
+        chain_id,
+        COUNT(DISTINCT grant_pool_id) as rounds_participated,
+        SUM(donations_count)::integer as total_donations,
+        ROUND(SUM(total_donated_usd)::numeric, 2) as total_donated_usd,
+        SUM(unique_donors)::integer as total_unique_donors,
+        ROUND(MAX(qf_score_estimate)::numeric, 2) as best_qf_score
+      FROM gold__gitcoin2_project_qf_scores
+      WHERE total_donated_usd > 0
+      GROUP BY project_id, project_name, chain_id
+      ORDER BY SUM(total_donated_usd) DESC
       LIMIT 20
     `, []);
 
@@ -169,18 +172,107 @@ export default async function handler(
       GROUP BY "isOpen"::boolean
     `, []);
 
+    // QF round analysis — top 30 rounds by amplification ratio
+    const qfRoundAnalysis = await query(`
+      SELECT
+        round_id, round_name, chain_id, strategy_name,
+        match_pool_usd, community_donated_usd, unique_donors,
+        donations_count, total_distributed_usd,
+        qf_amplification_ratio, avg_donors_per_project,
+        top_10_donor_concentration_pct, top_donor_concentration_pct,
+        avg_donation_usd, median_donation_usd,
+        projects_receiving_donations, projects_paid_out,
+        round_duration_days
+      FROM gold__gitcoin2_qf_round_analysis
+      WHERE qf_amplification_ratio IS NOT NULL
+        AND community_donated_usd > 0
+      ORDER BY qf_amplification_ratio DESC
+      LIMIT 30
+    `, []);
+
+    // QF aggregate summary stats
+    const qfSummary = await query(`
+      SELECT
+        COUNT(*) as rounds_with_donations,
+        ROUND(AVG(qf_amplification_ratio)::numeric, 2) as avg_amplification_ratio,
+        ROUND(MAX(qf_amplification_ratio)::numeric, 2) as max_amplification_ratio,
+        ROUND(AVG(avg_donors_per_project)::numeric, 2) as avg_donors_per_project,
+        ROUND(AVG(top_10_donor_concentration_pct)::numeric, 2) as avg_top10_concentration,
+        COUNT(*) FILTER (WHERE avg_donors_per_project >= 10) as rounds_with_broad_participation
+      FROM gold__gitcoin2_qf_round_analysis
+      WHERE community_donated_usd > 0
+    `, []);
+
+    // Donor segments
+    const donorSegments = await query(`
+      SELECT
+        segment, donor_count, pct_of_total_donors,
+        avg_rounds_donated_to, avg_chains_donated_on,
+        avg_total_donated_usd, avg_projects_supported,
+        total_donated_usd_segment, pct_of_total_volume
+      FROM gold__gitcoin2_donor_segments
+      ORDER BY donor_count DESC
+    `, []);
+
+    // Passport attestation impact
+    const attestationImpact = await query(`
+      SELECT
+        has_passport_attestation, donor_count, pct_of_total_donors,
+        avg_donations_count, avg_rounds_donated_to, avg_projects_supported,
+        avg_chains_donated_on, avg_total_donated_usd, avg_single_donation_usd,
+        total_donated_usd_segment, pct_of_total_volume
+      FROM gold__gitcoin2_attestation_impact
+      ORDER BY has_passport_attestation DESC
+    `, []);
+
+    // Donor retention cohorts
+    const donorRetention = await query(`
+      SELECT
+        cohort_year, cohort_size, retained_year_1, ever_returned,
+        year_1_retention_pct, ever_returned_pct,
+        cohort_avg_donated_usd, cohort_total_donated_usd,
+        cohort_avg_rounds_donated, returning_donor_avg_donated_usd,
+        one_time_donor_avg_donated_usd
+      FROM gold__gitcoin2_donor_retention
+      ORDER BY cohort_year ASC
+    `, []);
+
+    // Top token flows by volume
+    const tokenFlows = await query(`
+      SELECT
+        chain_id, chain_name, token_address, token_symbol,
+        donation_count, total_donated_usd, unique_donors,
+        rounds_using_token, pct_of_chain_volume
+      FROM gold__gitcoin2_token_flows
+      ORDER BY total_donated_usd DESC
+      LIMIT 20
+    `, []);
+
+    // Top projects by QF score (best QF performers)
+    const topQfProjects = await query(`
+      SELECT
+        project_id, project_name, grant_pool_id, round_name, chain_id,
+        unique_donors, donations_count, total_donated_usd,
+        qf_score_estimate, qf_rank_in_round,
+        donor_breadth_rank_in_round, qf_advantage_over_volume_rank
+      FROM gold__gitcoin2_project_qf_scores
+      WHERE qf_score_estimate > 0
+      ORDER BY qf_score_estimate DESC
+      LIMIT 20
+    `, []);
+
     // Year-over-year summary (rounds by year)
     const roundsByYear = await query(`
       SELECT
-        EXTRACT(YEAR FROM "io.gitcoin2.donationsStartTime"::timestamp)::integer as year,
+        EXTRACT(YEAR FROM "co.gitcoin.donationsStartTime"::timestamp)::integer as year,
         COUNT(*) as round_count,
         COALESCE(SUM("totalGrantPoolSizeInUSD"::numeric), 0) as total_matching_usd,
-        COALESCE(SUM("io.gitcoin2.totalAmountDonatedInUsd"::numeric), 0) as total_donated_usd,
-        COALESCE(SUM("io.gitcoin2.uniqueDonorsCount"::integer), 0) as total_donors
+        COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) as total_donated_usd,
+        COALESCE(SUM("co.gitcoin.uniqueDonorsCount"::integer), 0) as total_donors
       FROM silver_gitcoin2_grant_pools
-      WHERE "io.gitcoin2.donationsStartTime" IS NOT NULL
-        AND "io.gitcoin2.donationsStartTime" != 'None'
-      GROUP BY EXTRACT(YEAR FROM "io.gitcoin2.donationsStartTime"::timestamp)
+      WHERE "co.gitcoin.donationsStartTime" IS NOT NULL
+        AND "co.gitcoin.donationsStartTime" != 'None'
+      GROUP BY EXTRACT(YEAR FROM "co.gitcoin.donationsStartTime"::timestamp)
       ORDER BY year ASC
     `, []);
 
@@ -220,6 +312,13 @@ export default async function handler(
       applicationStats,
       roundStatus,
       roundsByYear,
+      qfRoundAnalysis,
+      qfSummary: qfSummary[0] || {},
+      donorSegments,
+      attestationImpact,
+      donorRetention,
+      tokenFlows,
+      topQfProjects,
     });
   } catch (error) {
     console.error('Gitcoin2 API error:', error);

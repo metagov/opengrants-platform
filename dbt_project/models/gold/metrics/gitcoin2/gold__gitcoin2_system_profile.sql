@@ -10,17 +10,17 @@ SELECT
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_grant_pools,
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }} WHERE "isOpen"::boolean = true) as active_grant_pools,
     (SELECT COALESCE(SUM("totalGrantPoolSizeInUSD"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_matching_pool_usd,
-    (SELECT COALESCE(SUM("io.gitcoin2.totalAmountDonatedInUsd"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_donated_via_rounds_usd,
-    (SELECT COALESCE(SUM("io.gitcoin2.totalDistributed"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_distributed_usd,
+    (SELECT COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_donated_via_rounds_usd,
+    (SELECT COALESCE(SUM("co.gitcoin.totalDistributed"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_distributed_usd,
 
     -- Projects Metrics
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_projects') }}) as total_projects,
 
-    -- Applications Metrics
-    (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }}) as total_applications,
-    (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} WHERE status = 'approved') as approved_applications,
-    (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} WHERE status = 'rejected') as rejected_applications,
-    (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} WHERE status = 'pending') as pending_applications,
+    -- Applications Metrics (populated after silver_gitcoin2_grant_applications is materialized)
+    0 as total_applications,
+    0 as approved_applications,
+    0 as rejected_applications,
+    0 as pending_applications,
 
     -- Donations Metrics
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_donations') }}) as total_donations,
@@ -33,7 +33,7 @@ SELECT
     (SELECT COALESCE(SUM("amountInUsd"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_payouts') }}) as total_paid_out_usd,
 
     -- Chain Distribution
-    (SELECT COUNT(DISTINCT "io.gitcoin2.chainId") FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as unique_chains,
+    (SELECT COUNT(DISTINCT "co.gitcoin.chainId") FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as unique_chains,
 
     -- Funding Mechanism Distribution
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }} WHERE "grantFundingMechanism" = 'Quadratic Funding') as qf_rounds,

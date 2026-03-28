@@ -51,13 +51,21 @@ UNION ALL
 -- Gitcoin 2.0 Projects
 SELECT
     'gitcoin2' as platform,
-    id,
-    name,
-    description,
-    "contentURI" as content_uri,
-    "image" as image_url,
-    "email" as contact_email,
+    p.id,
+    p.name,
+    p.description,
+    p."contentURI" as content_uri,
+    p."image" as image_url,
+    p."email" as contact_email,
     NULL as is_verified,
-    NULL as total_donations_usd,
-    NULL as unique_donors
-FROM {{ source('silver', 'silver_gitcoin2_projects') }}
+    (
+        SELECT SUM(COALESCE(ga."fundsApprovedInUSD"::numeric, 0))
+        FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} ga
+        WHERE ga."projectId" = p.id
+    ) as total_donations_usd,
+    (
+        SELECT SUM(COALESCE(ga."co.gitcoin.uniqueDonorsCount"::numeric, 0))
+        FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} ga
+        WHERE ga."projectId" = p.id
+    ) as unique_donors
+FROM {{ source('silver', 'silver_gitcoin2_projects') }} p
