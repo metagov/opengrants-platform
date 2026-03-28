@@ -1022,7 +1022,7 @@ export default function SCFPage() {
                                   borderColor="gray.200"
                                 >
                                   {status === 'past' ? '✓ ' : status === 'active' ? '● ' : '○ '}{phase.label}
-                                  {pi < PHASE_SEQUENCE.length - 1 && status !== 'unknown' && (
+                                  {pi < PHASE_SEQUENCE.length - 1 && (
                                     <Box as="span" mx={1} color="gray.200"> › </Box>
                                   )}
                                 </Box>

@@ -1,6 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '../../../lib/db';
 
+async function safeQuery(sql: string, params: any[] = [], fallback: any = []) {
+  try {
+    return await query(sql, params);
+  } catch {
+    return fallback;
+  }
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -11,13 +19,13 @@ export default async function handler(
 
   try {
     // System profile from gold metrics table
-    const systemProfile = await query(`
+    const systemProfile = await safeQuery(`
       SELECT * FROM gold__gitcoin2_system_profile
       LIMIT 1
     `, []);
 
     // Chain metrics from gold table
-    const chainMetrics = await query(`
+    const chainMetrics = await safeQuery(`
       SELECT
         chain_id,
         chain_name,
@@ -40,13 +48,13 @@ export default async function handler(
     `, []);
 
     // Donation metrics from gold table
-    const donationMetrics = await query(`
+    const donationMetrics = await safeQuery(`
       SELECT * FROM gold__gitcoin2_donation_metrics
       LIMIT 1
     `, []);
 
     // Top rounds by matching pool size
-    const topRounds = await query(`
+    const topRounds = await safeQuery(`
       SELECT
         round_id,
         round_name,
@@ -77,7 +85,7 @@ export default async function handler(
     `, []);
 
     // Funding mechanism distribution
-    const fundingMechanisms = await query(`
+    const fundingMechanisms = await safeQuery(`
       SELECT
         "grantFundingMechanism" as mechanism,
         COUNT(*) as round_count,
@@ -91,7 +99,7 @@ export default async function handler(
 
     // Top projects by total community donations — sourced from gold__gitcoin2_project_qf_scores
     // (grant_applications not yet materialized; this uses actual donation records)
-    const topProjects = await query(`
+    const topProjects = await safeQuery(`
       SELECT
         project_id as id,
         project_name,
@@ -109,7 +117,7 @@ export default async function handler(
     `, []);
 
     // Donation size distribution
-    const donationDistribution = await query(`
+    const donationDistribution = await safeQuery(`
       SELECT
         CASE
           WHEN "amountInUsd"::numeric < 1    THEN 'Under $1'
@@ -138,7 +146,7 @@ export default async function handler(
     `, []);
 
     // Monthly donation trends (all historical data)
-    const donationTrends = await query(`
+    const donationTrends = await safeQuery(`
       SELECT
         TO_CHAR(DATE_TRUNC('month', "timestamp"::timestamp), 'YYYY-MM') as month,
         COUNT(*) as donation_count,
@@ -152,7 +160,7 @@ export default async function handler(
     `, []);
 
     // Application status breakdown
-    const applicationStats = await query(`
+    const applicationStats = await safeQuery(`
       SELECT
         status,
         COUNT(*) as count,
@@ -163,7 +171,7 @@ export default async function handler(
     `, []);
 
     // Active vs closed rounds
-    const roundStatus = await query(`
+    const roundStatus = await safeQuery(`
       SELECT
         "isOpen"::boolean as is_open,
         COUNT(*) as count,
@@ -173,7 +181,7 @@ export default async function handler(
     `, []);
 
     // QF round analysis — top 30 rounds by amplification ratio
-    const qfRoundAnalysis = await query(`
+    const qfRoundAnalysis = await safeQuery(`
       SELECT
         round_id, round_name, chain_id, strategy_name,
         match_pool_usd, community_donated_usd, unique_donors,
@@ -191,7 +199,7 @@ export default async function handler(
     `, []);
 
     // QF aggregate summary stats
-    const qfSummary = await query(`
+    const qfSummary = await safeQuery(`
       SELECT
         COUNT(*) as rounds_with_donations,
         ROUND(AVG(qf_amplification_ratio)::numeric, 2) as avg_amplification_ratio,
@@ -204,7 +212,7 @@ export default async function handler(
     `, []);
 
     // Donor segments
-    const donorSegments = await query(`
+    const donorSegments = await safeQuery(`
       SELECT
         segment, donor_count, pct_of_total_donors,
         avg_rounds_donated_to, avg_chains_donated_on,
@@ -215,7 +223,7 @@ export default async function handler(
     `, []);
 
     // Passport attestation impact
-    const attestationImpact = await query(`
+    const attestationImpact = await safeQuery(`
       SELECT
         has_passport_attestation, donor_count, pct_of_total_donors,
         avg_donations_count, avg_rounds_donated_to, avg_projects_supported,
@@ -226,7 +234,7 @@ export default async function handler(
     `, []);
 
     // Donor retention cohorts
-    const donorRetention = await query(`
+    const donorRetention = await safeQuery(`
       SELECT
         cohort_year, cohort_size, retained_year_1, ever_returned,
         year_1_retention_pct, ever_returned_pct,
@@ -238,7 +246,7 @@ export default async function handler(
     `, []);
 
     // Top token flows by volume
-    const tokenFlows = await query(`
+    const tokenFlows = await safeQuery(`
       SELECT
         chain_id, chain_name, token_address, token_symbol,
         donation_count, total_donated_usd, unique_donors,
@@ -249,7 +257,7 @@ export default async function handler(
     `, []);
 
     // Top projects by QF score (best QF performers)
-    const topQfProjects = await query(`
+    const topQfProjects = await safeQuery(`
       SELECT
         project_id, project_name, grant_pool_id, round_name, chain_id,
         unique_donors, donations_count, total_donated_usd,
@@ -262,7 +270,7 @@ export default async function handler(
     `, []);
 
     // Year-over-year summary (rounds by year)
-    const roundsByYear = await query(`
+    const roundsByYear = await safeQuery(`
       SELECT
         EXTRACT(YEAR FROM "co.gitcoin.donationsStartTime"::timestamp)::integer as year,
         COUNT(*) as round_count,

@@ -53,13 +53,13 @@ export default async function handler(
     // Category distribution from silver_scf_projects
     const categoryData = await query(`
       SELECT 
-        "io.scf.category" as category,
+        "org.stellar.communityfund.category" as category,
         COUNT(*) as project_count,
-        SUM("io.scf.totalAwardedUSD") as total_awarded_usd,
-        SUM("io.scf.totalPaidUSD") as total_paid_usd
+        SUM("org.stellar.communityfund.totalAwardedUSD") as total_awarded_usd,
+        SUM("org.stellar.communityfund.totalPaidUSD") as total_paid_usd
       FROM silver_scf_projects
-      WHERE "io.scf.category" IS NOT NULL
-      GROUP BY "io.scf.category"
+      WHERE "org.stellar.communityfund.category" IS NOT NULL
+      GROUP BY "org.stellar.communityfund.category"
       ORDER BY total_awarded_usd DESC
     `, []);
 
@@ -89,26 +89,26 @@ export default async function handler(
     const trancheMetrics = await query(`
       SELECT 
         COUNT(*) as total_applications,
-        COUNT(CASE WHEN "io.scf.trancheCompletionPercent" = 100 THEN 1 END) as completed_tranches,
-        COUNT(CASE WHEN "io.scf.trancheCompletionPercent" > 0 AND "io.scf.trancheCompletionPercent" < 100 THEN 1 END) as in_progress_tranches,
-        COUNT(CASE WHEN "io.scf.trancheCompletionPercent" = 0 OR "io.scf.trancheCompletionPercent" IS NULL THEN 1 END) as not_started_tranches,
-        AVG("io.scf.trancheCompletionPercent") as avg_completion_percent,
-        SUM("io.scf.totalAwardedUSD") as total_awarded_usd,
-        SUM("io.scf.totalPaidUSD") as total_paid_usd
+        COUNT(CASE WHEN "org.stellar.communityfund.trancheCompletionPercent" = 100 THEN 1 END) as completed_tranches,
+        COUNT(CASE WHEN "org.stellar.communityfund.trancheCompletionPercent" > 0 AND "org.stellar.communityfund.trancheCompletionPercent" < 100 THEN 1 END) as in_progress_tranches,
+        COUNT(CASE WHEN "org.stellar.communityfund.trancheCompletionPercent" = 0 OR "org.stellar.communityfund.trancheCompletionPercent" IS NULL THEN 1 END) as not_started_tranches,
+        AVG("org.stellar.communityfund.trancheCompletionPercent") as avg_completion_percent,
+        SUM("org.stellar.communityfund.totalAwardedUSD") as total_awarded_usd,
+        SUM("org.stellar.communityfund.totalPaidUSD") as total_paid_usd
       FROM silver_scf_grant_applications
-      WHERE "io.scf.totalPaidUSD" > 0 OR "io.scf.totalAwardedUSD" > 0
+      WHERE "org.stellar.communityfund.totalPaidUSD" > 0 OR "org.stellar.communityfund.totalAwardedUSD" > 0
     `, []);
 
     // Tranche completion by status
     const trancheByStatus = await query(`
       SELECT 
-        "io.scf.trancheCompletion" as tranche_status,
+        "org.stellar.communityfund.trancheCompletion" as tranche_status,
         COUNT(*) as count,
-        SUM("io.scf.totalAwardedUSD") as total_awarded_usd,
-        SUM("io.scf.totalPaidUSD") as total_paid_usd
+        SUM("org.stellar.communityfund.totalAwardedUSD") as total_awarded_usd,
+        SUM("org.stellar.communityfund.totalPaidUSD") as total_paid_usd
       FROM silver_scf_grant_applications
-      WHERE "io.scf.trancheCompletion" IS NOT NULL AND "io.scf.trancheCompletion" != ''
-      GROUP BY "io.scf.trancheCompletion"
+      WHERE "org.stellar.communityfund.trancheCompletion" IS NOT NULL AND "org.stellar.communityfund.trancheCompletion" != ''
+      GROUP BY "org.stellar.communityfund.trancheCompletion"
       ORDER BY count DESC
     `, []);
 
@@ -116,16 +116,16 @@ export default async function handler(
     const topProjects = await query(`
       SELECT
         name as project_name,
-        "io.scf.round" as round_name,
-        "io.scf.totalAwardedUSD" as total_awarded_usd,
-        "io.scf.totalPaidUSD" as total_paid_usd,
-        "io.scf.category" as category,
-        "io.scf.awardType" as award_type,
-        "io.scf.trancheCompletionPercent" as tranche_completion,
-        "io.scf.mostRecentPaymentDate" as most_recent_payment_date
+        "org.stellar.communityfund.round" as round_name,
+        "org.stellar.communityfund.totalAwardedUSD" as total_awarded_usd,
+        "org.stellar.communityfund.totalPaidUSD" as total_paid_usd,
+        "org.stellar.communityfund.category" as category,
+        "org.stellar.communityfund.awardType" as award_type,
+        "org.stellar.communityfund.trancheCompletionPercent" as tranche_completion,
+        "org.stellar.communityfund.mostRecentPaymentDate" as most_recent_payment_date
       FROM silver_scf_grant_applications
-      WHERE "io.scf.totalPaidUSD" > 0 OR "io.scf.totalAwardedUSD" > 0
-      ORDER BY "io.scf.totalPaidUSD" DESC
+      WHERE "org.stellar.communityfund.totalPaidUSD" > 0 OR "org.stellar.communityfund.totalAwardedUSD" > 0
+      ORDER BY "org.stellar.communityfund.totalPaidUSD" DESC
       LIMIT 10
     `, []);
 
@@ -133,16 +133,16 @@ export default async function handler(
     const milestoneProjects = await query(`
       SELECT
         name as project_name,
-        "io.scf.round" as round_name,
-        "io.scf.totalAwardedUSD" as total_awarded_usd,
-        "io.scf.totalPaidUSD" as total_paid_usd,
-        "io.scf.trancheCompletion" as tranche_status,
-        "io.scf.trancheCompletionPercent" as tranche_completion_percent,
-        "io.scf.mostRecentPaymentDate" as most_recent_payment_date
+        "org.stellar.communityfund.round" as round_name,
+        "org.stellar.communityfund.totalAwardedUSD" as total_awarded_usd,
+        "org.stellar.communityfund.totalPaidUSD" as total_paid_usd,
+        "org.stellar.communityfund.trancheCompletion" as tranche_status,
+        "org.stellar.communityfund.trancheCompletionPercent" as tranche_completion_percent,
+        "org.stellar.communityfund.mostRecentPaymentDate" as most_recent_payment_date
       FROM silver_scf_grant_applications
-      WHERE ("io.scf.totalPaidUSD" > 0 OR "io.scf.totalAwardedUSD" > 0)
-        AND "io.scf.trancheCompletion" IS NOT NULL AND "io.scf.trancheCompletion" != ''
-      ORDER BY "io.scf.mostRecentPaymentDate" DESC NULLS LAST, "io.scf.totalPaidUSD" DESC
+      WHERE ("org.stellar.communityfund.totalPaidUSD" > 0 OR "org.stellar.communityfund.totalAwardedUSD" > 0)
+        AND "org.stellar.communityfund.trancheCompletion" IS NOT NULL AND "org.stellar.communityfund.trancheCompletion" != ''
+      ORDER BY "org.stellar.communityfund.mostRecentPaymentDate" DESC NULLS LAST, "org.stellar.communityfund.totalPaidUSD" DESC
       LIMIT 20
     `, []);
 
@@ -164,15 +164,15 @@ export default async function handler(
     // Category performance with completion rates (limit to top 5)
     const categoryPerformance = await query(`
       SELECT 
-        "io.scf.category" as category,
+        "org.stellar.communityfund.category" as category,
         COUNT(*) as total_projects,
-        SUM("io.scf.totalAwardedUSD") as total_awarded,
-        SUM("io.scf.totalPaidUSD") as total_paid,
-        AVG("io.scf.trancheCompletionPercent") as avg_completion,
-        COUNT(CASE WHEN "io.scf.trancheCompletionPercent" = 100 THEN 1 END) as fully_completed
+        SUM("org.stellar.communityfund.totalAwardedUSD") as total_awarded,
+        SUM("org.stellar.communityfund.totalPaidUSD") as total_paid,
+        AVG("org.stellar.communityfund.trancheCompletionPercent") as avg_completion,
+        COUNT(CASE WHEN "org.stellar.communityfund.trancheCompletionPercent" = 100 THEN 1 END) as fully_completed
       FROM silver_scf_grant_applications
-      WHERE "io.scf.category" IS NOT NULL AND "io.scf.totalAwardedUSD" > 0
-      GROUP BY "io.scf.category"
+      WHERE "org.stellar.communityfund.category" IS NOT NULL AND "org.stellar.communityfund.totalAwardedUSD" > 0
+      GROUP BY "org.stellar.communityfund.category"
       ORDER BY total_awarded DESC
       LIMIT 5
     `, []);
@@ -181,11 +181,11 @@ export default async function handler(
     const repeatFundingStats = await query(`
       WITH project_funding_counts AS (
         SELECT 
-          "io.scf.project" as project_name,
+          "org.stellar.communityfund.project" as project_name,
           COUNT(*) as funding_count
         FROM silver_scf_grant_applications
-        WHERE "io.scf.totalPaidUSD" > 0 AND "io.scf.project" IS NOT NULL AND "io.scf.project" != ''
-        GROUP BY "io.scf.project"
+        WHERE "org.stellar.communityfund.totalPaidUSD" > 0 AND "org.stellar.communityfund.project" IS NOT NULL AND "org.stellar.communityfund.project" != ''
+        GROUP BY "org.stellar.communityfund.project"
       )
       SELECT 
         (SELECT SUM("org.stellar.communityfund.awardedSubmissions") FROM silver_scf_grant_pools) as total_funding_instances,
@@ -202,11 +202,11 @@ export default async function handler(
     const cohortAnalysis = await query(`
       WITH project_funding_counts AS (
         SELECT 
-          "io.scf.project" as project_name,
+          "org.stellar.communityfund.project" as project_name,
           COUNT(*) as funding_count
         FROM silver_scf_grant_applications
-        WHERE "io.scf.totalPaidUSD" > 0 AND "io.scf.project" IS NOT NULL AND "io.scf.project" != ''
-        GROUP BY "io.scf.project"
+        WHERE "org.stellar.communityfund.totalPaidUSD" > 0 AND "org.stellar.communityfund.project" IS NOT NULL AND "org.stellar.communityfund.project" != ''
+        GROUP BY "org.stellar.communityfund.project"
       ),
       repeat_projects AS (
         SELECT project_name FROM project_funding_counts WHERE funding_count > 1
@@ -218,17 +218,17 @@ export default async function handler(
           COUNT(a.id) as total_funded_in_round
         FROM silver_scf_grant_applications a
         JOIN silver_scf_grant_pools gp ON a."grantPoolId" = gp.id
-        WHERE a."io.scf.totalPaidUSD" > 0
+        WHERE a."org.stellar.communityfund.totalPaidUSD" > 0
         GROUP BY gp."name"
       ),
       repeat_counts AS (
         SELECT 
           gp."name" as round_name,
-          COUNT(DISTINCT a."io.scf.project") as repeat_funded_projects
+          COUNT(DISTINCT a."org.stellar.communityfund.project") as repeat_funded_projects
         FROM silver_scf_grant_applications a
         JOIN silver_scf_grant_pools gp ON a."grantPoolId" = gp.id
-        WHERE a."io.scf.totalPaidUSD" > 0 
-          AND a."io.scf.project" IN (SELECT project_name FROM repeat_projects)
+        WHERE a."org.stellar.communityfund.totalPaidUSD" > 0 
+          AND a."org.stellar.communityfund.project" IN (SELECT project_name FROM repeat_projects)
         GROUP BY gp."name"
       )
       SELECT 
@@ -247,14 +247,14 @@ export default async function handler(
         gp."org.stellar.communityfund.quarterYear" as quarter,
         gp."org.stellar.communityfund.year" as year,
         COUNT(DISTINCT a.id) as total_applications,
-        COUNT(DISTINCT a.id) FILTER (WHERE a."io.scf.useSoroban" = true) as soroban_count,
+        COUNT(DISTINCT a.id) FILTER (WHERE a."org.stellar.communityfund.useSoroban" = true) as soroban_count,
         ROUND(
-          COUNT(DISTINCT a.id) FILTER (WHERE a."io.scf.useSoroban" = true)::numeric /
+          COUNT(DISTINCT a.id) FILTER (WHERE a."org.stellar.communityfund.useSoroban" = true)::numeric /
           NULLIF(COUNT(DISTINCT a.id), 0) * 100, 1
         ) as soroban_pct
       FROM silver_scf_grant_applications a
       JOIN silver_scf_grant_pools gp ON a."grantPoolId" = gp.id
-      WHERE a."io.scf.totalAwardedUSD" > 0
+      WHERE a."org.stellar.communityfund.totalAwardedUSD" > 0
         AND gp."org.stellar.communityfund.quarterYear" IS NOT NULL
       GROUP BY gp."org.stellar.communityfund.quarterYear", gp."org.stellar.communityfund.year"
       ORDER BY gp."org.stellar.communityfund.year", gp."org.stellar.communityfund.quarterYear"
@@ -277,17 +277,17 @@ export default async function handler(
     // Award type distribution
     const awardTypeDistribution = await query(`
       SELECT
-        "io.scf.awardType" as award_type,
+        "org.stellar.communityfund.awardType" as award_type,
         COUNT(*) as count,
-        COALESCE(SUM("io.scf.totalAwardedUSD"), 0) as total_awarded_usd,
-        COALESCE(SUM("io.scf.totalPaidUSD"), 0) as total_paid_usd,
+        COALESCE(SUM("org.stellar.communityfund.totalAwardedUSD"), 0) as total_awarded_usd,
+        COALESCE(SUM("org.stellar.communityfund.totalPaidUSD"), 0) as total_paid_usd,
         ROUND(
-          COALESCE(SUM("io.scf.totalPaidUSD"), 0) / NULLIF(COALESCE(SUM("io.scf.totalAwardedUSD"), 0), 0) * 100,
+          COALESCE(SUM("org.stellar.communityfund.totalPaidUSD"), 0) / NULLIF(COALESCE(SUM("org.stellar.communityfund.totalAwardedUSD"), 0), 0) * 100,
         1) as payment_rate_pct
       FROM silver_scf_grant_applications
-      WHERE "io.scf.awardType" IS NOT NULL AND "io.scf.awardType" != ''
-        AND "io.scf.totalAwardedUSD" > 0
-      GROUP BY "io.scf.awardType"
+      WHERE "org.stellar.communityfund.awardType" IS NOT NULL AND "org.stellar.communityfund.awardType" != ''
+        AND "org.stellar.communityfund.totalAwardedUSD" > 0
+      GROUP BY "org.stellar.communityfund.awardType"
       ORDER BY total_awarded_usd DESC
     `, []);
 
