@@ -15,6 +15,7 @@ from assets.bronze.ens import fetch_ens_data
 from assets.bronze.giveth import fetch_giveth_data
 from assets.bronze.privote import fetch_privote_data
 from assets.bronze.scf import bronze_scf_airtable_ingest
+from assets.bronze.gitcoin2 import load_gitcoin2_csv_data
 
 # --- Silver Assets ---
 from assets.silver.ens.ens import silver_ens_grant_pools, silver_ens_projects
@@ -25,6 +26,14 @@ from assets.silver.scf.scf import (
     silver_scf_grant_applications,
     silver_scf_grant_pools,
     silver_scf_projects,
+)
+from assets.silver.gitcoin2.gitcoin2 import (
+    silver_gitcoin2_grant_pools,
+    silver_gitcoin2_projects,
+    silver_gitcoin2_grant_applications,
+    silver_gitcoin2_donations,
+    silver_gitcoin2_payouts,
+    silver_gitcoin2_attestations,
 )
 
 # --- Sensors ---
@@ -96,6 +105,13 @@ bronze_scf_job = define_asset_job(
     description="Ingest SCF Airtable data into the Bronze layer.",
 )
 
+bronze_gitcoin2_job = define_asset_job(
+    name="bronze_gitcoin2_job",
+    selection=AssetSelection.assets(load_gitcoin2_csv_data),
+    description="Load Gitcoin 2.0 historical CSV snapshot into Bronze layer.",
+)
+
+
 # =============================================================================
 # Silver Jobs
 # =============================================================================
@@ -135,6 +151,20 @@ silver_privote_etl_job = define_asset_job(
     ),
     description="Transform Privote Subgraph Raw data into the Silver layer.",
 )
+
+silver_gitcoin2_etl_job = define_asset_job(
+    name="silver_gitcoin2_etl_job",
+    selection=AssetSelection.assets(
+        silver_gitcoin2_grant_pools,
+        silver_gitcoin2_projects,
+        silver_gitcoin2_grant_applications,
+        silver_gitcoin2_donations,
+        silver_gitcoin2_payouts,
+        silver_gitcoin2_attestations,
+    ),
+    description="Transform Gitcoin 2.0 CSV data into DAOIP-5 compliant Silver layer with co.gitcoin extensions.",
+)
+
 
 # =============================================================================
 # Gold Jobs
@@ -201,6 +231,7 @@ defs = Definitions(
         fetch_giveth_data,
         fetch_privote_data,
         bronze_scf_airtable_ingest,
+        load_gitcoin2_csv_data,
         # Silver
         silver_ens_grant_pools,
         silver_ens_projects,
@@ -210,6 +241,12 @@ defs = Definitions(
         silver_scf_projects,
         silver_scf_grant_applications,
         silver_scf_grant_pools,
+        silver_gitcoin2_grant_pools,
+        silver_gitcoin2_projects,
+        silver_gitcoin2_grant_applications,
+        silver_gitcoin2_donations,
+        silver_gitcoin2_payouts,
+        silver_gitcoin2_attestations,
         # Gold
         gold_dbt_assets,
     ],
@@ -223,11 +260,13 @@ defs = Definitions(
         bronze_giveth_job,
         bronze_privote_job,
         bronze_scf_job,
+        bronze_gitcoin2_job,
         # Silver
         silver_ens_etl_job,
         silver_giveth_etl_job,
         silver_scf_etl_job,
         silver_privote_etl_job,
+        silver_gitcoin2_etl_job,
         # Gold
         gold_dbt_job,
         # Full pipeline

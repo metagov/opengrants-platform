@@ -1,0 +1,879 @@
+# ============================================================
+# DAOIP-5 Unified Schema Map — Gitcoin 2.0 (CSV Snapshot)
+# ============================================================
+
+manifest:
+  schema_name: daoip5_gitcoin2
+  version: 1.0.0
+  source_system: "Gitcoin 2.0 CSV Snapshot (17 March 2026)"
+  last_updated: "2026-03-26T00:00:00Z"
+  description: >
+    DAOIP-5-compliant schema mapping for Gitcoin 2.0 historical CSV data.
+    Source columns are snake_case (CSV export format).
+    Maps rounds to GrantPool schema, projects to Project schema,
+    applications to GrantApplication schema, and donations/payouts to
+    their respective schemas. Extension namespace: co.gitcoin.
+
+schemas:
+
+  # ----------------------------------------------------------
+  # DAOIP-5: GrantPool Schema (Rounds)
+  # ----------------------------------------------------------
+  grant_pools:
+    table: bronze_gitcoin2_rounds
+    target_table: silver_gitcoin2_grant_pools
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:gitcoin2:grantPool:{v}' if v else None"
+
+      name:
+        source: round_metadata
+        type: string
+        required: true
+        transform: "lambda v: json.loads(v).get('name', 'Unnamed Round') if v and isinstance(v, str) else (v.get('name', 'Unnamed Round') if isinstance(v, dict) else 'Unnamed Round')"
+
+      description:
+        source: round_metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('description', '') if v and isinstance(v, str) else (v.get('description', '') if isinstance(v, dict) else '')"
+
+      grantFundingMechanism:
+        source: strategy_name
+        type: enum
+        required: false
+        allowed:
+          - "Quadratic Funding"
+          - "Direct Grants"
+          - "Retro Funding"
+          - "Streaming Quadratic Funding"
+          - "Bounties"
+          - "Delegated Domain Allocation"
+          - "Impact Attestations"
+        transform: "lambda v: 'Quadratic Funding' if v and 'Quadratic' in str(v) else ('Direct Grants' if v and 'Direct' in str(v) else 'Direct Grants')"
+
+      isOpen:
+        source: donations_end_time
+        type: boolean
+        required: false
+        transform: "lambda v: v is None or (v and str(v) > '2026-01-01') if v else True"
+
+      closeDate:
+        source: donations_end_time
+        type: datetime
+        required: false
+
+      totalGrantPoolSizeInUSD:
+        source: match_amount_in_usd
+        type: float
+        required: false
+
+      image:
+        source: round_metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('roundMetadataPtrCid', '') if v and isinstance(v, str) else (v.get('roundMetadataPtrCid', '') if isinstance(v, dict) else '')"
+
+      applicationsURI:
+        source: application_metadata_cid
+        type: string
+        required: false
+
+      coverImage:
+        source: null
+        type: string
+        required: false
+
+      email:
+        source: round_metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('support', {}).get('info', '') if v and isinstance(v, str) else (v.get('support', {}).get('info', '') if isinstance(v, dict) else '')"
+
+      governanceURI:
+        source: null
+        type: string
+        required: false
+
+      attestationIssuersURI:
+        source: null
+        type: string
+        required: false
+
+      requiredCredentials:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      totalGrantPoolSize:
+        source: match_amount
+        type: json
+        required: false
+        transform: "lambda v: [{'amount': float(v) if v else 0, 'denomination': 'ETH'}]"
+
+    extensions:
+      co.gitcoin:
+
+        # -------------------------
+        # CHAIN & BLOCK INFO
+        # -------------------------
+        chainId:
+          source: chain_id
+          type: string
+          required: true
+        createdAtBlock:
+          source: created_at_block
+          type: float
+          required: false
+        updatedAtBlock:
+          source: updated_at_block
+          type: float
+          required: false
+        createdByAddress:
+          source: created_by_address
+          type: string
+          required: false
+
+        # -------------------------
+        # FUNDING DETAILS
+        # -------------------------
+        matchAmount:
+          source: match_amount
+          type: float
+          required: false
+        matchAmountInUsd:
+          source: match_amount_in_usd
+          type: float
+          required: false
+        matchTokenAddress:
+          source: match_token_address
+          type: string
+          required: false
+        fundedAmount:
+          source: funded_amount
+          type: float
+          required: false
+        fundedAmountInUsd:
+          source: funded_amount_in_usd
+          type: float
+          required: false
+        totalAmountDonatedInUsd:
+          source: total_amount_donated_in_usd
+          type: float
+          required: false
+        totalDonationsCount:
+          source: total_donations_count
+          type: integer
+          required: false
+        uniqueDonorsCount:
+          source: unique_donors_count
+          type: integer
+          required: false
+        totalDistributed:
+          source: total_distributed
+          type: float
+          required: false
+
+        # -------------------------
+        # TIMING
+        # -------------------------
+        applicationsStartTime:
+          source: applications_start_time
+          type: datetime
+          required: false
+        applicationsEndTime:
+          source: applications_end_time
+          type: datetime
+          required: false
+        donationsStartTime:
+          source: donations_start_time
+          type: datetime
+          required: false
+        donationsEndTime:
+          source: donations_end_time
+          type: datetime
+          required: false
+
+        # -------------------------
+        # STRATEGY
+        # -------------------------
+        strategyId:
+          source: strategy_id
+          type: string
+          required: false
+        strategyName:
+          source: strategy_name
+          type: string
+          required: false
+        strategyAddress:
+          source: strategy_address
+          type: string
+          required: false
+
+        # -------------------------
+        # ROLES
+        # -------------------------
+        adminRole:
+          source: admin_role
+          type: string
+          required: false
+        managerRole:
+          source: manager_role
+          type: string
+          required: false
+
+        # -------------------------
+        # METADATA (JSON)
+        # -------------------------
+        roundMetadata:
+          source: round_metadata
+          type: json
+          required: false
+        applicationMetadata:
+          source: application_metadata
+          type: json
+          required: false
+        matchingDistribution:
+          source: matching_distribution
+          type: json
+          required: false
+        tags:
+          source: tags
+          type: json
+          required: false
+
+        # -------------------------
+        # PAYOUT
+        # -------------------------
+        readyForPayoutTransaction:
+          source: ready_for_payout_transaction
+          type: string
+          required: false
+
+  # ----------------------------------------------------------
+  # DAOIP-5: Project Schema (Projects)
+  # ----------------------------------------------------------
+  projects:
+    table: bronze_gitcoin2_projects
+    target_table: silver_gitcoin2_projects
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:gitcoin2:project:{v}' if v else None"
+
+      name:
+        source: name
+        type: string
+        required: true
+
+      description:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('description', '') if v and isinstance(v, str) else (v.get('description', '') if isinstance(v, dict) else '')"
+
+      contentURI:
+        source: metadata_cid
+        type: string
+        required: false
+        transform: "lambda v: f'ipfs://{v}' if v else None"
+
+      email:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('projectTwitter', '') if v and isinstance(v, str) else (v.get('projectTwitter', '') if isinstance(v, dict) else '')"
+
+      membersURI:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('website', '') if v and isinstance(v, str) else (v.get('website', '') if isinstance(v, dict) else '')"
+
+      attestationIssuersURI:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      image:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('logoImg', '') if v and isinstance(v, str) else (v.get('logoImg', '') if isinstance(v, dict) else '')"
+
+      coverImage:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('bannerImg', '') if v and isinstance(v, str) else (v.get('bannerImg', '') if isinstance(v, dict) else '')"
+
+      licenseURI:
+        source: null
+        type: string
+        required: false
+
+      relevantTo:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      socials:
+        source: metadata
+        type: json
+        required: false
+        transform: "lambda v: {'twitter': json.loads(v).get('projectTwitter', ''), 'github': json.loads(v).get('projectGithub', '')} if v and isinstance(v, str) else ({'twitter': v.get('projectTwitter', ''), 'github': v.get('projectGithub', '')} if isinstance(v, dict) else {})"
+
+    extensions:
+      co.gitcoin:
+
+        # -------------------------
+        # CHAIN & BLOCK INFO
+        # -------------------------
+        chainId:
+          source: chain_id
+          type: string
+          required: true
+        createdAtBlock:
+          source: created_at_block
+          type: float
+          required: false
+        updatedAtBlock:
+          source: updated_at_block
+          type: float
+          required: false
+        createdByAddress:
+          source: created_by_address
+          type: string
+          required: false
+        timestamp:
+          source: timestamp
+          type: datetime
+          required: false
+
+        # -------------------------
+        # PROJECT DETAILS
+        # -------------------------
+        nonce:
+          source: nonce
+          type: float
+          required: false
+        projectNumber:
+          source: project_number
+          type: integer
+          required: false
+        projectType:
+          source: project_type
+          type: string
+          required: false
+        anchorAddress:
+          source: anchor_address
+          type: string
+          required: false
+        registryAddress:
+          source: registry_address
+          type: string
+          required: false
+
+        # -------------------------
+        # METADATA
+        # -------------------------
+        metadata:
+          source: metadata
+          type: json
+          required: false
+        metadataCid:
+          source: metadata_cid
+          type: string
+          required: false
+        tags:
+          source: tags
+          type: json
+          required: false
+
+  # ----------------------------------------------------------
+  # DAOIP-5: GrantApplication Schema (Applications)
+  # ----------------------------------------------------------
+  grant_applications:
+    table: bronze_gitcoin2_applications
+    target_table: silver_gitcoin2_grant_applications
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:gitcoin2:grantApplication:{v}' if v else None"
+
+      name:
+        source: metadata
+        type: string
+        required: true
+        transform: "lambda v: json.loads(v).get('application', {}).get('project', {}).get('title', 'Unnamed Application') if v and isinstance(v, str) else 'Unnamed Application'"
+
+      grantPoolId:
+        source: round_id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:gitcoin2:grantPool:{v}' if v else None"
+
+      grantPoolName:
+        source: null
+        type: string
+        required: false
+
+      projectId:
+        source: project_id
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:gitcoin2:project:{v}' if v else None"
+
+      createdAt:
+        source: timestamp
+        type: datetime
+        required: true
+
+      description:
+        source: metadata
+        type: string
+        required: false
+        transform: "lambda v: json.loads(v).get('application', {}).get('project', {}).get('description', '') if v and isinstance(v, str) else ''"
+
+      contentURI:
+        source: metadata_cid
+        type: string
+        required: false
+        transform: "lambda v: f'ipfs://{v}' if v else None"
+
+      status:
+        source: status
+        type: enum
+        required: false
+        allowed:
+          - "pending"
+          - "in_review"
+          - "approved"
+          - "funded"
+          - "rejected"
+          - "completed"
+        transform: "lambda v: v.lower() if v else 'pending'"
+
+      fundsAsked:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      fundsAskedInUSD:
+        source: null
+        type: float
+        required: false
+
+      fundsApproved:
+        source: total_amount_donated_in_usd
+        type: json
+        required: false
+        transform: "lambda v: [{'amount': float(v), 'denomination': 'USD'}] if v else []"
+
+      fundsApprovedInUSD:
+        source: total_amount_donated_in_usd
+        type: float
+        required: false
+
+      payoutAddress:
+        source: anchor_address
+        type: json
+        required: false
+        transform: "lambda v: {'type': 'EthereumAddress', 'value': v} if v else None"
+
+      payouts:
+        source: null
+        type: json
+        required: false
+        transform: "lambda _: []"
+
+      discussionTo:
+        source: null
+        type: string
+        required: false
+
+      licenseURI:
+        source: null
+        type: string
+        required: false
+
+      isInactive:
+        source: status
+        type: boolean
+        required: false
+        transform: "lambda v: v in ['REJECTED', 'CANCELLED'] if v else False"
+
+      applicationCompletionRate:
+        source: null
+        type: float
+        required: false
+
+      socials:
+        source: metadata
+        type: json
+        required: false
+        transform: "lambda v: {'twitter': json.loads(v).get('application', {}).get('project', {}).get('projectTwitter', ''), 'github': json.loads(v).get('application', {}).get('project', {}).get('projectGithub', '')} if v and isinstance(v, str) else {}"
+
+    extensions:
+      co.gitcoin:
+
+        # -------------------------
+        # CHAIN & BLOCK INFO
+        # -------------------------
+        chainId:
+          source: chain_id
+          type: string
+          required: true
+        createdAtBlock:
+          source: created_at_block
+          type: float
+          required: false
+        statusUpdatedAtBlock:
+          source: status_updated_at_block
+          type: float
+          required: false
+        createdByAddress:
+          source: created_by_address
+          type: string
+          required: false
+
+        # -------------------------
+        # RELATIONSHIPS (raw IDs)
+        # -------------------------
+        roundId_raw:
+          source: round_id
+          type: string
+          required: true
+        projectId_raw:
+          source: project_id
+          type: string
+          required: false
+        anchorAddress:
+          source: anchor_address
+          type: string
+          required: false
+
+        # -------------------------
+        # STATUS
+        # -------------------------
+        status_raw:
+          source: status
+          type: string
+          required: false
+        statusSnapshots:
+          source: status_snapshots
+          type: json
+          required: false
+
+        # -------------------------
+        # FUNDING METRICS
+        # -------------------------
+        totalAmountDonatedInUsd:
+          source: total_amount_donated_in_usd
+          type: float
+          required: false
+        totalDonationsCount:
+          source: total_donations_count
+          type: integer
+          required: false
+        uniqueDonorsCount:
+          source: unique_donors_count
+          type: integer
+          required: false
+        distributionTransaction:
+          source: distribution_transaction
+          type: string
+          required: false
+
+        # -------------------------
+        # METADATA
+        # -------------------------
+        metadata:
+          source: metadata
+          type: json
+          required: false
+        metadataCid:
+          source: metadata_cid
+          type: string
+          required: false
+        tags:
+          source: tags
+          type: json
+          required: false
+        timestamp:
+          source: timestamp
+          type: datetime
+          required: false
+
+  # ----------------------------------------------------------
+  # Donations Schema
+  # ----------------------------------------------------------
+  donations:
+    table: bronze_gitcoin2_donations
+    target_table: silver_gitcoin2_donations
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:gitcoin2:donation:{v}' if v else None"
+
+      grantPoolId:
+        source: round_id
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:gitcoin2:grantPool:{v}' if v else None"
+
+      applicationId:
+        source: application_id
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:gitcoin2:application:{v}' if v else None"
+
+      projectId:
+        source: project_id
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:gitcoin2:project:{v}' if v else None"
+
+      donorAddress:
+        source: donor_address
+        type: string
+        required: false
+
+      recipientAddress:
+        source: recipient_address
+        type: string
+        required: false
+
+      amount:
+        source: amount
+        type: float
+        required: false
+
+      amountInUsd:
+        source: amount_in_usd
+        type: float
+        required: false
+
+      timestamp:
+        source: timestamp
+        type: datetime
+        required: false
+
+      transactionHash:
+        source: transaction_hash
+        type: string
+        required: false
+
+    extensions:
+      co.gitcoin:
+        chainId:
+          source: chain_id
+          type: string
+          required: false
+        blockNumber:
+          source: block_number
+          type: float
+          required: false
+        tokenAddress:
+          source: token_address
+          type: string
+          required: false
+        amountInRoundMatchToken:
+          source: amount_in_round_match_token
+          type: float
+          required: false
+        roundId_raw:
+          source: round_id
+          type: string
+          required: false
+        applicationId_raw:
+          source: application_id
+          type: string
+          required: false
+
+  # ----------------------------------------------------------
+  # Payouts Schema (applications_payouts)
+  # ----------------------------------------------------------
+  payouts:
+    table: bronze_gitcoin2_payouts
+    target_table: silver_gitcoin2_payouts
+
+    fields:
+      id:
+        source: id
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:gitcoin2:payout:{v}' if v else None"
+
+      type:
+        source: null
+        type: string
+        required: false
+        transform: "lambda _: 'OnchainTransaction'"
+
+      applicationId:
+        source: application_id
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:gitcoin2:application:{v}' if v else None"
+
+      grantPoolId:
+        source: round_id
+        type: string
+        required: false
+        transform: "lambda v: f'daoip-5:gitcoin2:grantPool:{v}' if v else None"
+
+      amount:
+        source: amount
+        type: float
+        required: false
+
+      amountInUsd:
+        source: amount_in_usd
+        type: float
+        required: false
+
+      sender:
+        source: sender
+        type: string
+        required: false
+
+      tokenAddress:
+        source: token_address
+        type: string
+        required: false
+
+      timestamp:
+        source: timestamp
+        type: datetime
+        required: false
+
+      proof:
+        source: transaction_hash
+        type: string
+        required: false
+
+    extensions:
+      co.gitcoin:
+        chainId:
+          source: chain_id
+          type: string
+          required: false
+        transactionHash:
+          source: transaction_hash
+          type: string
+          required: false
+        amountInRoundMatchToken:
+          source: amount_in_round_match_token
+          type: float
+          required: false
+        roundId_raw:
+          source: round_id
+          type: string
+          required: false
+        applicationId_raw:
+          source: application_id
+          type: string
+          required: false
+
+  # ----------------------------------------------------------
+  # DAOIP-3 Attestations Schema (on-chain contributor attestations)
+  # Columns: uid, chain_id, fee, recipient, ref_uid,
+  #          projects_contributed, rounds_contributed,
+  #          chain_ids_contributed, total_usdamount, timestamp,
+  #          metadata_cid, metadata
+  # ----------------------------------------------------------
+  attestations:
+    table: bronze_gitcoin2_attestations
+    target_table: silver_gitcoin2_attestations
+
+    fields:
+      id:
+        source: uid
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:gitcoin2:attestation:{v}' if v else None"
+
+      recipient:
+        source: recipient
+        type: string
+        required: false
+
+      refUID:
+        source: ref_uid
+        type: string
+        required: false
+
+      timestamp:
+        source: timestamp
+        type: datetime
+        required: false
+
+      contentURI:
+        source: metadata_cid
+        type: string
+        required: false
+        transform: "lambda v: f'ipfs://{v}' if v else None"
+
+    extensions:
+      co.gitcoin:
+        chainId:
+          source: chain_id
+          type: string
+          required: false
+        fee:
+          source: fee
+          type: float
+          required: false
+        projectsContributed:
+          source: projects_contributed
+          type: integer
+          required: false
+        roundsContributed:
+          source: rounds_contributed
+          type: integer
+          required: false
+        chainIdsContributed:
+          source: chain_ids_contributed
+          type: json
+          required: false
+        totalUsdAmount:
+          source: total_usdamount
+          type: float
+          required: false
+        metadata:
+          source: metadata
+          type: json
+          required: false
+
+meta:
+  daoip_version: 5
+  author: "OpenGrants Platform"
+  mapping_strategy: "DAOIP-5 compliant + co.gitcoin extensions (CSV snake_case source)"
+  compatible_with:
+    - "opengrants-silver-pipeline>=0.3.0"
+  validation_rules:
+    json_fields_must_parse: true
+    json_schema_enforced: false
+    id_format: "daoip-5:gitcoin2"
+    enum_enforced: true
+    required_fields:
+      - id
+      - name

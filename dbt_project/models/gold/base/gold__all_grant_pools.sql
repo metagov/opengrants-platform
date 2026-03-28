@@ -54,3 +54,16 @@ SELECT
     "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
 FROM {{ source('silver', 'silver_privote_grant_pools') }}
 
+UNION ALL
+
+-- Gitcoin 2.0 Grant Pools (Rounds)
+SELECT
+    'gitcoin2' as platform,
+    id,
+    name,
+    description,
+    "grantFundingMechanism" as funding_mechanism,
+    "isOpen"::boolean as is_open,
+    "closeDate" as close_date,
+    "totalGrantPoolSizeInUSD"::numeric as total_pool_size_usd
+FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}

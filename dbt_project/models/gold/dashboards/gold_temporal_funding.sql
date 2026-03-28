@@ -54,6 +54,22 @@ WITH grant_round_timeline AS (
     JOIN {{ source('silver', 'silver_privote_grant_pools') }} gp ON ga."grantPoolId" = gp.id
     WHERE gp."closeDate" IS NOT NULL
     GROUP BY gp.id, gp.name, gp."closeDate", gp."totalGrantPoolSizeInUSD"
+
+    UNION ALL
+
+    -- Gitcoin 2.0 Rounds
+    SELECT
+        'gitcoin2' as platform,
+        gp.name as round_name,
+        gp."closeDate" as round_date,
+        gp."totalGrantPoolSizeInUSD"::numeric as total_pool_size,
+        COUNT(ga.id) as projects_funded,
+        AVG(ga."fundsApprovedInUSD"::numeric) as avg_funding_per_project
+    FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }} gp
+    LEFT JOIN {{ source('silver', 'silver_gitcoin2_grant_applications') }} ga ON gp.id = ga."grantPoolId"
+        AND ga."fundsApprovedInUSD" IS NOT NULL
+    WHERE gp."closeDate" IS NOT NULL
+    GROUP BY gp.id, gp.name, gp."closeDate", gp."totalGrantPoolSizeInUSD"
 ),
 
 time_series_data AS (
