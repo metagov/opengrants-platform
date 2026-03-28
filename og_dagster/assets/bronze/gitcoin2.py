@@ -50,14 +50,22 @@ GITCOIN2_RAW_DATA_DIR = os.getenv(
 # Tables to load: (csv_filename, table_name, large_file)
 # large_file=True means stream via COPY batches instead of loading all into memory
 CSV_TABLE_MAP = [
-    ("rounds.csv",               "bronze_gitcoin2_rounds",          False),
-    ("projects.csv",             "bronze_gitcoin2_projects",         True),
-    ("applications.csv",         "bronze_gitcoin2_applications",     True),
-    ("donations.csv",            "bronze_gitcoin2_donations",        True),
-    ("applications_payouts.csv", "bronze_gitcoin2_payouts",          False),
-    ("attestations.csv",         "bronze_gitcoin2_attestations",     True),
-    ("metadata_cache.csv",       "bronze_gitcoin2_metadata_cache",   True),
-    ("price_cache.csv",          "bronze_gitcoin2_price_cache",      False),
+    ("rounds.csv",               "bronze_gitcoin2_rounds",              False),
+    ("projects.csv",             "bronze_gitcoin2_projects",             True),
+    ("applications.csv",         "bronze_gitcoin2_applications",         True),
+    ("donations.csv",            "bronze_gitcoin2_donations",            True),
+    ("applications_payouts.csv", "bronze_gitcoin2_payouts",              False),
+    ("attestations.csv",         "bronze_gitcoin2_attestations",         True),
+    ("attestation_txns.csv",     "bronze_gitcoin2_attestation_txns",     False),
+    ("metadata_cache.csv",       "bronze_gitcoin2_metadata_cache",       True),
+    ("price_cache.csv",          "bronze_gitcoin2_price_cache",          False),
+    ("legacy_projects.csv",      "bronze_gitcoin2_legacy_projects",      False),
+    ("project_roles.csv",        "bronze_gitcoin2_project_roles",        False),
+    ("round_roles.csv",          "bronze_gitcoin2_round_roles",          False),
+    ("pending_round_roles.csv",  "bronze_gitcoin2_pending_round_roles",  False),
+    ("strategies_registry.csv",  "bronze_gitcoin2_strategies_registry",  False),
+    ("strategy_timings.csv",     "bronze_gitcoin2_strategy_timings",     False),
+    ("events_registry.csv",      "bronze_gitcoin2_events_registry",      False),
 ]
 
 COPY_BATCH_ROWS = 100_000  # rows per COPY batch for large files
@@ -208,12 +216,44 @@ def _load_csv_small(csv_path: Path, table_name: str) -> int:
             metadata={"description": "Gitcoin 2.0 on-chain attestations from CSV snapshot (77MB)"},
             tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
         ),
+        "bronze__gitcoin2_attestation_txns": AssetOut(
+            metadata={"description": "Gitcoin 2.0 attestation transactions from CSV snapshot"},
+            tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
+        ),
         "bronze__gitcoin2_metadata_cache": AssetOut(
             metadata={"description": "Gitcoin 2.0 IPFS metadata cache from CSV snapshot (195MB)"},
             tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
         ),
         "bronze__gitcoin2_price_cache": AssetOut(
             metadata={"description": "Gitcoin 2.0 token price history from CSV snapshot"},
+            tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
+        ),
+        "bronze__gitcoin2_legacy_projects": AssetOut(
+            metadata={"description": "Gitcoin 2.0 legacy projects from CSV snapshot"},
+            tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
+        ),
+        "bronze__gitcoin2_project_roles": AssetOut(
+            metadata={"description": "Gitcoin 2.0 project roles from CSV snapshot"},
+            tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
+        ),
+        "bronze__gitcoin2_round_roles": AssetOut(
+            metadata={"description": "Gitcoin 2.0 round roles from CSV snapshot"},
+            tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
+        ),
+        "bronze__gitcoin2_pending_round_roles": AssetOut(
+            metadata={"description": "Gitcoin 2.0 pending round roles from CSV snapshot"},
+            tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
+        ),
+        "bronze__gitcoin2_strategies_registry": AssetOut(
+            metadata={"description": "Gitcoin 2.0 strategies registry from CSV snapshot"},
+            tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
+        ),
+        "bronze__gitcoin2_strategy_timings": AssetOut(
+            metadata={"description": "Gitcoin 2.0 strategy timings from CSV snapshot"},
+            tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
+        ),
+        "bronze__gitcoin2_events_registry": AssetOut(
+            metadata={"description": "Gitcoin 2.0 events registry from CSV snapshot"},
             tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
         ),
     },
@@ -256,21 +296,11 @@ def load_gitcoin2_csv_data():
     summary = ", ".join(f"{k.replace('bronze_gitcoin2_', '')}: {v}" for k, v in counts.items())
     logger.info(f"Gitcoin2 CSV load complete — {summary}")
 
-    # Yield minimal outputs (data is in Postgres)
-    conn = _get_conn()
-    for asset_key, table_name in [
-        ("bronze__gitcoin2_rounds",        "bronze_gitcoin2_rounds"),
-        ("bronze__gitcoin2_projects",      "bronze_gitcoin2_projects"),
-        ("bronze__gitcoin2_applications",  "bronze_gitcoin2_applications"),
-        ("bronze__gitcoin2_donations",     "bronze_gitcoin2_donations"),
-        ("bronze__gitcoin2_payouts",       "bronze_gitcoin2_payouts"),
-        ("bronze__gitcoin2_attestations",  "bronze_gitcoin2_attestations"),
-        ("bronze__gitcoin2_metadata_cache","bronze_gitcoin2_metadata_cache"),
-        ("bronze__gitcoin2_price_cache",   "bronze_gitcoin2_price_cache"),
-    ]:
+    # Yield one Output per asset — row count as the value
+    for _, table_name, _ in CSV_TABLE_MAP:
+        asset_key = table_name.replace("bronze_gitcoin2_", "bronze__gitcoin2_")
         yield Output(
             counts.get(table_name, 0),
             asset_key,
             metadata={"row_count": counts.get(table_name, 0)},
         )
-    conn.close()
