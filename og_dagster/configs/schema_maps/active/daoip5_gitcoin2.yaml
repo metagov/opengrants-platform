@@ -12,7 +12,7 @@ manifest:
     Source columns are snake_case (CSV export format).
     Maps rounds to GrantPool schema, projects to Project schema,
     applications to GrantApplication schema, and donations/payouts to
-    their respective schemas. Extension namespace: io.gitcoin2.
+    their respective schemas. Extension namespace: co.gitcoin.
 
 schemas:
 
@@ -117,7 +117,7 @@ schemas:
         transform: "lambda v: [{'amount': float(v) if v else 0, 'denomination': 'ETH'}]"
 
     extensions:
-      io.gitcoin2:
+      co.gitcoin:
 
         # -------------------------
         # CHAIN & BLOCK INFO
@@ -334,7 +334,7 @@ schemas:
         transform: "lambda v: {'twitter': json.loads(v).get('projectTwitter', ''), 'github': json.loads(v).get('projectGithub', '')} if v and isinstance(v, str) else ({'twitter': v.get('projectTwitter', ''), 'github': v.get('projectGithub', '')} if isinstance(v, dict) else {})"
 
     extensions:
-      io.gitcoin2:
+      co.gitcoin:
 
         # -------------------------
         # CHAIN & BLOCK INFO
@@ -529,7 +529,7 @@ schemas:
         transform: "lambda v: {'twitter': json.loads(v).get('application', {}).get('project', {}).get('projectTwitter', ''), 'github': json.loads(v).get('application', {}).get('project', {}).get('projectGithub', '')} if v and isinstance(v, str) else {}"
 
     extensions:
-      io.gitcoin2:
+      co.gitcoin:
 
         # -------------------------
         # CHAIN & BLOCK INFO
@@ -682,7 +682,7 @@ schemas:
         required: false
 
     extensions:
-      io.gitcoin2:
+      co.gitcoin:
         chainId:
           source: chain_id
           type: integer
@@ -771,7 +771,7 @@ schemas:
         required: false
 
     extensions:
-      io.gitcoin2:
+      co.gitcoin:
         chainId:
           source: chain_id
           type: integer
@@ -833,7 +833,7 @@ schemas:
         transform: "lambda v: f'ipfs://{v}' if v else None"
 
     extensions:
-      io.gitcoin2:
+      co.gitcoin:
         chainId:
           source: chain_id
           type: integer
@@ -866,7 +866,7 @@ schemas:
 meta:
   daoip_version: 5
   author: "OpenGrants Platform"
-  mapping_strategy: "DAOIP-5 compliant + io.gitcoin2 extensions (CSV snake_case source)"
+  mapping_strategy: "DAOIP-5 compliant + co.gitcoin extensions (CSV snake_case source)"
   compatible_with:
     - "opengrants-silver-pipeline>=0.3.0"
   validation_rules:

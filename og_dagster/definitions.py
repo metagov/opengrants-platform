@@ -32,16 +32,6 @@ from assets.silver.gitcoin2.gitcoin2 import (
     silver_gitcoin2_donations,
     silver_gitcoin2_payouts,
     silver_gitcoin2_attestations,
-    silver_gitcoin2_metadata_cache,
-    silver_gitcoin2_price_cache,
-    silver_gitcoin2_legacy_projects,
-    silver_gitcoin2_attestation_txns,
-    silver_gitcoin2_project_roles,
-    silver_gitcoin2_round_roles,
-    silver_gitcoin2_pending_round_roles,
-    silver_gitcoin2_strategies_registry,
-    silver_gitcoin2_strategy_timings,
-    silver_gitcoin2_events_registry,
 )
 
 # --- Sensors ---
@@ -154,18 +144,8 @@ silver_gitcoin2_etl_job = define_asset_job(
         silver_gitcoin2_donations,
         silver_gitcoin2_payouts,
         silver_gitcoin2_attestations,
-        silver_gitcoin2_metadata_cache,
-        silver_gitcoin2_price_cache,
-        silver_gitcoin2_legacy_projects,
-        silver_gitcoin2_attestation_txns,
-        silver_gitcoin2_project_roles,
-        silver_gitcoin2_round_roles,
-        silver_gitcoin2_pending_round_roles,
-        silver_gitcoin2_strategies_registry,
-        silver_gitcoin2_strategy_timings,
-        silver_gitcoin2_events_registry,
     ),
-    description="Transform Gitcoin 2.0 CSV data into the Silver layer (DAOIP-5 + passthrough).",
+    description="Transform Gitcoin 2.0 CSV data into DAOIP-5 compliant Silver layer with co.gitcoin extensions.",
 )
 
 
@@ -237,16 +217,6 @@ defs = Definitions(
         silver_gitcoin2_donations,
         silver_gitcoin2_payouts,
         silver_gitcoin2_attestations,
-        silver_gitcoin2_metadata_cache,
-        silver_gitcoin2_price_cache,
-        silver_gitcoin2_legacy_projects,
-        silver_gitcoin2_attestation_txns,
-        silver_gitcoin2_project_roles,
-        silver_gitcoin2_round_roles,
-        silver_gitcoin2_pending_round_roles,
-        silver_gitcoin2_strategies_registry,
-        silver_gitcoin2_strategy_timings,
-        silver_gitcoin2_events_registry,
         # Gold
         gold_dbt_assets,
     ],
