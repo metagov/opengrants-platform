@@ -35,7 +35,7 @@ WITH project_funding_history AS (
         UNION ALL
         
         -- Privote
-        SELECT 
+        SELECT
             name,
             'privote' as platform,
             "fundsApprovedInUSD" as total_funding,
@@ -43,6 +43,19 @@ WITH project_funding_history AS (
             "createdAt"::timestamp as funding_date
         FROM {{ source('silver', 'silver_privote_grant_applications') }}
         WHERE "fundsApprovedInUSD" > 0
+
+        UNION ALL
+
+        -- Gitcoin 2.0
+        SELECT
+            ga.name,
+            'gitcoin2' as platform,
+            ga."fundsApprovedInUSD" as total_funding,
+            gp.name as grant_round,
+            gp."closeDate"::timestamp as funding_date
+        FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} ga
+        JOIN {{ source('silver', 'silver_gitcoin2_grant_pools') }} gp ON ga."grantPoolId" = gp.id
+        WHERE ga."fundsApprovedInUSD" IS NOT NULL
     ) combined
 ),
 

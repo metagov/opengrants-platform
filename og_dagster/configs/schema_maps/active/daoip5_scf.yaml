@@ -89,13 +89,15 @@ schemas:
 
       attestationIssuersURI:
         source: null
-        type: string
-        transform: "lambda _: None"
+        type: json
+        required: false
+        transform: "lambda _: []"
 
       relevantTo:
         source: null
-        type: string
-        transform: "lambda _: None"
+        type: json
+        required: false
+        transform: "lambda _: []"
 
       licenseURI:
         source: null

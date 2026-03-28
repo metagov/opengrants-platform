@@ -130,6 +130,59 @@ interface SCFData {
     repeat_funded_projects: number;
     total_funded_in_round: number;
   }>;
+  sorobanAdoption: Array<{
+    quarter: string;
+    year: number;
+    total_applications: number;
+    soroban_count: number;
+    soroban_pct: number;
+  }>;
+  geoDistribution: Array<{
+    region: string;
+    project_count: number;
+    total_awarded_usd: number;
+  }>;
+  awardTypeDistribution: Array<{
+    award_type: string;
+    count: number;
+    total_awarded_usd: number;
+    total_paid_usd: number;
+    payment_rate_pct: number;
+  }>;
+  projectStats: {
+    total_projects: number;
+    open_source_count: number;
+    open_source_pct: number;
+    soroban_project_count: number;
+    soroban_project_pct: number;
+    total_paid_xlm: number;
+  };
+  phaseDurations: {
+    avg_submission_days: number;
+    avg_initial_review_days: number;
+    avg_vote_days: number;
+    avg_panel_days: number;
+    rounds_with_dates: number;
+  };
+  roundPhases: Array<{
+    round_id: string;
+    round_name: string;
+    phase_raw: string;
+    submission_open: string | null;
+    submission_close: string | null;
+    initial_review_open: string | null;
+    initial_review_close: string | null;
+    vote_open: string | null;
+    vote_close: string | null;
+    award_sub_open: string | null;
+    award_sub_close: string | null;
+    panel_open: string | null;
+    panel_close: string | null;
+    notification_open: string | null;
+    notification_close: string | null;
+    cohort_open: string | null;
+    cohort_close: string | null;
+  }>;
 }
 
 const CATEGORY_COLORS = [
@@ -139,6 +192,63 @@ const CATEGORY_COLORS = [
   '#800020', // burgundy
   '#E07000', // orange
 ];
+
+const GEO_COLORS = ['#8B9A46','#006E7F','#2A0055','#800020','#E07000','#F59E0B','#10B981','#6F3FF5'];
+
+const PHASE_SEQUENCE = [
+  { key: 'submission',    label: 'Submissions',     open: 'submission_open',      close: 'submission_close'      },
+  { key: 'initial_review',label: 'Initial Review',  open: 'initial_review_open',  close: 'initial_review_close'  },
+  { key: 'award_sub',     label: 'Award Sub.',      open: 'award_sub_open',       close: 'award_sub_close'       },
+  { key: 'vote',          label: 'Community Vote',  open: 'vote_open',            close: 'vote_close'            },
+  { key: 'panel',         label: 'Panel Review',    open: 'panel_open',           close: 'panel_close'           },
+  { key: 'notification',  label: 'Notification',    open: 'notification_open',    close: 'notification_close'    },
+  { key: 'cohort',        label: 'Cohort',          open: 'cohort_open',          close: 'cohort_close'          },
+];
+
+const PHASE_COLORS: Record<string, string> = {
+  'Submissions':    '#3B82F6',
+  'Initial Review': '#F59E0B',
+  'Award Sub.':     '#06B6D4',
+  'Community Vote': '#8B5CF6',
+  'Panel Review':   '#EF4444',
+  'Notification':   '#10B981',
+  'Cohort':         '#8B9A46',
+  'Closed':         '#9CA3AF',
+};
+
+type RoundPhaseRow = SCFData['roundPhases'][0];
+
+function computeCurrentPhase(rp: RoundPhaseRow): string {
+  const today = new Date();
+  const tryParse = (s: string | null | undefined): Date | null => {
+    if (!s || s === 'None' || s === '') return null;
+    try {
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    } catch { return null; }
+  };
+
+  for (const phase of PHASE_SEQUENCE) {
+    const open  = tryParse((rp as any)[phase.open]);
+    const close = tryParse((rp as any)[phase.close]);
+    if (open && close && today >= open && today <= close) return phase.label;
+  }
+  return rp.phase_raw || 'Closed';
+}
+
+function getPhaseStatus(rp: RoundPhaseRow, phaseKey: typeof PHASE_SEQUENCE[0]): 'past' | 'active' | 'future' | 'unknown' {
+  const today = new Date();
+  const tryParse = (s: string | null | undefined): Date | null => {
+    if (!s || s === 'None' || s === '') return null;
+    try { const d = new Date(s); return isNaN(d.getTime()) ? null : d; } catch { return null; }
+  };
+  const open  = tryParse((rp as any)[phaseKey.open]);
+  const close = tryParse((rp as any)[phaseKey.close]);
+  if (!open || !close) return 'unknown';
+  if (today > close)  return 'past';
+  if (today >= open)  return 'active';
+  return 'future';
+}
 
 export default function SCFPage() {
   const [data, setData] = useState<SCFData | null>(null);
@@ -234,6 +344,32 @@ export default function SCFPage() {
     repeatFunded: Number(r.repeat_funded_projects),
     totalFunded: Number(r.total_funded_in_round),
   }));
+
+  const sorobanChartData = (data?.sorobanAdoption || []).map(s => ({
+    quarter: s.quarter,
+    total: Number(s.total_applications) || 0,
+    soroban: Number(s.soroban_count) || 0,
+    pct: Number(s.soroban_pct) || 0,
+  }));
+
+  const geoChartData = (data?.geoDistribution || []).map(g => ({
+    name: g.region,
+    value: Number(g.project_count) || 0,
+    funding: Number(g.total_awarded_usd) || 0,
+  }));
+
+  const awardTypeData = (data?.awardTypeDistribution || []).map(a => ({
+    name: a.award_type,
+    count: Number(a.count) || 0,
+    awarded: Number(a.total_awarded_usd) || 0,
+    paid: Number(a.total_paid_usd) || 0,
+    rate: Number(a.payment_rate_pct) || 0,
+  }));
+
+  // Lookup map: round_name → phase data (for live phase computation in Rounds tab)
+  const phaseMap = new Map<string, RoundPhaseRow>(
+    (data?.roundPhases || []).map(rp => [rp.round_name, rp])
+  );
 
   return (
     <>
@@ -345,6 +481,47 @@ export default function SCFPage() {
                   dataSource={data?.metadata?.data_source}
                 />
 
+                {/* Project quality KPIs */}
+                <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
+                  <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Open Source Projects</Text>
+                    <Text fontSize="xl" fontWeight="semibold" color={brandColors.olive}>
+                      {Number(data?.projectStats?.open_source_pct || 0).toFixed(1)}%
+                    </Text>
+                    <Text fontSize="xs" color="gray.400">
+                      {Number(data?.projectStats?.open_source_count || 0)} of {Number(data?.projectStats?.total_projects || 0)} projects
+                    </Text>
+                  </Box>
+                  <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Soroban Adoption</Text>
+                    <Text fontSize="xl" fontWeight="semibold">
+                      {Number(data?.projectStats?.soroban_project_pct || 0).toFixed(1)}%
+                    </Text>
+                    <Text fontSize="xs" color="gray.400">
+                      {Number(data?.projectStats?.soroban_project_count || 0)} projects use Soroban
+                    </Text>
+                  </Box>
+                  <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Total Paid (XLM)</Text>
+                    <Text fontSize="xl" fontWeight="semibold">
+                      {Number(data?.projectStats?.total_paid_xlm || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </Text>
+                    <Text fontSize="xs" color="gray.400">XLM distributed to projects</Text>
+                  </Box>
+                  <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                    <Text fontSize="xs" color="gray.500" mb={1}>Avg Round Duration</Text>
+                    <Text fontSize="xl" fontWeight="semibold">
+                      {(
+                        (Number(data?.phaseDurations?.avg_submission_days || 0) +
+                         Number(data?.phaseDurations?.avg_initial_review_days || 0) +
+                         Number(data?.phaseDurations?.avg_vote_days || 0) +
+                         Number(data?.phaseDurations?.avg_panel_days || 0))
+                      ).toFixed(0)} days
+                    </Text>
+                    <Text fontSize="xs" color="gray.400">submission → panel review</Text>
+                  </Box>
+                </SimpleGrid>
+
                 <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
                   <ChartCard title="Quarterly Projects Awarded">
                     <BarChart
@@ -370,6 +547,32 @@ export default function SCFPage() {
                     />
                   </ChartCard>
                 </SimpleGrid>
+
+                {geoChartData.length > 0 && (
+                  <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
+                    <ChartCard title="Projects by Region">
+                      <PieChart
+                        data={geoChartData}
+                        colors={GEO_COLORS}
+                        height={280}
+                        label={({ name, percent }: any) => `${name?.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
+                        tooltipFormatter={(value: number, name: string, props: any) => [
+                          `${value} projects (${formatCurrency(props.payload.funding)})`, name
+                        ]}
+                      />
+                    </ChartCard>
+                    <ChartCard title="Award Types">
+                      <BarChart
+                        data={awardTypeData}
+                        xKey="name"
+                        bars={[{ dataKey: 'awarded', name: 'Awarded', color: brandColors.olive }]}
+                        height={280}
+                        rotateLabels
+                        tooltipFormatter={(v: number) => [formatCurrency(v), 'Awarded']}
+                      />
+                    </ChartCard>
+                  </SimpleGrid>
+                )}
 
                 <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                   <Text fontSize="md" fontWeight="semibold" mb={4}>Top Funded Projects</Text>
@@ -468,7 +671,76 @@ export default function SCFPage() {
                   />
                 </ChartCard>
 
-                {/* Voter Participation Trend - commented out for now */}
+                <ChartCard
+                  title="Voter Participation Trend"
+                  subtitle="Community voter count per round"
+                  height="250px"
+                >
+                  <LineChart
+                    data={avgGrantTrendData}
+                    xKey="round"
+                    lines={[{ dataKey: 'voters', color: brandColors.teal, strokeWidth: 2, dot: { r: 3 } }]}
+                    height={250}
+                    yTickFormatter={(v: number) => String(Math.round(v))}
+                    tooltipFormatter={(value: number) => [String(Math.round(value)), 'Voters']}
+                    xTickSize="sm"
+                    xAxisInterval={4}
+                  />
+                </ChartCard>
+
+                {sorobanChartData.length > 0 && (
+                  <>
+                    <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Soroban Adoption</Text>
+                    <ChartCard
+                      title="Soroban Usage by Quarter"
+                      subtitle="% of awarded projects using Soroban smart contracts"
+                      height="300px"
+                    >
+                      <ComposedChart
+                        data={sorobanChartData}
+                        xKey="quarter"
+                        series={[
+                          { type: 'bar', dataKey: 'soroban', name: 'Soroban Projects', color: brandColors.olive, yAxisId: 'left' },
+                          { type: 'bar', dataKey: 'total', name: 'Total Projects', color: brandColors.teal, yAxisId: 'left', fillOpacity: 0.35 },
+                          { type: 'line', dataKey: 'pct', name: 'Soroban %', color: brandColors.burgundy, yAxisId: 'right', strokeWidth: 2, dot: false },
+                        ]}
+                        yAxes={[
+                          { id: 'left' },
+                          { id: 'right', orientation: 'right', tickFormatter: (v: number) => `${v}%`, domain: [0, 100] },
+                        ]}
+                        height={300}
+                        tooltipFormatter={(value: number, name: string) => {
+                          if (name === 'Soroban %') return [`${value}%`, name];
+                          return [String(value), name];
+                        }}
+                        xAxisInterval={1}
+                      />
+                    </ChartCard>
+                  </>
+                )}
+
+                {/* Phase Duration Analysis */}
+                {Number(data?.phaseDurations?.rounds_with_dates || 0) > 0 && (
+                  <>
+                    <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Round Process Speed</Text>
+                    <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
+                      {[
+                        { label: 'Submission Window', days: data?.phaseDurations?.avg_submission_days },
+                        { label: 'Initial Review',    days: data?.phaseDurations?.avg_initial_review_days },
+                        { label: 'Community Vote',    days: data?.phaseDurations?.avg_vote_days },
+                        { label: 'Panel Review',      days: data?.phaseDurations?.avg_panel_days },
+                      ].map(p => (
+                        <Box key={p.label} p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                          <Text fontSize="xs" color="gray.500" mb={1}>{p.label}</Text>
+                          <Text fontSize="xl" fontWeight="semibold">
+                            {Number(p.days || 0).toFixed(0)} days
+                          </Text>
+                          <Text fontSize="xs" color="gray.400">avg across rounds</Text>
+                        </Box>
+                      ))}
+                    </SimpleGrid>
+                  </>
+                )}
 
                 <Text fontSize="lg" fontWeight="semibold" color={brandColors.olive} mt={4}>Cohort Analysis</Text>
 
@@ -681,6 +953,11 @@ export default function SCFPage() {
 
                 {(data?.rounds || []).slice(0, visibleRounds).map((round, idx) => {
                   const roundNum = round.round_name?.match(/#(\d+)/)?.[1];
+                  const rp = phaseMap.get(round.round_name);
+                  const currentPhase = rp ? computeCurrentPhase(rp) : (round.phase || 'Closed');
+                  const phaseColor = PHASE_COLORS[currentPhase] || PHASE_COLORS['Closed'];
+                  const isActive = currentPhase !== 'Closed' && currentPhase !== '';
+
                   return (
                     <Link key={idx} href={roundNum ? `/system/scf/${roundNum}` : '#'} style={{ textDecoration: 'none' }}>
                       <Box
@@ -688,25 +965,72 @@ export default function SCFPage() {
                         bg="white"
                         borderRadius="lg"
                         borderWidth="1px"
-                        borderColor="gray.100"
+                        borderColor={isActive ? `${phaseColor}40` : 'gray.100'}
+                        borderLeftWidth="4px"
+                        borderLeftColor={isActive ? phaseColor : 'gray.200'}
                         _hover={{ borderColor: 'gray.300', shadow: 'sm', cursor: 'pointer' }}
                         transition="all 0.2s"
                       >
-                        <HStack justify="space-between" mb={4}>
+                        <HStack justify="space-between" mb={3}>
                           <VStack align="start" gap={1}>
-                            <HStack gap={2}>
+                            <HStack gap={2} flexWrap="wrap">
                               <Text fontSize="lg" fontWeight="semibold">{round.round_name}</Text>
                               <Text fontSize="sm" color={brandColors.teal}>→</Text>
                             </HStack>
-                            <HStack gap={2}>
+                            <HStack gap={2} flexWrap="wrap">
                               <Badge bg={brandColors.teal} color="white" px={2} py={0.5} borderRadius="md" fontSize="xs">{round.quarter_year}</Badge>
                               <Badge bg="gray.400" color="white" px={2} py={0.5} borderRadius="md" fontSize="xs">{round.round_type}</Badge>
+                              <Badge
+                                bg={phaseColor}
+                                color="white"
+                                px={2} py={0.5}
+                                borderRadius="md"
+                                fontSize="xs"
+                              >
+                                {isActive ? '● ' : ''}{currentPhase}
+                              </Badge>
                             </HStack>
                           </VStack>
                           <Text fontSize="2xl" fontWeight="bold" color={brandColors.olive}>
                             {formatCurrency(round.total_paid_usd || round.total_awarded_usd)}
                           </Text>
                         </HStack>
+
+                        {/* Phase timeline — only for rounds that have date data */}
+                        {rp && (
+                          <HStack gap={1} mb={3} flexWrap="wrap">
+                            {PHASE_SEQUENCE.map((phase, pi) => {
+                              const status = getPhaseStatus(rp, phase);
+                              if (status === 'unknown') return null;
+                              return (
+                                <Box
+                                  key={phase.key}
+                                  px={2}
+                                  py={0.5}
+                                  borderRadius="sm"
+                                  fontSize="10px"
+                                  fontWeight="medium"
+                                  bg={
+                                    status === 'active' ? phaseColor :
+                                    status === 'past'   ? 'gray.100' : 'transparent'
+                                  }
+                                  color={
+                                    status === 'active' ? 'white' :
+                                    status === 'past'   ? 'gray.400' : 'gray.300'
+                                  }
+                                  borderWidth={status === 'future' ? '1px' : '0'}
+                                  borderColor="gray.200"
+                                >
+                                  {status === 'past' ? '✓ ' : status === 'active' ? '● ' : '○ '}{phase.label}
+                                  {pi < PHASE_SEQUENCE.length - 1 && (
+                                    <Box as="span" mx={1} color="gray.200"> › </Box>
+                                  )}
+                                </Box>
+                              );
+                            })}
+                          </HStack>
+                        )}
+
                         <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
                           <VStack align="start" gap={0}>
                             <Text fontSize="xs" color="gray.500">Projects</Text>
@@ -714,7 +1038,11 @@ export default function SCFPage() {
                           </VStack>
                           <VStack align="start" gap={0}>
                             <Text fontSize="xs" color="gray.500">Applied</Text>
-                            <Text fontSize="md" fontWeight="medium">{round.applied_submissions || 'N/A'}</Text>
+                            <Text fontSize="md" fontWeight="medium">
+                              {round.applied_submissions
+                                ? `${round.applied_submissions} (${Math.round((round.awarded_submissions / round.applied_submissions) * 100)}% acceptance)`
+                                : 'N/A'}
+                            </Text>
                           </VStack>
                           <VStack align="start" gap={0}>
                             <Text fontSize="xs" color="gray.500">Avg Award</Text>

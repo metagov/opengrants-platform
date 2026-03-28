@@ -12,10 +12,12 @@ services:
       - ./dbt_project:/app/dbt_project
       - ./duckdb:/data/duckdb
       - ./raw_data:/app/raw_data
+      - ${GITCOIN2_HOST_DATA_DIR:-/home/torch/opengrants-platform/raw_data/Gitcoin}:/app/raw_data/Gitcoin
     environment:
       - DAGSTER_HOME=/app
       - DATABASE_URL="${DATABASE_URL}"
       - DUCKDB_CACHE_PATH=/data/duckdb/local.duckdb
+      - GITCOIN2_RAW_DATA_DIR=/app/raw_data/Gitcoin/17_March_2026
 
     env_file:
       - .env
@@ -39,10 +41,12 @@ services:
       - ./dbt_project:/app/dbt_project
       - ./duckdb:/data/duckdb
       - ./raw_data:/app/raw_data
+      - ${GITCOIN2_HOST_DATA_DIR:-/home/torch/opengrants-platform/raw_data/Gitcoin}:/app/raw_data/Gitcoin
     environment:
       - DAGSTER_HOME=/app
       - DATABASE_URL="${DATABASE_URL}"
       - DUCKDB_CACHE_PATH=/data/duckdb/local.duckdb
+      - GITCOIN2_RAW_DATA_DIR=/app/raw_data/Gitcoin/17_March_2026
     env_file:
       - .env
     command:

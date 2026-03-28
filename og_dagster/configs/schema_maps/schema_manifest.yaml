@@ -21,6 +21,7 @@ schemas_block:
   grant_applications: include('grant_application_schema', required=False)
   donations: include('donation_schema', required=False)
   payouts: include('payout_schema', required=False)
+  attestations: include('attestation_schema', required=False)
 ---
 
 # ============================================================
@@ -44,7 +45,7 @@ project_schema:
     attestationIssuersURI: include('optional_json_array_field_schema')
     relevantTo: include('optional_json_array_field_schema')
     licenseURI: include('optional_uri_field_schema')
-  extensions: map(include('project_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  extensions: map(include('project_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|co\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
   join_keys: list(str(), required=False)
 ---
 
@@ -77,7 +78,7 @@ grant_application_schema:
     fundsApprovedInUSD: include('currency_field_schema')
     status: include('application_status_field_schema')
     socials: include('application_socials_field_schema')
-  extensions: map(include('grant_application_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  extensions: map(include('grant_application_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|co\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
   join_keys: list(str(), required=False)
 ---
 
@@ -105,7 +106,7 @@ grant_pool_schema:
     attestationIssuersURI: include('optional_uri_field_schema')
     requiredCredentials: include('optional_json_array_field_schema')
     totalGrantPoolSize: include('optional_grant_pool_size_field_schema')
-  extensions: map(include('grant_pool_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  extensions: map(include('grant_pool_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|co\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
   join_keys: list(str(), required=False)
 ---
 
@@ -128,7 +129,7 @@ donation_schema:
     amountInUsd: include('optional_float_field_schema')
     timestamp: include('optional_datetime_field_schema')
     transactionHash: include('optional_string_field_schema')
-  extensions: map(include('donation_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  extensions: map(include('donation_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|co\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
   join_keys: list(str(), required=False)
 ---
 
@@ -151,7 +152,25 @@ payout_schema:
     tokenAddress: include('optional_string_field_schema')
     timestamp: include('optional_datetime_field_schema')
     proof: include('optional_string_field_schema')
-  extensions: map(include('payout_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  extensions: map(include('payout_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|co\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
+  join_keys: list(str(), required=False)
+---
+
+# ============================================================
+# ATTESTATION SCHEMA (DAOIP-3)
+# ============================================================
+attestation_schema:
+  table: any(str(), list(str()), required=False)
+  sources: list(include('table_source_schema'), required=False)
+  target_table: str()
+  schema: str(required=False)
+  fields:
+    id: include('id_field_schema')
+    recipient: include('optional_string_field_schema')
+    refUID: include('optional_string_field_schema')
+    timestamp: include('optional_datetime_field_schema')
+    contentURI: include('optional_uri_field_schema')
+  extensions: map(include('attestation_extension_fields'), key=regex('^(io\\.|org\\.|com\\.|co\\.|x\\-|ethereum\\.|stellar\\.).+', name='valid_extension_namespace'), required=False)
   join_keys: list(str(), required=False)
 ---
 
@@ -452,6 +471,15 @@ donation_extension_field:
 # Payout Extension Fields
 payout_extension_fields: map(include('payout_extension_field'), key=str())
 payout_extension_field:
+  source: any(str(), list(str()), null())
+  type: enum('string', 'integer', 'float', 'boolean', 'datetime', 'json')
+  transform: str(required=False)
+  required: bool(required=False)
+  allowed: list(required=False)
+
+# Attestation Extension Fields
+attestation_extension_fields: map(include('attestation_extension_field'), key=str())
+attestation_extension_field:
   source: any(str(), list(str()), null())
   type: enum('string', 'integer', 'float', 'boolean', 'datetime', 'json')
   transform: str(required=False)

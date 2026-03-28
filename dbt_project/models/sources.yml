@@ -13,3 +13,10 @@ sources:
       - name: silver_privote_projects
       - name: silver_privote_grant_pools
       - name: silver_privote_grant_applications
+      # Gitcoin 2.0 — DAOIP-5 mapped (co.gitcoin extensions)
+      - name: silver_gitcoin2_grant_pools
+      - name: silver_gitcoin2_projects
+      - name: silver_gitcoin2_grant_applications
+      - name: silver_gitcoin2_donations
+      - name: silver_gitcoin2_payouts
+      - name: silver_gitcoin2_attestations

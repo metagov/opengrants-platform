@@ -46,3 +46,26 @@ SELECT
     NULL as unique_donors
 FROM {{ source('silver', 'silver_privote_projects') }}
 
+UNION ALL
+
+-- Gitcoin 2.0 Projects
+SELECT
+    'gitcoin2' as platform,
+    p.id,
+    p.name,
+    p.description,
+    p."contentURI" as content_uri,
+    p."image" as image_url,
+    p."email" as contact_email,
+    NULL as is_verified,
+    (
+        SELECT SUM(COALESCE(ga."fundsApprovedInUSD"::numeric, 0))
+        FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} ga
+        WHERE ga."projectId" = p.id
+    ) as total_donations_usd,
+    (
+        SELECT SUM(COALESCE(ga."co.gitcoin.uniqueDonorsCount"::numeric, 0))
+        FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} ga
+        WHERE ga."projectId" = p.id
+    ) as unique_donors
+FROM {{ source('silver', 'silver_gitcoin2_projects') }} p

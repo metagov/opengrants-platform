@@ -36,6 +36,19 @@ WITH all_projects AS (
     FROM {{ source('silver', 'silver_privote_grant_applications') }}
     WHERE "fundsApprovedInUSD" > 0
 
+    UNION ALL
+
+    -- Gitcoin 2.0 Projects
+    SELECT
+        'gitcoin2' as platform,
+        ga.name,
+        LOWER(TRIM(ga.name)) as normalized_name,
+        ga."fundsApprovedInUSD" as total_funding,
+        gp.name as grant_rounds
+    FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} ga
+    JOIN {{ source('silver', 'silver_gitcoin2_grant_pools') }} gp ON ga."grantPoolId" = gp.id
+    WHERE ga."fundsApprovedInUSD" IS NOT NULL
+
 ),
 
 project_cross_presence AS (
@@ -74,7 +87,10 @@ project_details AS (
          WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'scf') as scf_funding,
 
         (SELECT SUM(total_funding) FROM all_projects ap
-         WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'privote') as privote_funding
+         WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'privote') as privote_funding,
+
+        (SELECT SUM(total_funding) FROM all_projects ap
+         WHERE ap.normalized_name = p.normalized_name AND ap.platform = 'gitcoin2') as gitcoin2_funding
 
     FROM project_cross_presence p
 )
@@ -89,15 +105,18 @@ SELECT
     giveth_funding,
     scf_funding,
     privote_funding,
+    gitcoin2_funding,
 
     -- Funding diversity indicator
     CASE
         WHEN (CASE WHEN giveth_funding > 0 THEN 1 ELSE 0 END +
               CASE WHEN scf_funding > 0 THEN 1 ELSE 0 END +
-              CASE WHEN privote_funding > 0 THEN 1 ELSE 0 END) >= 3 THEN 'High Diversity'
+              CASE WHEN privote_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN gitcoin2_funding > 0 THEN 1 ELSE 0 END) >= 3 THEN 'High Diversity'
         WHEN (CASE WHEN giveth_funding > 0 THEN 1 ELSE 0 END +
               CASE WHEN scf_funding > 0 THEN 1 ELSE 0 END +
-              CASE WHEN privote_funding > 0 THEN 1 ELSE 0 END) = 2 THEN 'Medium Diversity'
+              CASE WHEN privote_funding > 0 THEN 1 ELSE 0 END +
+              CASE WHEN gitcoin2_funding > 0 THEN 1 ELSE 0 END) = 2 THEN 'Medium Diversity'
         ELSE 'Low Diversity'
     END as funding_diversity
 
