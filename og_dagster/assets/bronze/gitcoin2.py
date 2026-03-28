@@ -3,26 +3,27 @@
 Bronze layer loader for Gitcoin 2.0 CSV snapshot.
 
 Reads CSV files from GITCOIN2_RAW_DATA_DIR and loads them into Postgres
-as bronze_gitcoin2_* tables.
+as bronze_gitcoin2_* tables using COPY FROM STDIN for fast bulk ingestion.
 
 CSV Files:
-- rounds.csv           -> bronze_gitcoin2_rounds
-- projects.csv         -> bronze_gitcoin2_projects
-- applications.csv     -> bronze_gitcoin2_applications
-- donations.csv        -> bronze_gitcoin2_donations        (large - streamed)
+- rounds.csv               -> bronze_gitcoin2_rounds
+- projects.csv             -> bronze_gitcoin2_projects
+- applications.csv         -> bronze_gitcoin2_applications
+- donations.csv            -> bronze_gitcoin2_donations        (195MB - streamed)
 - applications_payouts.csv -> bronze_gitcoin2_payouts
-- attestations.csv     -> bronze_gitcoin2_attestations
-- metadata_cache.csv   -> bronze_gitcoin2_metadata_cache
-- price_cache.csv      -> bronze_gitcoin2_price_cache
+- attestations.csv         -> bronze_gitcoin2_attestations     (77MB - streamed)
+- metadata_cache.csv       -> bronze_gitcoin2_metadata_cache   (195MB - streamed)
+- price_cache.csv          -> bronze_gitcoin2_price_cache
 """
 
+import csv
+import io
 import os
 from pathlib import Path
-from typing import List
 
 import polars as pl
+import psycopg2
 from dagster import AssetOut, Output, get_dagster_logger, multi_asset
-from sqlalchemy import create_engine
 
 from utils.graphql_helpers import (
     POSTGRES_DB,
@@ -42,101 +43,136 @@ GITCOIN2_RAW_DATA_DIR = os.getenv(
     "/app/raw_data/Gitcoin/17_March_2026",
 )
 
-# Tables to load: (csv_filename, table_name, stream_large)
-# stream_large=True means write in chunks (for 100k+ row files)
+# Tables to load: (csv_filename, table_name, large_file)
+# large_file=True means stream via COPY batches instead of loading all into memory
 CSV_TABLE_MAP = [
     ("rounds.csv",               "bronze_gitcoin2_rounds",          False),
-    ("projects.csv",             "bronze_gitcoin2_projects",         False),
-    ("applications.csv",         "bronze_gitcoin2_applications",     False),
+    ("projects.csv",             "bronze_gitcoin2_projects",         True),
+    ("applications.csv",         "bronze_gitcoin2_applications",     True),
     ("donations.csv",            "bronze_gitcoin2_donations",        True),
     ("applications_payouts.csv", "bronze_gitcoin2_payouts",          False),
-    ("attestations.csv",         "bronze_gitcoin2_attestations",     False),
-    ("metadata_cache.csv",       "bronze_gitcoin2_metadata_cache",   False),
+    ("attestations.csv",         "bronze_gitcoin2_attestations",     True),
+    ("metadata_cache.csv",       "bronze_gitcoin2_metadata_cache",   True),
     ("price_cache.csv",          "bronze_gitcoin2_price_cache",      False),
 ]
 
-STREAM_BATCH_SIZE = 50_000
-
-DB_URL = (
-    f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}"
-    f"@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-)
-engine = create_engine(DB_URL)
+COPY_BATCH_ROWS = 100_000  # rows per COPY batch for large files
 
 
 # ======================
 # HELPERS
 # ======================
 
-def _sanitize_df(df: pl.DataFrame) -> pl.DataFrame:
-    """Cast all columns to Utf8 (string) so Postgres accepts any value."""
-    return df.with_columns([pl.col(c).cast(pl.Utf8) for c in df.columns])
-
-
-def _load_csv(path: Path) -> pl.DataFrame:
-    """Read CSV with Polars, all columns as strings to avoid type conflicts."""
-    return pl.read_csv(
-        path,
-        infer_schema_length=0,   # treat every column as string
-        truncate_ragged_lines=True,
-        ignore_errors=True,
+def _get_conn():
+    return psycopg2.connect(
+        host=POSTGRES_HOST,
+        port=int(POSTGRES_PORT),
+        dbname=POSTGRES_DB,
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
     )
 
 
-def _write_df(df: pl.DataFrame, table_name: str, replace: bool) -> int:
-    mode = "replace" if replace else "append"
-    df.write_database(
-        table_name=table_name,
-        connection=engine,
-        if_table_exists=mode,
-    )
-    logger.info(f"Wrote {len(df)} rows to {table_name} ({mode})")
-    return len(df)
+def _sanitize_value(v: str) -> str:
+    """Escape special characters for Postgres COPY text format."""
+    if v is None:
+        return "\\N"
+    # Escape backslash first, then special COPY chars
+    return v.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
 
 
-def _load_and_write_small(csv_path: Path, table_name: str) -> int:
-    """Load entire CSV into memory then write once."""
-    df = _sanitize_df(_load_csv(csv_path))
-    return _write_df(df, table_name, replace=True)
+def _create_table(conn, table_name: str, columns: list[str]):
+    """Drop and recreate table with all TEXT columns."""
+    col_defs = ", ".join(f'"{c}" TEXT' for c in columns)
+    with conn.cursor() as cur:
+        cur.execute(f'DROP TABLE IF EXISTS "{table_name}" CASCADE')
+        cur.execute(f'CREATE TABLE "{table_name}" ({col_defs})')
+    conn.commit()
 
 
-def _load_and_write_large(csv_path: Path, table_name: str) -> int:
-    """Stream CSV in batches to keep memory bounded.
+def _copy_batch(conn, table_name: str, columns: list[str], rows: list[list[str]]):
+    """Write a batch of rows to Postgres using COPY FROM STDIN."""
+    buf = io.StringIO()
+    for row in rows:
+        buf.write("\t".join(_sanitize_value(v) for v in row) + "\n")
+    buf.seek(0)
+    col_list = ", ".join(f'"{c}"' for c in columns)
+    with conn.cursor() as cur:
+        cur.copy_expert(f'COPY "{table_name}" ({col_list}) FROM STDIN', buf)
+    conn.commit()
 
-    pl.read_csv_batched returns a BatchedCsvReader; next_batches(n) returns
-    the next n DataFrames as a list (or None when exhausted).
+
+def _load_csv_copy(csv_path: Path, table_name: str) -> int:
     """
+    Stream CSV file into Postgres via COPY FROM STDIN in batches.
+    Handles any file size without loading it all into memory.
+    """
+    conn = _get_conn()
     total = 0
-    first = True
+    created = False
 
-    reader = pl.read_csv_batched(
-        csv_path,
-        infer_schema_length=0,
-        truncate_ragged_lines=True,
-        ignore_errors=True,
-        batch_size=STREAM_BATCH_SIZE,
-    )
+    with open(csv_path, newline="", encoding="utf-8", errors="replace") as f:
+        reader = csv.reader(f)
+        columns = next(reader)  # header row
 
-    while True:
-        batches = reader.next_batches(5)  # fetch up to 5 chunks at once
-        if not batches:
-            break
-        for batch_df in batches:
-            if len(batch_df) == 0:
-                continue
-            df = _sanitize_df(batch_df)
-            total += _write_df(df, table_name, replace=first)
-            first = False
+        # Sanitize column names
+        columns = [c.strip().replace(" ", "_").replace(".", "_") for c in columns]
 
-    logger.info(f"Total streamed to {table_name}: {total} rows")
+        batch: list[list[str]] = []
+
+        for row in reader:
+            # Pad short rows, truncate long rows
+            if len(row) < len(columns):
+                row += [""] * (len(columns) - len(row))
+            elif len(row) > len(columns):
+                row = row[: len(columns)]
+
+            batch.append(row)
+
+            if len(batch) >= COPY_BATCH_ROWS:
+                if not created:
+                    _create_table(conn, table_name, columns)
+                    created = True
+                _copy_batch(conn, table_name, columns, batch)
+                total += len(batch)
+                logger.info(f"{table_name}: {total} rows written...")
+                batch = []
+
+        # Write remaining rows
+        if batch:
+            if not created:
+                _create_table(conn, table_name, columns)
+            _copy_batch(conn, table_name, columns, batch)
+            total += len(batch)
+
+    conn.close()
+    logger.info(f"{table_name}: done — {total} total rows")
     return total
 
 
-def _read_table(table_name: str) -> pl.DataFrame:
-    return pl.read_database(
-        query=f"SELECT * FROM {table_name} LIMIT 1",
-        connection=engine,
-    )
+def _load_csv_small(csv_path: Path, table_name: str) -> int:
+    """Load small CSV entirely into memory, then COPY in one shot."""
+    conn = _get_conn()
+
+    with open(csv_path, newline="", encoding="utf-8", errors="replace") as f:
+        reader = csv.reader(f)
+        columns = next(reader)
+        columns = [c.strip().replace(" ", "_").replace(".", "_") for c in columns]
+        rows = []
+        for row in reader:
+            if len(row) < len(columns):
+                row += [""] * (len(columns) - len(row))
+            elif len(row) > len(columns):
+                row = row[: len(columns)]
+            rows.append(row)
+
+    _create_table(conn, table_name, columns)
+    if rows:
+        _copy_batch(conn, table_name, columns, rows)
+    conn.close()
+
+    logger.info(f"{table_name}: {len(rows)} rows loaded")
+    return len(rows)
 
 
 # ======================
@@ -157,7 +193,7 @@ def _read_table(table_name: str) -> pl.DataFrame:
             tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
         ),
         "bronze__gitcoin2_donations": AssetOut(
-            metadata={"description": "Gitcoin 2.0 donation transactions from CSV snapshot (497k rows)"},
+            metadata={"description": "Gitcoin 2.0 donation transactions from CSV snapshot (195MB)"},
             tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
         ),
         "bronze__gitcoin2_payouts": AssetOut(
@@ -165,11 +201,11 @@ def _read_table(table_name: str) -> pl.DataFrame:
             tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
         ),
         "bronze__gitcoin2_attestations": AssetOut(
-            metadata={"description": "Gitcoin 2.0 on-chain attestations from CSV snapshot"},
+            metadata={"description": "Gitcoin 2.0 on-chain attestations from CSV snapshot (77MB)"},
             tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
         ),
         "bronze__gitcoin2_metadata_cache": AssetOut(
-            metadata={"description": "Gitcoin 2.0 IPFS metadata cache from CSV snapshot"},
+            metadata={"description": "Gitcoin 2.0 IPFS metadata cache from CSV snapshot (195MB)"},
             tags={"layer": "bronze", "source": "gitcoin2", "domain": "grants"},
         ),
         "bronze__gitcoin2_price_cache": AssetOut(
@@ -184,8 +220,9 @@ def load_gitcoin2_csv_data():
     """
     Load Gitcoin 2.0 historical CSV snapshot into Postgres bronze tables.
 
-    Reads from GITCOIN2_RAW_DATA_DIR (default: /app/raw_data/Gitcoin/17_March_2026).
-    Large files (donations) are streamed in 50k-row batches to bound memory usage.
+    Uses psycopg2 COPY FROM STDIN for bulk ingestion — ~100x faster than
+    individual INSERT statements. Large files (>30MB) are streamed in
+    100k-row batches to keep memory bounded.
     """
     data_dir = Path(GITCOIN2_RAW_DATA_DIR)
     logger.info(f"Loading Gitcoin2 CSV data from: {data_dir}")
@@ -197,60 +234,39 @@ def load_gitcoin2_csv_data():
         )
 
     counts = {}
-    for csv_file, table_name, stream_large in CSV_TABLE_MAP:
+    for csv_file, table_name, large_file in CSV_TABLE_MAP:
         csv_path = data_dir / csv_file
         if not csv_path.exists():
             logger.warning(f"File not found, skipping: {csv_path}")
             counts[table_name] = 0
             continue
 
-        logger.info(f"Loading {csv_file} -> {table_name} (stream={stream_large})")
-        if stream_large:
-            counts[table_name] = _load_and_write_large(csv_path, table_name)
+        size_mb = csv_path.stat().st_size / 1_048_576
+        logger.info(f"Loading {csv_file} ({size_mb:.1f}MB) -> {table_name}")
+
+        if large_file:
+            counts[table_name] = _load_csv_copy(csv_path, table_name)
         else:
-            counts[table_name] = _load_and_write_small(csv_path, table_name)
+            counts[table_name] = _load_csv_small(csv_path, table_name)
 
     summary = ", ".join(f"{k.replace('bronze_gitcoin2_', '')}: {v}" for k, v in counts.items())
     logger.info(f"Gitcoin2 CSV load complete — {summary}")
 
-    # Return minimal DataFrames as asset outputs (full data is in Postgres)
-    yield Output(
-        pl.read_database("SELECT * FROM bronze_gitcoin2_rounds LIMIT 5", engine),
-        "bronze__gitcoin2_rounds",
-        metadata={"row_count": counts.get("bronze_gitcoin2_rounds", 0)},
-    )
-    yield Output(
-        pl.read_database("SELECT * FROM bronze_gitcoin2_projects LIMIT 5", engine),
-        "bronze__gitcoin2_projects",
-        metadata={"row_count": counts.get("bronze_gitcoin2_projects", 0)},
-    )
-    yield Output(
-        pl.read_database("SELECT * FROM bronze_gitcoin2_applications LIMIT 5", engine),
-        "bronze__gitcoin2_applications",
-        metadata={"row_count": counts.get("bronze_gitcoin2_applications", 0)},
-    )
-    yield Output(
-        pl.read_database("SELECT * FROM bronze_gitcoin2_donations LIMIT 5", engine),
-        "bronze__gitcoin2_donations",
-        metadata={"row_count": counts.get("bronze_gitcoin2_donations", 0)},
-    )
-    yield Output(
-        pl.read_database("SELECT * FROM bronze_gitcoin2_payouts LIMIT 5", engine),
-        "bronze__gitcoin2_payouts",
-        metadata={"row_count": counts.get("bronze_gitcoin2_payouts", 0)},
-    )
-    yield Output(
-        pl.read_database("SELECT * FROM bronze_gitcoin2_attestations LIMIT 5", engine),
-        "bronze__gitcoin2_attestations",
-        metadata={"row_count": counts.get("bronze_gitcoin2_attestations", 0)},
-    )
-    yield Output(
-        pl.read_database("SELECT * FROM bronze_gitcoin2_metadata_cache LIMIT 5", engine),
-        "bronze__gitcoin2_metadata_cache",
-        metadata={"row_count": counts.get("bronze_gitcoin2_metadata_cache", 0)},
-    )
-    yield Output(
-        pl.read_database("SELECT * FROM bronze_gitcoin2_price_cache LIMIT 5", engine),
-        "bronze__gitcoin2_price_cache",
-        metadata={"row_count": counts.get("bronze_gitcoin2_price_cache", 0)},
-    )
+    # Yield minimal outputs (data is in Postgres)
+    conn = _get_conn()
+    for asset_key, table_name in [
+        ("bronze__gitcoin2_rounds",        "bronze_gitcoin2_rounds"),
+        ("bronze__gitcoin2_projects",      "bronze_gitcoin2_projects"),
+        ("bronze__gitcoin2_applications",  "bronze_gitcoin2_applications"),
+        ("bronze__gitcoin2_donations",     "bronze_gitcoin2_donations"),
+        ("bronze__gitcoin2_payouts",       "bronze_gitcoin2_payouts"),
+        ("bronze__gitcoin2_attestations",  "bronze_gitcoin2_attestations"),
+        ("bronze__gitcoin2_metadata_cache","bronze_gitcoin2_metadata_cache"),
+        ("bronze__gitcoin2_price_cache",   "bronze_gitcoin2_price_cache"),
+    ]:
+        yield Output(
+            counts.get(table_name, 0),
+            asset_key,
+            metadata={"row_count": counts.get(table_name, 0)},
+        )
+    conn.close()
