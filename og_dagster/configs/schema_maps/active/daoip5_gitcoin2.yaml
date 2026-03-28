@@ -793,6 +793,76 @@ schemas:
           type: string
           required: false
 
+  # ----------------------------------------------------------
+  # DAOIP-3 Attestations Schema (on-chain contributor attestations)
+  # Columns: uid, chain_id, fee, recipient, ref_uid,
+  #          projects_contributed, rounds_contributed,
+  #          chain_ids_contributed, total_usdamount, timestamp,
+  #          metadata_cid, metadata
+  # ----------------------------------------------------------
+  attestations:
+    table: bronze_gitcoin2_attestations
+    target_table: silver_gitcoin2_attestations
+
+    fields:
+      id:
+        source: uid
+        type: string
+        required: true
+        transform: "lambda v: f'daoip-5:gitcoin2:attestation:{v}' if v else None"
+
+      recipient:
+        source: recipient
+        type: string
+        required: false
+
+      refUID:
+        source: ref_uid
+        type: string
+        required: false
+
+      timestamp:
+        source: timestamp
+        type: datetime
+        required: false
+
+      contentURI:
+        source: metadata_cid
+        type: string
+        required: false
+        transform: "lambda v: f'ipfs://{v}' if v else None"
+
+    extensions:
+      io.gitcoin2:
+        chainId:
+          source: chain_id
+          type: integer
+          required: false
+        fee:
+          source: fee
+          type: float
+          required: false
+        projectsContributed:
+          source: projects_contributed
+          type: integer
+          required: false
+        roundsContributed:
+          source: rounds_contributed
+          type: integer
+          required: false
+        chainIdsContributed:
+          source: chain_ids_contributed
+          type: json
+          required: false
+        totalUsdAmount:
+          source: total_usdamount
+          type: float
+          required: false
+        metadata:
+          source: metadata
+          type: json
+          required: false
+
 meta:
   daoip_version: 5
   author: "OpenGrants Platform"
