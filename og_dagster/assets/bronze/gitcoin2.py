@@ -19,7 +19,11 @@ CSV Files:
 import csv
 import io
 import os
+import sys
 from pathlib import Path
+
+# Some CSV fields (e.g. metadata_cache JSON blobs) exceed the default 128KB limit
+csv.field_size_limit(sys.maxsize)
 
 import polars as pl
 import psycopg2
