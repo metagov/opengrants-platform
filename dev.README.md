@@ -20,6 +20,7 @@ Yaml Schema check:
 
 `yamale -s <Schema_manifest file path>  <Source schema file path>
 
+/home/torch/opengrants-platform/og_dagster/configs/schema_maps/schema_manifest.yaml
 
 Docker version 28.5.1, build e180ab8
 
