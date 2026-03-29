@@ -63,7 +63,7 @@ export default async function handler(
 
     // Cross-platform comparison: Average grant size per platform
     const avgGrantSize = await query(`
-      SELECT 
+      SELECT
         'SCF' as platform,
         AVG(CAST("fundsApprovedInUSD" AS numeric)) as avg_grant_size,
         COUNT(*) as project_count,
@@ -71,7 +71,7 @@ export default async function handler(
       FROM silver_scf_grant_applications
       WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
       UNION ALL
-      SELECT 
+      SELECT
         'Giveth' as platform,
         AVG(CAST("io.giveth.totalDonations" AS numeric)) as avg_grant_size,
         COUNT(DISTINCT id) as project_count,
@@ -79,19 +79,30 @@ export default async function handler(
       FROM silver_giveth_projects
       WHERE "io.giveth.totalDonations" IS NOT NULL
       UNION ALL
-      SELECT 
+      SELECT
         'Privote' as platform,
         AVG(CAST("fundsApprovedInUSD" AS numeric)) as avg_grant_size,
         COUNT(*) as project_count,
         SUM(CAST("fundsApprovedInUSD" AS numeric)) as total_funding
       FROM silver_privote_grant_applications
       WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
-    `);
+      UNION ALL
+      SELECT
+        'Gitcoin2' as platform,
+        AVG(CAST("fundsApprovedInUSD" AS numeric)) as avg_grant_size,
+        COUNT(*) as project_count,
+        SUM(CAST("fundsApprovedInUSD" AS numeric)) as total_funding
+      FROM silver_gitcoin2_grant_applications
+      WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
+    `).catch((e: Error) => {
+      console.error('avgGrantSize query failed:', e.message);
+      return [];
+    });
 
     // Funding distribution curve data (top projects per platform)
     const fundingDistribution = await query(`
       WITH scf_ranked AS (
-        SELECT 
+        SELECT
           'SCF' as platform,
           name as project_name,
           CAST("fundsApprovedInUSD" AS numeric) as funding,
@@ -100,7 +111,7 @@ export default async function handler(
         WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
       ),
       giveth_ranked AS (
-        SELECT 
+        SELECT
           'Giveth' as platform,
           name as project_name,
           CAST("io.giveth.totalDonations" AS numeric) as funding,
@@ -112,12 +123,21 @@ export default async function handler(
         ) deduped
       ),
       privote_ranked AS (
-        SELECT 
+        SELECT
           'Privote' as platform,
           name as project_name,
           CAST("fundsApprovedInUSD" AS numeric) as funding,
           ROW_NUMBER() OVER (ORDER BY CAST("fundsApprovedInUSD" AS numeric) DESC) as rank
         FROM silver_privote_grant_applications
+        WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
+      ),
+      gitcoin2_ranked AS (
+        SELECT
+          'Gitcoin2' as platform,
+          name as project_name,
+          CAST("fundsApprovedInUSD" AS numeric) as funding,
+          ROW_NUMBER() OVER (ORDER BY CAST("fundsApprovedInUSD" AS numeric) DESC) as rank
+        FROM silver_gitcoin2_grant_applications
         WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
       )
       SELECT * FROM scf_ranked WHERE rank <= 20
@@ -125,8 +145,13 @@ export default async function handler(
       SELECT * FROM giveth_ranked WHERE rank <= 20
       UNION ALL
       SELECT * FROM privote_ranked WHERE rank <= 20
+      UNION ALL
+      SELECT * FROM gitcoin2_ranked WHERE rank <= 20
       ORDER BY platform, rank
-    `);
+    `).catch((e: Error) => {
+      console.error('fundingDistribution query failed:', e.message);
+      return [];
+    });
 
     res.status(200).json({
       platforms: ecosystemData || [],

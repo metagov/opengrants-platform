@@ -27,6 +27,8 @@ const platformRoutes: { [key: string]: string } = {
   scf: "/system/scf",
   giveth: "/system/giveth",
   privote: "/system/privote",
+  ens: "/system/ens",
+  gitcoin2: "/system/gitcoin",
 };
 
 function FundingChart({ platforms }: { platforms: any[] }) {

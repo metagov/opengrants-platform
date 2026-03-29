@@ -98,6 +98,7 @@ export default function Ecosystem() {
     giveth: "purple.500",
     scf: "orange.500",
     privote: "teal.500",
+    gitcoin2: "green.700",
   };
 
   const platformDisplayNames: { [key: string]: string } = {
@@ -105,6 +106,7 @@ export default function Ecosystem() {
     scf: "Stellar Community Fund",
     giveth: "Giveth",
     privote: "Privote (GG24 Privacy)",
+    gitcoin2: "Gitcoin",
   };
 
   const getPlatformName = (key: string) => platformDisplayNames[key] || key;
@@ -134,6 +136,10 @@ export default function Ecosystem() {
       rank: Number(d.rank),
       privote: Number(d.funding) || 0,
     }));
+    const gitcoin2Data = (data?.fundingDistribution || []).filter(d => d.platform === 'Gitcoin2').map(d => ({
+      rank: Number(d.rank),
+      gitcoin2: Number(d.funding) || 0,
+    }));
 
     const ranks = Array.from({ length: 20 }, (_, i) => i + 1);
     return ranks.map(rank => ({
@@ -141,6 +147,7 @@ export default function Ecosystem() {
       SCF: scfData.find(d => d.rank === rank)?.scf || 0,
       Giveth: givethData.find(d => d.rank === rank)?.giveth || 0,
       Privote: privoteData.find(d => d.rank === rank)?.privote || 0,
+      Gitcoin: gitcoin2Data.find(d => d.rank === rank)?.gitcoin2 || 0,
     }));
   })();
 
@@ -374,6 +381,7 @@ export default function Ecosystem() {
                     { dataKey: 'SCF', color: brandColors.olive, strokeWidth: 2, dot: { r: 3 } },
                     { dataKey: 'Giveth', color: brandColors.deepPurple, strokeWidth: 2, dot: { r: 3 } },
                     { dataKey: 'Privote', color: brandColors.teal, strokeWidth: 2, dot: { r: 3 } },
+                    { dataKey: 'Gitcoin', color: '#00433B', strokeWidth: 2, dot: { r: 3 } },
                   ]}
                   height={300}
                   showLegend
