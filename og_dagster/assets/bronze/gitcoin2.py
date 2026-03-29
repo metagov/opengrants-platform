@@ -70,6 +70,11 @@ CSV_TABLE_MAP = [
 
 COPY_BATCH_ROWS = 100_000  # rows per COPY batch for large files
 
+# When GITCOIN2_OBSERVE_ONLY=true, skip CSV loading and instead read row counts
+# from existing bronze tables — lets Dagster "see" tables that were loaded outside
+# of a Dagster run (e.g. after a deployment killed an in-flight bronze job).
+GITCOIN2_OBSERVE_ONLY = os.getenv("GITCOIN2_OBSERVE_ONLY", "false").lower() == "true"
+
 
 # ======================
 # HELPERS
@@ -187,6 +192,36 @@ def _load_csv_small(csv_path: Path, table_name: str) -> int:
     return len(rows)
 
 
+def _observe_existing_tables() -> dict:
+    """
+    Query the DB for row counts on existing bronze_gitcoin2_* tables.
+    Used when GITCOIN2_OBSERVE_ONLY=true to register pre-existing tables
+    in Dagster's event log without re-loading CSVs.
+    Returns {table_name: row_count}. Tables that don't exist get count=0.
+    """
+    conn = _get_conn()
+    counts = {}
+    try:
+        for _, table_name, _ in CSV_TABLE_MAP:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT EXISTS (SELECT FROM information_schema.tables "
+                    "WHERE table_schema = 'public' AND table_name = %s)",
+                    [table_name],
+                )
+                exists = cur.fetchone()[0]
+                if exists:
+                    cur.execute(f'SELECT COUNT(*) FROM "{table_name}"')
+                    counts[table_name] = cur.fetchone()[0]
+                    logger.info(f"[observe] {table_name}: {counts[table_name]} rows")
+                else:
+                    counts[table_name] = 0
+                    logger.warning(f"[observe] {table_name}: does not exist")
+    finally:
+        conn.close()
+    return counts
+
+
 # ======================
 # MAIN DAGSTER ASSET
 # ======================
@@ -267,7 +302,28 @@ def load_gitcoin2_csv_data():
     Uses psycopg2 COPY FROM STDIN for bulk ingestion — ~100x faster than
     individual INSERT statements. Large files (>30MB) are streamed in
     100k-row batches to keep memory bounded.
+
+    Observe mode (GITCOIN2_OBSERVE_ONLY=true):
+    Skip CSV loading — query existing table row counts and register them in
+    Dagster's event log. Use this when bronze tables already exist in the DB
+    but Dagster shows them as unmateriailzed (e.g. after a killed run).
     """
+    if GITCOIN2_OBSERVE_ONLY:
+        logger.info("GITCOIN2_OBSERVE_ONLY=true — reading row counts from existing tables")
+        counts = _observe_existing_tables()
+        missing = [t for t, n in counts.items() if n == 0]
+        if missing:
+            raise Exception(
+                f"Observe mode: the following tables are missing or empty in the DB: {missing}\n"
+                "Run the full bronze_gitcoin2_job (with GITCOIN2_OBSERVE_ONLY unset) to load them."
+            )
+        summary = ", ".join(f"{k.replace('bronze_gitcoin2_', '')}: {v}" for k, v in counts.items())
+        logger.info(f"Observe complete — {summary}")
+        for _, table_name, _ in CSV_TABLE_MAP:
+            asset_key = table_name.replace("bronze_gitcoin2_", "bronze__gitcoin2_")
+            yield Output(counts[table_name], asset_key, metadata={"row_count": counts[table_name]})
+        return
+
     data_dir = Path(GITCOIN2_RAW_DATA_DIR)
     logger.info(f"Loading Gitcoin2 CSV data from: {data_dir}")
 

@@ -10,8 +10,10 @@ export default async function handler(
   }
 
   try {
+    // Gold queries are wrapped individually — a stale or rebuilding gold table
+    // won't crash the entire endpoint; affected sections just return empty.
     const ecosystemData = await query(`
-      SELECT 
+      SELECT
         platform,
         total_projects,
         total_grant_pools,
@@ -22,7 +24,10 @@ export default async function handler(
         funding_share_pct
       FROM gold__ecosystem_overview
       ORDER BY total_funding_usd DESC NULLS LAST
-    `);
+    `).catch((e: Error) => {
+      console.error('ecosystem_overview query failed:', e.message);
+      return [];
+    });
 
     const crossPlatform = await query(`
       SELECT
@@ -38,17 +43,23 @@ export default async function handler(
       WHERE platforms_present > 1
       ORDER BY total_funding_across_platforms DESC
       LIMIT 10
-    `);
+    `).catch((e: Error) => {
+      console.error('cross_platform query failed:', e.message);
+      return [];
+    });
 
     const scfSummary = await query(`
-      SELECT 
+      SELECT
         total_grant_pools as total_rounds,
         total_funding_distributed_usd as total_awarded,
         total_funding_distributed_usd as total_paid,
         avg_funding_per_project as avg_per_round
       FROM gold__scf_system_profile
       LIMIT 1
-    `);
+    `).catch((e: Error) => {
+      console.error('scf_system_profile query failed:', e.message);
+      return [];
+    });
 
     // Cross-platform comparison: Average grant size per platform
     const avgGrantSize = await query(`

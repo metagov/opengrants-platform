@@ -220,6 +220,20 @@ etl_privote_full_job = define_asset_job(
     description="Full Privote pipeline: Subgraph -> Bronze -> Silver -> Gold (dbt).",
 )
 
+etl_gitcoin2_full_job = define_asset_job(
+    name="etl_gitcoin2_full_job",
+    selection=AssetSelection.assets(
+        load_gitcoin2_csv_data,
+        silver_gitcoin2_grant_pools,
+        silver_gitcoin2_projects,
+        silver_gitcoin2_grant_applications,
+        silver_gitcoin2_donations,
+        silver_gitcoin2_payouts,
+        silver_gitcoin2_attestations,
+    ) | AssetSelection.assets(gold_dbt_assets),
+    description="Full Gitcoin 2.0 pipeline: CSV files -> Bronze -> Silver -> Gold (dbt).",
+)
+
 # =============================================================================
 # Unified Definitions
 # =============================================================================
@@ -274,6 +288,7 @@ defs = Definitions(
         etl_scf_full_job,
         etl_giveth_full_job,
         etl_privote_full_job,
+        etl_gitcoin2_full_job,
     ],
     sensors=[
         airtable_scf_sensor,

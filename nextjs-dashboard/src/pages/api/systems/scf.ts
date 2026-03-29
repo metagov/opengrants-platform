@@ -282,7 +282,7 @@ export default async function handler(
         COALESCE(SUM("org.stellar.communityfund.totalAwardedUSD"), 0) as total_awarded_usd,
         COALESCE(SUM("org.stellar.communityfund.totalPaidUSD"), 0) as total_paid_usd,
         ROUND(
-          COALESCE(SUM("org.stellar.communityfund.totalPaidUSD"), 0) / NULLIF(COALESCE(SUM("org.stellar.communityfund.totalAwardedUSD"), 0), 0) * 100,
+          COALESCE(SUM("org.stellar.communityfund.totalPaidUSD"), 0)::numeric / NULLIF(COALESCE(SUM("org.stellar.communityfund.totalAwardedUSD"), 0), 0) * 100,
         1) as payment_rate_pct
       FROM silver_scf_grant_applications
       WHERE "org.stellar.communityfund.awardType" IS NOT NULL AND "org.stellar.communityfund.awardType" != ''
