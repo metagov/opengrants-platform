@@ -6,7 +6,7 @@ __pycache__/
 
 .env
 .env.local
-raw_data/
+raw_data/Gitcoin/
 duckdb/
 dbt_project/target/
 dlt_pipelines/

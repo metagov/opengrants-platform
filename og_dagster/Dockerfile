@@ -35,6 +35,9 @@ RUN update-ca-certificates
 # Copy application code (build context = repo root)
 COPY og_dagster/ /app/
 COPY dbt_project/ /app/dbt_project/
+# Raw data for file-based bronze loaders (ENS JSON, SCF CSVs).
+# Gitcoin CSVs are excluded via .dockerignore (600MB, loaded via localhost).
+COPY raw_data/ /app/raw_data/
 
 EXPOSE 3000
 
