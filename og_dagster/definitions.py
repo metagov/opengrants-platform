@@ -71,7 +71,7 @@ class _DbtTranslator(DagsterDbtTranslator):
         return super().get_asset_key(dbt_resource_props)
 
 
-@dbt_assets(manifest=MANIFEST_PATH, select="tag:gold", dagster_dbt_translator=_DbtTranslator())
+@dbt_assets(manifest=MANIFEST_PATH, select="tag:gold", dagster_dbt_translator=_DbtTranslator(), group_name="gold_dbt")
 def gold_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     """Run dbt models tagged with 'gold' for analytics layer."""
     yield from dbt.cli(["build"], context=context).stream()
