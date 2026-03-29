@@ -7,7 +7,7 @@ to avoid spawning multiple gRPC code server processes.
 import os
 from pathlib import Path
 
-from dagster import AssetSelection, Definitions, define_asset_job
+from dagster import AssetSelection, Definitions, define_asset_job, multiprocess_executor
 from dagster_dbt import DbtCliResource, dbt_assets, DagsterDbtTranslator
 
 # --- Bronze Assets ---
@@ -162,7 +162,8 @@ silver_gitcoin2_etl_job = define_asset_job(
         silver_gitcoin2_payouts,
         silver_gitcoin2_attestations,
     ),
-    description="Transform Gitcoin 2.0 CSV data into DAOIP-5 compliant Silver layer with co.gitcoin extensions.",
+    executor_def=multiprocess_executor.configured({"max_concurrent": 1}),
+    description="Transform Gitcoin 2.0 CSV data into DAOIP-5 compliant Silver layer with co.gitcoin extensions (sequential to stay within 2GB RAM).",
 )
 
 
