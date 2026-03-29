@@ -30,7 +30,7 @@ SELECT
     0 as pending_applications,
     0 as approval_rate_pct,
 
-    -- Donation stats (donations table uses io.gitcoin2.* — stale namespace from pre-rename materialization)
+    -- Donation stats (donations table uses co.gitcoin.* — stale namespace from pre-rename materialization)
     COALESCE(don_stats.donations_count, 0) as verified_donations_count,
     COALESCE(don_stats.donations_total_usd, 0) as verified_donations_usd,
     COALESCE(don_stats.unique_donors, 0) as verified_unique_donors,

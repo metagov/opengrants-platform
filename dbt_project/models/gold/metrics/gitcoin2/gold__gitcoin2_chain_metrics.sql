@@ -40,30 +40,30 @@ pool_by_chain AS (
 
 projects_by_chain AS (
     SELECT
-        "io.gitcoin2.chainId"::integer as chain_id,
+        "co.gitcoin.chainId"::integer as chain_id,
         COUNT(*) as project_count
     FROM {{ source('silver', 'silver_gitcoin2_projects') }}
-    GROUP BY "io.gitcoin2.chainId"::integer
+    GROUP BY "co.gitcoin.chainId"::integer
 ),
 
 donations_by_chain AS (
     SELECT
-        "io.gitcoin2.chainId"::integer as chain_id,
+        "co.gitcoin.chainId"::integer as chain_id,
         COUNT(*) as donation_count,
         COALESCE(SUM("amountInUsd"::numeric), 0) as donation_volume_usd,
         COUNT(DISTINCT "donorAddress") as unique_donors,
         COALESCE(AVG("amountInUsd"::numeric), 0) as avg_donation_usd
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
-    GROUP BY "io.gitcoin2.chainId"::integer
+    GROUP BY "co.gitcoin.chainId"::integer
 ),
 
 payouts_by_chain AS (
     SELECT
-        "io.gitcoin2.chainId"::integer as chain_id,
+        "co.gitcoin.chainId"::integer as chain_id,
         COUNT(*) as payout_count,
         COALESCE(SUM("amountInUsd"::numeric), 0) as payout_volume_usd
     FROM {{ source('silver', 'silver_gitcoin2_payouts') }}
-    GROUP BY "io.gitcoin2.chainId"::integer
+    GROUP BY "co.gitcoin.chainId"::integer
 )
 
 SELECT

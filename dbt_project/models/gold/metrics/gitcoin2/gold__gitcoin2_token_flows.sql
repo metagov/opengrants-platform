@@ -2,7 +2,7 @@
 
 -- Gitcoin 2.0 Token Flow Analysis
 -- Which tokens move through the protocol on each chain
--- Donations table uses io.gitcoin2.* namespace (materialized before rename)
+-- Donations table uses co.gitcoin.* namespace (materialized before rename)
 
 WITH known_tokens AS (
     SELECT * FROM (VALUES
@@ -47,8 +47,8 @@ chain_names AS (
 
 token_stats AS (
     SELECT
-        "io.gitcoin2.chainId"::integer as chain_id,
-        LOWER("io.gitcoin2.tokenAddress") as token_address,
+        "co.gitcoin.chainId"::integer as chain_id,
+        LOWER("co.gitcoin.tokenAddress") as token_address,
         COUNT(*) as donation_count,
         COALESCE(SUM("amountInUsd"::numeric), 0) as total_donated_usd,
         COUNT(DISTINCT "donorAddress") as unique_donors,
@@ -57,11 +57,11 @@ token_stats AS (
         COALESCE(AVG("amountInUsd"::numeric), 0) as avg_donation_usd,
         COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "amountInUsd"::numeric)::numeric, 0) as median_donation_usd
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
-    WHERE "io.gitcoin2.tokenAddress" IS NOT NULL
-      AND "io.gitcoin2.tokenAddress" != ''
+    WHERE "co.gitcoin.tokenAddress" IS NOT NULL
+      AND "co.gitcoin.tokenAddress" != ''
     GROUP BY
-        "io.gitcoin2.chainId"::integer,
-        LOWER("io.gitcoin2.tokenAddress")
+        "co.gitcoin.chainId"::integer,
+        LOWER("co.gitcoin.tokenAddress")
 ),
 
 chain_totals AS (

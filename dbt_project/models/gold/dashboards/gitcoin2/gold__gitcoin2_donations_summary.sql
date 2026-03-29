@@ -4,8 +4,8 @@
 WITH donations_by_round AS (
     SELECT
         d."grantPoolId",
-        d."io.gitcoin2.chainId"::integer as chain_id,
-        d."io.gitcoin2.tokenAddress" as token_address,
+        d."co.gitcoin.chainId"::integer as chain_id,
+        d."co.gitcoin.tokenAddress" as token_address,
         COUNT(*) as donation_count,
         COUNT(DISTINCT d."donorAddress") as unique_donors,
         COUNT(DISTINCT d."projectId") as projects_receiving,
@@ -14,7 +14,7 @@ WITH donations_by_round AS (
         MIN(d."timestamp") as first_donation_at,
         MAX(d."timestamp") as last_donation_at
     FROM {{ source('silver', 'silver_gitcoin2_donations') }} d
-    GROUP BY d."grantPoolId", d."io.gitcoin2.chainId", d."io.gitcoin2.tokenAddress"
+    GROUP BY d."grantPoolId", d."co.gitcoin.chainId", d."co.gitcoin.tokenAddress"
 )
 
 SELECT

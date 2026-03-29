@@ -2,7 +2,7 @@
 
 -- Gitcoin Passport Attestation Impact
 -- Compares donation behavior of attested (Passport-verified) vs non-attested donors
--- Attestations table uses co.gitcoin.* namespace; donations uses io.gitcoin2.*
+-- Attestations table uses co.gitcoin.* namespace; donations uses co.gitcoin.*
 
 WITH attested_donors AS (
     -- Unique wallet addresses that hold a Gitcoin Passport attestation
@@ -30,7 +30,7 @@ donor_behavior AS (
         COUNT(*) as total_donations,
         COUNT(DISTINCT d."grantPoolId") as rounds_donated_to,
         COUNT(DISTINCT d."projectId") as projects_supported,
-        COUNT(DISTINCT d."io.gitcoin2.chainId") as chains_donated_on,
+        COUNT(DISTINCT d."co.gitcoin.chainId") as chains_donated_on,
         COALESCE(SUM(d."amountInUsd"::numeric), 0) as total_donated_usd,
         COALESCE(AVG(d."amountInUsd"::numeric), 0) as avg_donation_usd,
         COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY d."amountInUsd"::numeric), 0) as median_donation_usd

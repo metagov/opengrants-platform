@@ -7,7 +7,7 @@
 -- High amplification + high unique donors = healthy democratic QF
 -- High top-donor concentration = potential sybil / whale dominance risk
 --
--- grant_pools uses co.gitcoin.* namespace; donations uses io.gitcoin2.*
+-- grant_pools uses co.gitcoin.* namespace; donations uses co.gitcoin.*
 
 WITH raw_donation_stats AS (
     -- Per-donation aggregation: counts, totals, avg, median

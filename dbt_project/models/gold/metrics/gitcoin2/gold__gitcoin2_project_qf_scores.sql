@@ -4,7 +4,7 @@
 -- QF formula: matching ∝ (∑ √donation_i)² − ∑ donation_i
 -- Breadth of unique donors matters more than total donation size
 --
--- Projects + donations use io.gitcoin2.* namespace (materialized before rename)
+-- Projects + donations use co.gitcoin.* namespace (materialized before rename)
 -- Payouts link via applicationId — matching_received will be 0 until
 -- silver_gitcoin2_grant_applications is materialized (re-run silver ETL)
 

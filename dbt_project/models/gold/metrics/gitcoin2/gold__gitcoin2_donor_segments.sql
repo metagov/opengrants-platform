@@ -2,7 +2,7 @@
 
 -- Gitcoin 2.0 Donor Segmentation
 -- QF health signal: community breadth, loyalty, and concentration
--- Donations table uses io.gitcoin2.* namespace (materialized before rename)
+-- Donations table uses co.gitcoin.* namespace (materialized before rename)
 
 WITH donor_stats AS (
     SELECT
@@ -10,7 +10,7 @@ WITH donor_stats AS (
         COUNT(*) as total_donations,
         COUNT(DISTINCT "grantPoolId") as rounds_donated_to,
         COUNT(DISTINCT "projectId") as projects_supported,
-        COUNT(DISTINCT "io.gitcoin2.chainId") as chains_donated_on,
+        COUNT(DISTINCT "co.gitcoin.chainId") as chains_donated_on,
         COALESCE(SUM("amountInUsd"::numeric), 0) as total_donated_usd,
         COALESCE(AVG("amountInUsd"::numeric), 0) as avg_donation_usd,
         MIN("timestamp") as first_donation_at,

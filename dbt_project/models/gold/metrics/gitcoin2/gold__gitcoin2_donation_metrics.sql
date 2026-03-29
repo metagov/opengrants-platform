@@ -35,7 +35,7 @@ donor_engagement AS (
 
 chain_breakdown AS (
     SELECT
-        COUNT(DISTINCT "io.gitcoin2.chainId") as chains_with_donations
+        COUNT(DISTINCT "co.gitcoin.chainId") as chains_with_donations
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
 )
 
