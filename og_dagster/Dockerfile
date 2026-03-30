@@ -1,5 +1,5 @@
 # Stage 1 — Base builder
-FROM python:3.12-slim AS base
+FROM python:3.12-slim-bookworm AS base
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -12,7 +12,7 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Stage 2 — Final runtime
-FROM python:3.12-slim AS final
+FROM python:3.12-slim-bookworm AS final
 WORKDIR /app
 ENV PYTHONPATH=/app
 
@@ -30,7 +30,9 @@ COPY --from=base /usr/local/bin /usr/local/bin
 # Bake in DigitalOcean Postgres CA cert for SSL connections
 COPY nextjs-dashboard/ca.crt /usr/local/share/ca-certificates/do-postgres.crt
 COPY nextjs-dashboard/ca.crt /app/ca.crt
-RUN update-ca-certificates
+RUN apt-get update && apt-get install -y ca-certificates --no-install-recommends \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy application code (build context = repo root)
 COPY og_dagster/ /app/
