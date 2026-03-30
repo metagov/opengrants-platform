@@ -1,4 +1,5 @@
 from dagster import Output, asset
+from utils.data_quality import write_data_quality_report
 from utils.db import drop_table_cascade
 from utils.translate_to_silver import build_silver
 
@@ -12,7 +13,7 @@ from utils.translate_to_silver import build_silver
 def silver_giveth_projects(context):
     engine = context.resources.database_engine
 
-    df_silver = build_silver(
+    df_silver, null_issues = build_silver(
         engine=engine,
         schema_path="/app/configs/schema_maps/active/daoip5_giveth.yaml",
         section="projects",
@@ -25,6 +26,7 @@ def silver_giveth_projects(context):
         connection=engine,
         if_table_exists="replace",
     )
+    write_data_quality_report("giveth", "silver_giveth_projects", df_silver.height, null_issues, [], context.run_id)
 
     context.log.info(f"✅ Saved {df_silver.height} rows to silver_giveth_projects")
     return Output(df_silver)

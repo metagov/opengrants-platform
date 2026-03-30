@@ -30,6 +30,7 @@ import os
 
 from dagster import Output, asset
 from sqlalchemy import text
+from utils.data_quality import write_data_quality_report
 from utils.db import drop_table_cascade
 from utils.translate_to_silver import build_silver
 
@@ -224,11 +225,12 @@ def silver_gitcoin2_grant_pools(context):
         return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_grant_pools...")
-    df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="grant_pools")
+    df_silver, null_issues = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="grant_pools")
     drop_table_cascade(engine, "silver_gitcoin2_grant_pools", context)
     df_silver.write_database(table_name="silver_gitcoin2_grant_pools", connection=engine, if_table_exists="replace")
     context.log.info(f"Wrote {df_silver.height} rows — enriching with roles + timings...")
     _enrich_grant_pools(engine, context)
+    write_data_quality_report("gitcoin2", "silver_gitcoin2_grant_pools", df_silver.height, null_issues, [], context.run_id)
     return Output(df_silver)
 
 
@@ -246,11 +248,12 @@ def silver_gitcoin2_projects(context):
         return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_projects...")
-    df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="projects")
+    df_silver, null_issues = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="projects")
     drop_table_cascade(engine, "silver_gitcoin2_projects", context)
     df_silver.write_database(table_name="silver_gitcoin2_projects", connection=engine, if_table_exists="replace")
     context.log.info(f"Wrote {df_silver.height} rows — enriching with roles + legacy IDs...")
     _enrich_projects(engine, context)
+    write_data_quality_report("gitcoin2", "silver_gitcoin2_projects", df_silver.height, null_issues, [], context.run_id)
     return Output(df_silver)
 
 
@@ -268,10 +271,11 @@ def silver_gitcoin2_grant_applications(context):
         return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_grant_applications...")
-    df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="grant_applications")
+    df_silver, null_issues = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="grant_applications")
     drop_table_cascade(engine, "silver_gitcoin2_grant_applications", context)
     df_silver.write_database(table_name="silver_gitcoin2_grant_applications", connection=engine, if_table_exists="replace")
     context.log.info(f"Saved {df_silver.height} rows to silver_gitcoin2_grant_applications")
+    write_data_quality_report("gitcoin2", "silver_gitcoin2_grant_applications", df_silver.height, null_issues, [], context.run_id)
     return Output(df_silver)
 
 
@@ -289,10 +293,11 @@ def silver_gitcoin2_donations(context):
         return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_donations...")
-    df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="donations")
+    df_silver, null_issues = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="donations")
     drop_table_cascade(engine, "silver_gitcoin2_donations", context)
     df_silver.write_database(table_name="silver_gitcoin2_donations", connection=engine, if_table_exists="replace")
     context.log.info(f"Saved {df_silver.height} rows to silver_gitcoin2_donations")
+    write_data_quality_report("gitcoin2", "silver_gitcoin2_donations", df_silver.height, null_issues, [], context.run_id)
     return Output(df_silver)
 
 
@@ -310,10 +315,11 @@ def silver_gitcoin2_payouts(context):
         return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_payouts...")
-    df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="payouts")
+    df_silver, null_issues = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="payouts")
     drop_table_cascade(engine, "silver_gitcoin2_payouts", context)
     df_silver.write_database(table_name="silver_gitcoin2_payouts", connection=engine, if_table_exists="replace")
     context.log.info(f"Saved {df_silver.height} rows to silver_gitcoin2_payouts")
+    write_data_quality_report("gitcoin2", "silver_gitcoin2_payouts", df_silver.height, null_issues, [], context.run_id)
     return Output(df_silver)
 
 
@@ -331,9 +337,10 @@ def silver_gitcoin2_attestations(context):
         return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_attestations...")
-    df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="attestations")
+    df_silver, null_issues = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="attestations")
     drop_table_cascade(engine, "silver_gitcoin2_attestations", context)
     df_silver.write_database(table_name="silver_gitcoin2_attestations", connection=engine, if_table_exists="replace")
     context.log.info(f"Wrote {df_silver.height} rows — enriching with tx hashes...")
     _enrich_attestations(engine, context)
+    write_data_quality_report("gitcoin2", "silver_gitcoin2_attestations", df_silver.height, null_issues, [], context.run_id)
     return Output(df_silver)

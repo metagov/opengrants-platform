@@ -346,7 +346,7 @@ def fetch_metadata_from_url(meta_url: str) -> Dict[str, Any]:
 # ============================================================
 
 
-def validate_row(row: dict, schema_fields: dict):
+def validate_row(row: dict, schema_fields: dict, missing_required: list | None = None):
     validated = {}
 
     # Safe metadata fetching
@@ -424,6 +424,8 @@ def validate_row(row: dict, schema_fields: dict):
 
             if required and (val is None or str(val).strip() == ""):
                 logger.warning(f"⚠️ Missing required field '{field}'")
+                if missing_required is not None:
+                    missing_required.append(field)
 
             if allowed and val not in allowed:
                 logger.warning(f"⚠️ Invalid enum for {field}: {val}")
@@ -440,13 +442,14 @@ def validate_row(row: dict, schema_fields: dict):
     return validated
 
 
-def transform_dataframe(df: pl.DataFrame, schema_fields: dict) -> pl.DataFrame:
+def transform_dataframe(df: pl.DataFrame, schema_fields: dict) -> tuple[pl.DataFrame, list[str]]:
     records = []
+    missing_required: list[str] = []
     for row in df.to_dicts():
-        rec = validate_row(row, schema_fields)
+        rec = validate_row(row, schema_fields, missing_required)
         records.append(rec)
 
-    return pl.DataFrame(records, infer_schema_length=len(records))
+    return pl.DataFrame(records, infer_schema_length=len(records)), missing_required
 
 
 # ============================================================
@@ -454,7 +457,7 @@ def transform_dataframe(df: pl.DataFrame, schema_fields: dict) -> pl.DataFrame:
 # ============================================================
 
 
-def build_silver(engine, schema_path: str, section: str) -> pl.DataFrame:
+def build_silver(engine, schema_path: str, section: str) -> tuple[pl.DataFrame, list[dict]]:
     schema = load_schema(schema_path)
     schema_section = schema["schemas"][section]
 
@@ -522,9 +525,10 @@ def build_silver(engine, schema_path: str, section: str) -> pl.DataFrame:
         for k, v in ext_fields.items():
             merged[f"{ns}.{k}"] = v
 
-    df_silver = transform_dataframe(df, merged)
+    df_silver, missing_required = transform_dataframe(df, merged)
 
-    # Warn on any columns with null values
+    # Collect null issues (log + return for quality report)
+    null_issues = []
     total = len(df_silver)
     if total > 0:
         for col in df_silver.columns:
@@ -534,5 +538,12 @@ def build_silver(engine, schema_path: str, section: str) -> pl.DataFrame:
                 logger.warning(
                     f"⚠️ NULL values in '{col}': {null_count}/{total} rows ({pct}%)"
                 )
+                null_issues.append({
+                    "type": "null_values",
+                    "field": col,
+                    "null_count": null_count,
+                    "total_rows": total,
+                    "null_pct": pct,
+                })
 
-    return df_silver
+    return df_silver, null_issues

@@ -1,6 +1,7 @@
 import os
 
 from dagster import asset
+from utils.data_quality import write_data_quality_report
 from utils.graphql_helpers import sanitize_for_sql
 from utils.translate_to_silver import build_silver
 
@@ -31,7 +32,7 @@ def silver_privote_transform(context):
     for section in sections:
         context.log.info(f"⚙️ Transforming '{section}' ...")
 
-        df_silver = build_silver(
+        df_silver, null_issues = build_silver(
             engine=engine,
             schema_path=schema_path,
             section=section,
@@ -45,6 +46,7 @@ def silver_privote_transform(context):
             connection=engine,
             if_table_exists="replace",
         )
+        write_data_quality_report("privote", target, df_silver.height, null_issues, [], context.run_id)
 
         context.log.info(f"✅ [{section}] → {target} ({df_silver.height} rows)")
 

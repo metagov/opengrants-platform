@@ -1,4 +1,5 @@
 from dagster import AssetKey, asset
+from utils.data_quality import write_data_quality_report
 from utils.translate_to_silver import build_silver
 from utils.graphql_helpers import sanitize_for_sql
 
@@ -11,7 +12,7 @@ SCHEMA_PATH = "/app/configs/schema_maps/active/daoip5_ens.yaml"
     deps=[AssetKey("bronze__ens_proposals")],
 )
 def silver_ens_grant_pools(context):
-    df_silver = build_silver(
+    df_silver, null_issues = build_silver(
         engine=context.resources.database_engine,
         schema_path=SCHEMA_PATH,
         section="grant_pools",
@@ -23,6 +24,7 @@ def silver_ens_grant_pools(context):
         connection=context.resources.database_engine,
         if_table_exists="replace",
     )
+    write_data_quality_report("ens", "silver_ens_grant_pools", df_silver.height, null_issues, [], context.run_id)
 
     return df_silver
 
@@ -33,7 +35,7 @@ def silver_ens_grant_pools(context):
     deps=[AssetKey("bronze__ens_project_choices")],
 )
 def silver_ens_projects(context):
-    df_silver = build_silver(
+    df_silver, null_issues = build_silver(
         engine=context.resources.database_engine,
         schema_path=SCHEMA_PATH,
         section="projects",
@@ -45,5 +47,6 @@ def silver_ens_projects(context):
         connection=context.resources.database_engine,
         if_table_exists="replace",
     )
+    write_data_quality_report("ens", "silver_ens_projects", df_silver.height, null_issues, [], context.run_id)
 
     return df_silver
