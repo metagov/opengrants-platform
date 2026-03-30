@@ -11,6 +11,13 @@ docker compose up dagster
  docker compose -f docker-compose.local.yml build dagster
 docker compose -f docker-compose.local.yml up dagster
 
+  # Connect to DO Managed Postgres                                                                                                             
+  set -a && source .env.do && set +a                                                                                                           
+  docker compose -f docker-compose.local.yml up dagster                                                                                        
+                                                                                                                                               
+  # Back to local (restart shell or unset vars)                                                                                                
+  docker compose -f docker-compose.local.yml up dagster
+
 # Verbose mode for debugging
 docker compose --verbose up dagster
 
