@@ -81,44 +81,6 @@ function FundingChart({ platforms }: { platforms: any[] }) {
       <Text fontSize="10px" color="gray.400" textAlign="right" mt={1} fontFamily="Inter">
         bar uses √ scale — hover segments for exact values
       </Text>
-
-      <VStack gap={3} mt={4} align="stretch">
-        {sortedPlatforms.map((p) => {
-          const value = parseFloat(String(p.total_funding_usd)) || 0;
-          const percentage = totalFunding > 0 ? (value / totalFunding) * 100 : 0;
-          const color = platformHexColors[p.platform] || "#718096";
-          const route = platformRoutes[p.platform];
-
-          return (
-            <HStack
-              key={p.platform}
-              justify="space-between"
-              px={2}
-              py={2}
-              borderRadius="md"
-              cursor={route ? "pointer" : "default"}
-              onClick={() => route && router.push(route)}
-              _hover={{ bg: "gray.50" }}
-              transition="background 0.2s"
-            >
-              <HStack gap={3}>
-                <Box w="12px" h="12px" borderRadius="sm" bg={color} />
-                <Text fontSize="sm" color="gray.700" fontFamily="Inter">
-                  {platformDisplayNames[p.platform] || p.platform}
-                </Text>
-              </HStack>
-              <HStack gap={4}>
-                <Text fontSize="sm" fontWeight="medium" color="gray.800" fontFamily="Inter">
-                  {formatCurrency(value)}
-                </Text>
-                <Text fontSize="xs" color="gray.500" fontFamily="Inter" minW="45px" textAlign="right">
-                  {percentage.toFixed(1)}%
-                </Text>
-              </HStack>
-            </HStack>
-          );
-        })}
-      </VStack>
     </Box>
   );
 }

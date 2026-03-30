@@ -243,7 +243,7 @@ export default function GitcoinPage() {
         <Center h="80vh">
           <VStack gap={4}>
             <Spinner size="xl" color={gitcoinColors.primary} />
-            <Text color="gray.500" fontSize="sm">Loading Gitcoin 2.0 data…</Text>
+            <Text color="gray.500" fontSize="sm">Loading Gitcoin data…</Text>
           </VStack>
         </Center>
       </>
@@ -381,7 +381,7 @@ export default function GitcoinPage() {
       <Box minH="100vh" bg="gray.50">
         <Container maxW="7xl" py={12}>
           <SystemHeader
-            title="Gitcoin 2.0"
+            title="Gitcoin"
             description="Complete historical record of Gitcoin Grants Stack — 497k donations, 2.3k rounds, 14k projects across multiple chains"
             color={gitcoinColors.primary}
           />
@@ -419,7 +419,7 @@ export default function GitcoinPage() {
             <Tabs.Content value="overview">
               <VStack gap={8} align="stretch">
                 <ProgramProfile
-                  name="Gitcoin 2.0 (Grants Stack)"
+                  name="Gitcoin (Grants Stack)"
                   description="Gitcoin Grants Stack is the decentralized grants infrastructure powering quadratic funding across the Ethereum ecosystem. This dataset represents the complete historical record from the March 2026 snapshot."
                   programDescription="The platform supports Quadratic Funding (QF), Direct Grants, and other mechanisms. Projects apply to community-run rounds, receive donations from the community, and matching funds are distributed proportionally to the breadth of community support."
                   primaryMechanism="Quadratic Funding"
