@@ -150,17 +150,84 @@ This pipeline ensures your grant data is standardized and ready for cross-ecosys
 
 ## DAOIP-5 Compliance Assessment
 
-As of March 2026, SCF data is assessed under two complementary compliance frameworks developed to measure both the breadth and depth of DAOIP-5 coverage.
+As of March 2026, SCF data is assessed under two complementary compliance frameworks.
 
-**Round-level indexing compliance** measures how many SCF grant rounds are successfully indexed and available in the DAOIP-5 data standard. SCF achieves **100% compliance across all 40 finished rounds** (SCF #1–#40), meaning every completed cohort is translated into a DAOIP-5 `GrantPool` record with name, dates, funding, and submission data intact.
+**Round-level indexing compliance** measures how many SCF grant rounds are successfully indexed and available in DAOIP-5. SCF achieves **100% compliance across all 40 finished rounds** (SCF #1–#40) — every completed cohort is translated into a DAOIP-5 `GrantPool` record with name, dates, funding, and submission data intact.
 
-**Field-level schema compliance** measures how many DAOIP-5 schema fields within those records are populated from genuine Airtable source columns vs hardcoded placeholder values. SCF scores **55% source-mapped** at the field level — identifying specific gaps where schema fields exist in the DAOIP-5 output but draw from constants rather than source data (e.g., `grantFundingMechanism`, `contentURI`).
+**Field-level schema compliance** measures how many DAOIP-5 fields within those records are populated from genuine Airtable source columns vs hardcoded placeholders. The reassessed results, focused on required fields:
 
-Together these two assessments give a complete picture: SCF has excellent round coverage, with a clear and actionable set of field-level improvements remaining.
+| Schema | Required Fields | Passing | Rate |
+| --- | --- | --- | --- |
+| GrantPool | 6 | 6 | **100%** |
+| Project | 4 | 4 | **100%** |
+| GrantApplication | 4 | 3 | **75%** — 1 P0 issue |
+| **Overall required** | **14** | **13** | **93%** |
 
-Full methodology — including the field classification system, scoring model, P0–P3 issue definitions, and replication instructions — is documented at:
+**Overall source-column-backed coverage (required + optional):** 55%
+
+The single open issue blocking 100% required-field compliance is a P0 on `createdAt` in `GrantApplication` — every submission record carries a hardcoded `'2025-01-01T00:00:00Z'` timestamp because the Airtable CSV export does not include per-record creation timestamps. See the recommendation below.
+
+Full methodology — including field classification, scoring model, P0–P3 definitions, and replication instructions:
 
 **[docs/compliance/daoip5_assessment_methodology.md](https://github.com/metagov/opengrants-platform/blob/master/docs/compliance/daoip5_assessment_methodology.md)**
+
+Full field-level detail report:
+
+**[docs/compliance/daoip5_compliance_report_2026-03-31.md](https://github.com/metagov/opengrants-platform/blob/master/docs/compliance/daoip5_compliance_report_2026-03-31.md)**
+
+---
+
+## Recommendation: Reaching 100% Required Field Compliance
+
+One change closes the gap.
+
+### Fix `createdAt` — P0 (blocks 100% required field compliance)
+
+**Current state:** `createdAt` in `silver_scf_grant_applications` is hardcoded:
+
+```yaml
+createdAt:
+  source: null
+  type: datetime
+  transform: "lambda _: '2025-01-01T00:00:00Z'"
+```
+
+Every SCF submission record carries `2025-01-01T00:00:00Z` regardless of when it was actually submitted. This makes time-series analysis, application velocity tracking, and cohort reporting on SCF data unreliable.
+
+**Why it's missing:** The current SCF ingestion reads from CSV exports (`Build Award Rounds-By Year_DATE.csv`, etc.). These CSVs are manual exports from Airtable views and do not include the `created_time` metadata field that Airtable attaches to every record.
+
+**The fix:** The Airtable API already exposes `createdTime` on every record. The sensor infrastructure (`og_dagster/sensors/scf_sensor.py`) already authenticates against the Airtable API using `AIRTABLE_API_KEY`. Switching the bronze `Awarded Submissions` ingestion from CSV to API-based fetching via `fetch_airtable_table` (already used in the sensor) will surface `createdTime` per submission record.
+
+**Changes required:**
+
+1. **Bronze asset (`og_dagster/assets/bronze/scf.py`):** Add `createdTime` to the fields fetched from the `Awarded Submissions [Build Only]` table, or switch that table's ingestion from CSV to `fetch_airtable_table`. Store as `created_time` in `bronze_scf_submissions`.
+
+2. **Silver schema map (`og_dagster/configs/schema_maps/active/daoip5_scf.yaml`):** Update the `createdAt` field mapping:
+
+```yaml
+# Before
+createdAt:
+  source: null
+  type: datetime
+  transform: "lambda _: '2025-01-01T00:00:00Z'"
+
+# After
+createdAt:
+  source: "created_time"
+  type: datetime
+  required: true
+```
+
+3. **YAML governance fix:** While updating the schema map, set `required: true` on `contentURI` in the `projects` schema — it is a DAOIP-5 required field currently without a `required` flag, meaning the pipeline will not catch it going NULL.
+
+**Expected outcome after fix:**
+
+| Schema | Required Fields | Passing | Rate |
+| --- | --- | --- | --- |
+| GrantPool | 6 | 6 | **100%** |
+| Project | 4 | 4 | **100%** |
+| GrantApplication | 4 | 4 | **100%** |
+| **Overall required** | **14** | **14** | **100%** |
 
 ---
 
