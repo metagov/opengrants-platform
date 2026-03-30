@@ -172,7 +172,7 @@ export default function ENSPage() {
           />
 
           {/* Top-line KPIs */}
-          <SimpleGrid columns={{ base: 2, md: 4 }} gap={6} mb={12}>
+          <SimpleGrid columns={{ base: 2, md: 4 }} gap={6} mb={6}>
             <MetricCard label="Rounds" value={data?.summary?.total_rounds || 0} color={ENS_BLUE} />
             <MetricCard label="Unique Projects" value={(data?.summary?.unique_project_names || 0).toLocaleString()} />
             <MetricCard label="Unique Voters" value={(data?.summary?.unique_voters || 0).toLocaleString()} />
@@ -182,6 +182,26 @@ export default function ENSPage() {
               subtitle="voted in 2+ rounds"
             />
           </SimpleGrid>
+
+          {/* Data enrichment notice */}
+          <Box
+            mb={10}
+            px={4}
+            py={3}
+            bg="blue.50"
+            borderRadius="md"
+            borderLeftWidth="3px"
+            borderLeftColor="blue.400"
+          >
+            <HStack gap={2} align="center">
+              <Badge colorScheme="blue" fontSize="xs" px={2} py={1} borderRadius="full">
+                Data Enrichment In Progress
+              </Badge>
+              <Text fontSize="sm" color="blue.700" fontFamily="Inter">
+                We don't yet have USD grant value data for ENS — funding amounts are denominated in ENS voting power, not USD. Price enrichment is on the roadmap.
+              </Text>
+            </HStack>
+          </Box>
 
           <Tabs.Root defaultValue="overview" variant="line">
             <Tabs.List borderBottomWidth="1px" borderColor="gray.200" mb={8} gap={2}>

@@ -78,6 +78,39 @@ function FundingChart({ platforms }: { platforms: any[] }) {
           );
         })}
       </HStack>
+
+      {/* Platform name labels below each segment */}
+      <HStack w="100%" gap={0} mt={2} align="flex-start">
+        {sortedPlatforms.map((p, index) => {
+          const sqrtPct = sqrtTotal > 0 ? (sqrtValues[index] / sqrtTotal) * 100 : 0;
+          const color = platformHexColors[p.platform] || "#718096";
+          const route = platformRoutes[p.platform];
+          const name = platformDisplayNames[p.platform] || p.platform;
+
+          return (
+            <Box
+              key={p.platform}
+              w={`${sqrtPct}%`}
+              overflow="hidden"
+              cursor={route ? "pointer" : "default"}
+              onClick={() => route && router.push(route)}
+            >
+              <Text
+                fontSize="10px"
+                color={color}
+                fontFamily="Inter"
+                fontWeight="medium"
+                whiteSpace="nowrap"
+                overflow="hidden"
+                textOverflow="ellipsis"
+              >
+                {name}
+              </Text>
+            </Box>
+          );
+        })}
+      </HStack>
+
       <Text fontSize="10px" color="gray.400" textAlign="right" mt={1} fontFamily="Inter">
         bar uses √ scale — hover segments for exact values
       </Text>
