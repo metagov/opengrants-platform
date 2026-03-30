@@ -26,12 +26,58 @@ Bronze-only (no DAOIP-5 value, operational reference data):
   bronze_gitcoin2_events_registry     (raw event log)
 """
 
+import os
+
 from dagster import Output, asset
 from sqlalchemy import text
 from utils.db import drop_table_cascade
 from utils.translate_to_silver import build_silver
 
 SCHEMA_PATH = "/app/configs/schema_maps/active/daoip5_gitcoin2.yaml"
+
+# When GITCOIN2_OBSERVE_ONLY=true, skip ETL and register existing silver tables
+# in Dagster's event log. Use this when silver tables already exist in the DB
+# but Dagster shows them as unmaterialized (e.g. after a killed run).
+GITCOIN2_OBSERVE_ONLY = os.getenv("GITCOIN2_OBSERVE_ONLY", "false").lower() == "true"
+
+SILVER_TABLES = [
+    "silver_gitcoin2_grant_pools",
+    "silver_gitcoin2_projects",
+    "silver_gitcoin2_grant_applications",
+    "silver_gitcoin2_donations",
+    "silver_gitcoin2_payouts",
+    "silver_gitcoin2_attestations",
+]
+
+
+def _observe_row_count(engine, table_name: str) -> int:
+    """Return row count for table, or 0 if it doesn't exist."""
+    with engine.connect() as conn:
+        exists = conn.execute(text(
+            "SELECT EXISTS (SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema='public' AND table_name=:t)"
+        ), {"t": table_name}).scalar()
+        if not exists:
+            return 0
+        return conn.execute(text(f'SELECT COUNT(*) FROM "{table_name}"')).scalar()
+
+
+def _maybe_observe(context, table_name: str) -> Output | None:
+    """
+    If GITCOIN2_OBSERVE_ONLY=true, check the table exists and return an Output
+    so Dagster marks it materialized. Returns None if full ETL should run.
+    """
+    if not GITCOIN2_OBSERVE_ONLY:
+        return None
+    engine = context.resources.database_engine
+    count = _observe_row_count(engine, table_name)
+    if count == 0:
+        raise Exception(
+            f"Observe mode: {table_name} is missing or empty. "
+            "Run silver_gitcoin2_etl_job with GITCOIN2_OBSERVE_ONLY=false to populate it."
+        )
+    context.log.info(f"GITCOIN2_OBSERVE_ONLY=true — {table_name}: {count} rows (already materialized)")
+    return Output(count, metadata={"row_count": count})
 
 
 # ============================================================
@@ -173,6 +219,9 @@ def _enrich_attestations(engine, context):
     group_name="silver_gitcoin2",
 )
 def silver_gitcoin2_grant_pools(context):
+    obs = _maybe_observe(context, "silver_gitcoin2_grant_pools")
+    if obs is not None:
+        return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_grant_pools...")
     df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="grant_pools")
@@ -192,6 +241,9 @@ def silver_gitcoin2_grant_pools(context):
     group_name="silver_gitcoin2",
 )
 def silver_gitcoin2_projects(context):
+    obs = _maybe_observe(context, "silver_gitcoin2_projects")
+    if obs is not None:
+        return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_projects...")
     df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="projects")
@@ -211,6 +263,9 @@ def silver_gitcoin2_projects(context):
     group_name="silver_gitcoin2",
 )
 def silver_gitcoin2_grant_applications(context):
+    obs = _maybe_observe(context, "silver_gitcoin2_grant_applications")
+    if obs is not None:
+        return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_grant_applications...")
     df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="grant_applications")
@@ -229,6 +284,9 @@ def silver_gitcoin2_grant_applications(context):
     group_name="silver_gitcoin2",
 )
 def silver_gitcoin2_donations(context):
+    obs = _maybe_observe(context, "silver_gitcoin2_donations")
+    if obs is not None:
+        return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_donations...")
     df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="donations")
@@ -247,6 +305,9 @@ def silver_gitcoin2_donations(context):
     group_name="silver_gitcoin2",
 )
 def silver_gitcoin2_payouts(context):
+    obs = _maybe_observe(context, "silver_gitcoin2_payouts")
+    if obs is not None:
+        return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_payouts...")
     df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="payouts")
@@ -265,6 +326,9 @@ def silver_gitcoin2_payouts(context):
     group_name="silver_gitcoin2",
 )
 def silver_gitcoin2_attestations(context):
+    obs = _maybe_observe(context, "silver_gitcoin2_attestations")
+    if obs is not None:
+        return obs
     engine = context.resources.database_engine
     context.log.info("Building silver_gitcoin2_attestations...")
     df_silver = build_silver(engine=engine, schema_path=SCHEMA_PATH, section="attestations")
