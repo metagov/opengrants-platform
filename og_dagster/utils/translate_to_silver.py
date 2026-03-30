@@ -20,13 +20,26 @@ def safe_read_query(conn, query: str) -> pl.DataFrame:
     """
     Safely load any SQL query into a Polars DataFrame.
     Attempts:
-    1. polars.read_database(..., cast_columns=str)
+    1. polars.read_database(url_string) — uses ConnectorX bulk transfer (fast)
     2. pandas.read_sql(..., dtype=str) -> polars
     3. manual SQLAlchemy fetch -> polars
     """
-    # Attempt 1 — Polars direct read
+    # Attempt 1 — Polars via ConnectorX (fast bulk path)
+    # Pass the engine URL string so Polars uses ConnectorX instead of the slow
+    # DBAPI cursor path (which it falls back to for SQLAlchemy connection objects).
     try:
-        df = pl.read_database(query, conn)
+        conn_str = None
+        if hasattr(conn, 'engine'):
+            # SQLAlchemy Connection — extract engine URL
+            conn_str = str(conn.engine.url)
+        elif hasattr(conn, 'url'):
+            # SQLAlchemy Engine
+            conn_str = str(conn.url)
+
+        if conn_str:
+            df = pl.read_database(query, conn_str)
+        else:
+            df = pl.read_database(query, conn)
         # Safety: force all columns to Utf8 to avoid "could not append value" errors
         df = df.with_columns([pl.col(col).cast(pl.Utf8) for col in df.columns])
         return df
