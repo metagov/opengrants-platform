@@ -39,7 +39,8 @@ def safe_read_query(conn, query: str) -> pl.DataFrame:
         if conn_str:
             # ConnectorX only understands postgresql://, not postgresql+psycopg2://
             conn_str = re.sub(r'\+[^:]+://', '://', conn_str)
-            df = pl.read_database(query, conn_str)
+            # Polars 1.x: read_database_uri for string URIs, read_database for connections
+            df = pl.read_database_uri(query, conn_str)
         else:
             df = pl.read_database(query, conn)
         # Safety: force all columns to Utf8 to avoid "could not append value" errors
