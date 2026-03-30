@@ -30,11 +30,12 @@ def safe_read_query(conn, query: str) -> pl.DataFrame:
     try:
         conn_str = None
         if hasattr(conn, 'engine'):
-            # SQLAlchemy Connection — extract engine URL
-            conn_str = str(conn.engine.url)
+            # SQLAlchemy Connection — extract engine URL (hide_password=False required;
+            # str() masks the password as *** which causes ConnectorX auth failures)
+            conn_str = conn.engine.url.render_as_string(hide_password=False)
         elif hasattr(conn, 'url'):
             # SQLAlchemy Engine
-            conn_str = str(conn.url)
+            conn_str = conn.url.render_as_string(hide_password=False)
 
         if conn_str:
             # ConnectorX only understands postgresql://, not postgresql+psycopg2://
