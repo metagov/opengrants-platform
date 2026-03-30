@@ -12,6 +12,7 @@ psycopg2-binary
 sqlalchemy
 python-dotenv
 polars
+connectorx
 pyarrow>=8.0.0
 yamale
 Web3

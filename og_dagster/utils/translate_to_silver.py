@@ -37,6 +37,8 @@ def safe_read_query(conn, query: str) -> pl.DataFrame:
             conn_str = str(conn.url)
 
         if conn_str:
+            # ConnectorX only understands postgresql://, not postgresql+psycopg2://
+            conn_str = re.sub(r'\+[^:]+://', '://', conn_str)
             df = pl.read_database(query, conn_str)
         else:
             df = pl.read_database(query, conn)
