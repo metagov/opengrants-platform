@@ -10,7 +10,7 @@ import {
   Center,
 } from "@chakra-ui/react";
 import { Legend } from "recharts";
-import { brandColors } from "../theme/colors";
+import { brandColors, platformDisplayNames } from "../theme/colors";
 import { Navigation } from "../components/Navigation";
 import { SystemHeader } from "../components/SystemHeader";
 import { MetricCard } from "../components/MetricCard";
@@ -92,22 +92,6 @@ export default function Ecosystem() {
     (sum, p) => sum + (parseInt(String(p.total_grant_pools)) || 0),
     0,
   );
-
-  const platformColors: { [key: string]: string } = {
-    ens: "blue.500",
-    giveth: "purple.500",
-    scf: "orange.500",
-    privote: "teal.500",
-    gitcoin2: "green.700",
-  };
-
-  const platformDisplayNames: { [key: string]: string } = {
-    ens: "ENS Small Grants",
-    scf: "Stellar Community Fund",
-    giveth: "Giveth",
-    privote: "Privote (GG24 Privacy)",
-    gitcoin2: "Gitcoin",
-  };
 
   const getPlatformName = (key: string) => platformDisplayNames[key] || key;
 
@@ -247,88 +231,6 @@ export default function Ecosystem() {
               />
             </Box>
           </Box>
-
-          <VStack gap={8} align="stretch">
-            <Box>
-              <Text
-                fontSize="sm"
-                fontWeight="medium"
-                letterSpacing="wide"
-                textTransform="uppercase"
-                color="gray.600"
-                mb={6}
-              >
-                Platform Breakdown
-              </Text>
-
-              <VStack gap={4} align="stretch">
-                {(data?.platforms || []).map((platform) => (
-                  <Box
-                    key={platform.platform}
-                    p={6}
-                    bg="white"
-                    borderRadius="lg"
-                    borderWidth="1px"
-                    borderColor="gray.100"
-                  >
-                    <HStack justify="space-between" mb={4}>
-                      <VStack align="start" gap={1}>
-                        <Text
-                          fontSize="xl"
-                          fontWeight="medium"
-                          color={
-                            platformColors[platform.platform] || "gray.700"
-                          }
-                        >
-                          {getPlatformName(platform.platform)}
-                        </Text>
-                        <Text fontSize="sm" color="gray.600">
-                          {platform.primary_mechanism}
-                        </Text>
-                      </VStack>
-                      <VStack align="end" gap={0}>
-                        <Text fontSize="2xl" fontWeight="light">
-                          {platform.total_funding_display ||
-                            formatCurrency(platform.total_funding_usd)}
-                        </Text>
-                        <Text fontSize="xs" color="gray.500">
-                          total funding
-                        </Text>
-                      </VStack>
-                    </HStack>
-
-                    <SimpleGrid columns={3} gap={4}>
-                      <Box>
-                        <Text fontSize="xs" color="gray.500">
-                          Projects
-                        </Text>
-                        <Text fontSize="lg" fontWeight="medium">
-                          {platform.total_projects.toLocaleString()}
-                        </Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="xs" color="gray.500">
-                          Grant Pools
-                        </Text>
-                        <Text fontSize="lg" fontWeight="medium">
-                          {platform.total_grant_pools}
-                        </Text>
-                      </Box>
-                      <Box>
-                        <Text fontSize="xs" color="gray.500">
-                          Applications
-                        </Text>
-                        <Text fontSize="lg" fontWeight="medium">
-                          {platform.total_applications?.toLocaleString() ||
-                            "N/A"}
-                        </Text>
-                      </Box>
-                    </SimpleGrid>
-                  </Box>
-                ))}
-              </VStack>
-            </Box>
-          </VStack>
 
           <Box mt={12}>
             <HStack mb={6} align="center" gap={2}>

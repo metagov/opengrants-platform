@@ -124,7 +124,7 @@ function FundingChart({ platforms }: { platforms: any[] }) {
 }
 
 export default function Index() {
-  const { data, isLoading } = useSWR("/api/ecosystem", fetcher, {
+  const { data, isLoading } = useSWR("/api/ecosystem?lite=1", fetcher, {
     revalidateOnFocus: true,
     revalidateOnMount: true,
     refreshInterval: 300000,

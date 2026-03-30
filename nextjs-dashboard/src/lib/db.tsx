@@ -40,7 +40,7 @@ const config: PoolConfig = {
   connectionString,
   connectionTimeoutMillis: 30000,
   idleTimeoutMillis: 60000,
-  max: 5,
+  max: 10,
   ssl: sslConfig,
 };
 

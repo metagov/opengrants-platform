@@ -11,6 +11,8 @@ export default async function handler(
   }
 
   try {
+    const lite = req.query.lite === '1';
+
     // Gold queries are wrapped individually — a stale or rebuilding gold table
     // won't crash the entire endpoint; affected sections just return empty.
     const ecosystemData = await query(`
@@ -29,6 +31,11 @@ export default async function handler(
       console.error('ecosystem_overview query failed:', e.message);
       return [];
     });
+
+    // Lite mode: only return platforms (for landing page bar chart)
+    if (lite) {
+      return res.status(200).json({ platforms: ecosystemData || [] });
+    }
 
     const crossPlatform = await query(`
       SELECT
