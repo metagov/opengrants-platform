@@ -43,9 +43,13 @@ round_meta AS (
         "co.gitcoin.chainId"::integer as chain_id,
         "co.gitcoin.strategyName" as strategy_name,
         "grantFundingMechanism" as funding_mechanism,
-        "totalGrantPoolSizeInUSD"::numeric as match_pool_usd,
+        "co.gitcoin.matchAmountInUsd"::numeric as match_pool_usd,
         "co.gitcoin.totalAmountDonatedInUsd"::numeric as round_total_donated_usd
     FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}
+    -- Mainnet only, real funded rounds
+    WHERE "co.gitcoin.chainId"::integer IN (1, 10, 42, 137, 324, 1088, 1329, 8453, 42161, 42220, 43114, 534352)
+      AND "co.gitcoin.fundedAmountInUsd"::numeric >= 100
+      AND "co.gitcoin.totalAmountDonatedInUsd"::numeric > 0
 ),
 
 ranked AS (
@@ -135,5 +139,8 @@ SELECT
 
 FROM ranked r
 LEFT JOIN {{ source('silver', 'silver_gitcoin2_projects') }} p ON p.id = r."projectId"
+
+-- Exclude micro-donation noise: projects with < $50 total donated in a round
+WHERE r.total_donated_usd >= 50
 
 ORDER BY r.qf_score_estimate DESC NULLS LAST

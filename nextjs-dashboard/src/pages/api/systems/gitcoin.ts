@@ -37,7 +37,7 @@ export default async function handler(
             SUM(unique_donors)::integer as total_unique_donors,
             ROUND(MAX(qf_score_estimate)::numeric, 2) as best_qf_score
           FROM gold__gitcoin2_project_qf_scores
-          WHERE total_donated_usd > 0
+          WHERE total_donated_usd >= 50
           GROUP BY project_id, project_name, chain_id
           ORDER BY SUM(total_donated_usd) DESC
           LIMIT 20
@@ -47,10 +47,13 @@ export default async function handler(
           SELECT
             "grantFundingMechanism" as mechanism,
             COUNT(*) as round_count,
-            COALESCE(SUM("totalGrantPoolSizeInUSD"::numeric), 0) as total_pool_usd,
+            COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) as total_pool_usd,
             COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) as total_donated_usd
           FROM silver_gitcoin2_grant_pools
           WHERE "grantFundingMechanism" IS NOT NULL
+            AND "co.gitcoin.chainId"::integer IN (1, 10, 42, 137, 324, 1088, 1329, 8453, 42161, 42220, 43114, 534352)
+            AND "co.gitcoin.fundedAmountInUsd"::numeric >= 100
+            AND "co.gitcoin.totalAmountDonatedInUsd"::numeric > 0
           GROUP BY "grantFundingMechanism"
           ORDER BY total_pool_usd DESC
         `, []),
@@ -119,8 +122,11 @@ export default async function handler(
           SELECT
             "isOpen"::boolean as is_open,
             COUNT(*) as count,
-            COALESCE(SUM("totalGrantPoolSizeInUSD"::numeric), 0) as total_pool_usd
+            COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) as total_pool_usd
           FROM silver_gitcoin2_grant_pools
+          WHERE "co.gitcoin.chainId"::integer IN (1, 10, 42, 137, 324, 1088, 1329, 8453, 42161, 42220, 43114, 534352)
+            AND "co.gitcoin.fundedAmountInUsd"::numeric >= 100
+            AND "co.gitcoin.totalAmountDonatedInUsd"::numeric > 0
           GROUP BY "isOpen"::boolean
         `, []),
       ]);
@@ -249,12 +255,15 @@ export default async function handler(
         SELECT
           EXTRACT(YEAR FROM "co.gitcoin.donationsStartTime"::timestamp)::integer as year,
           COUNT(*) as round_count,
-          COALESCE(SUM("totalGrantPoolSizeInUSD"::numeric), 0) as total_matching_usd,
+          COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) as total_matching_usd,
           COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) as total_donated_usd,
           COALESCE(SUM("co.gitcoin.uniqueDonorsCount"::integer), 0) as total_donors
         FROM silver_gitcoin2_grant_pools
         WHERE "co.gitcoin.donationsStartTime" IS NOT NULL
           AND "co.gitcoin.donationsStartTime" != 'None'
+          AND "co.gitcoin.chainId"::integer IN (1, 10, 42, 137, 324, 1088, 1329, 8453, 42161, 42220, 43114, 534352)
+          AND "co.gitcoin.fundedAmountInUsd"::numeric >= 100
+          AND "co.gitcoin.totalAmountDonatedInUsd"::numeric > 0
         GROUP BY EXTRACT(YEAR FROM "co.gitcoin.donationsStartTime"::timestamp)
         ORDER BY year ASC
       `, []);

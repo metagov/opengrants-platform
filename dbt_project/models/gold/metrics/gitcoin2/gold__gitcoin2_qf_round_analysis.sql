@@ -184,6 +184,11 @@ LEFT JOIN round_donation_stats rds ON gp.id = rds."grantPoolId"
 LEFT JOIN top_donor_concentration tdc ON gp.id = tdc."grantPoolId"
 LEFT JOIN payout_stats ps ON gp.id = ps."grantPoolId"
 
+-- Mainnet only, real funded rounds with community donations
+WHERE gp."co.gitcoin.chainId"::integer IN (1, 10, 42, 137, 324, 1088, 1329, 8453, 42161, 42220, 43114, 534352)
+  AND gp."co.gitcoin.fundedAmountInUsd"::numeric >= 100
+  AND gp."co.gitcoin.totalAmountDonatedInUsd"::numeric > 0
+
 ORDER BY COALESCE(
     NULLIF(gp."co.gitcoin.totalAmountDonatedInUsd"::numeric, 0),
     rds.total_donated_usd_raw, 0

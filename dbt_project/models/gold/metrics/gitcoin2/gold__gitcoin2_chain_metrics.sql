@@ -24,19 +24,21 @@ WITH chain_names AS (
 ),
 
 pool_by_chain AS (
-    -- Cap matching pool at $5M/round to exclude outliers with wrong units
+    -- Mainnet chains only, real funded rounds (fundedAmountInUsd >= $100, donations > 0)
     SELECT
         "co.gitcoin.chainId"::integer as chain_id,
         COUNT(*) as round_count,
         COUNT(*) FILTER (WHERE "isOpen"::boolean = true) as active_rounds,
-        COALESCE(SUM(LEAST("totalGrantPoolSizeInUSD"::numeric, 5000000)), 0) as total_matching_pool_usd,
+        COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) as total_matching_pool_usd,
         COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) as total_match_amount_usd,
         COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) as total_donated_usd,
         COALESCE(SUM("co.gitcoin.uniqueDonorsCount"::integer), 0) as total_unique_donors,
         COALESCE(SUM("co.gitcoin.totalDonationsCount"::integer), 0) as total_donations_count,
-        -- co.gitcoin.totalDistributed is in raw token units (not USD); use capped matching pool as proxy
-        COALESCE(SUM(LEAST("totalGrantPoolSizeInUSD"::numeric, 5000000)), 0) as total_distributed_usd
+        COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) as total_distributed_usd
     FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}
+    WHERE "co.gitcoin.chainId"::integer IN (1, 10, 42, 137, 324, 1088, 1329, 8453, 42161, 42220, 43114, 534352)
+      AND "co.gitcoin.fundedAmountInUsd"::numeric >= 100
+      AND "co.gitcoin.totalAmountDonatedInUsd"::numeric > 0
     GROUP BY "co.gitcoin.chainId"::integer
 ),
 

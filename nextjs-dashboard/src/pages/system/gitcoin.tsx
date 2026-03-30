@@ -509,6 +509,24 @@ export default function GitcoinPage() {
                     />
                   </ChartCard>
                 </SimpleGrid>
+
+                <Box p={6} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
+                  <Text fontSize="md" fontWeight="semibold" mb={1}>Data Notes</Text>
+                  <VStack align="start" gap={2} mt={3}>
+                    <Text fontSize="xs" color="gray.500">
+                      <strong>Mainnet only:</strong> Only rounds on mainnet chains are shown (Ethereum, Optimism, Arbitrum, Polygon, Base, Celo, Avalanche, Scroll, Sei, zkSync Era, Kovan, Metis). Testnet rounds (e.g. Sepolia) are excluded.
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      <strong>Round threshold — $100 funded:</strong> Rounds with less than $100 in actual pool funding are excluded. This removes ~1,800 empty, test, and unnamed rounds (e.g. "Unnamed Round", "test round huss 2", "hello world") from all metrics.
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      <strong>Project threshold — $50 donated:</strong> Projects receiving less than $50 in total community donations within a round are excluded from project rankings and QF analysis.
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      <strong>Donation outlier cap — $50K:</strong> A small number of donation records contain raw token amounts instead of USD values. Records above $50K are excluded from all donation metrics and averages.
+                    </Text>
+                  </VStack>
+                </Box>
               </VStack>
             </Tabs.Content>
 
