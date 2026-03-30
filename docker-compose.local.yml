@@ -60,24 +60,39 @@ services:
     environment:
       - DAGSTER_HOME=/app
       - DUCKDB_CACHE_PATH=/app/duckdb/data/local.duckdb
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=opengrants
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/opengrants
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-opengrants}
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_SSL=${POSTGRES_SSL:-}
+      - DAGSTER_STORAGE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/opengrants
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://postgres:postgres@postgres:5432/opengrants}
       - GITCOIN2_RAW_DATA_DIR=/app/raw_data/Gitcoin/17_March_2026
-      - DESTINATION__POSTGRES__CREDENTIALS__HOST=postgres
-      - DESTINATION__POSTGRES__CREDENTIALS__USERNAME=postgres
-      - DESTINATION__POSTGRES__CREDENTIALS__PASSWORD=postgres
-      - DESTINATION__POSTGRES__CREDENTIALS__DATABASE=opengrants
-      - DESTINATION__POSTGRES__CREDENTIALS__PORT=5432
+      - DESTINATION__POSTGRES__CREDENTIALS__HOST=${POSTGRES_HOST:-postgres}
+      - DESTINATION__POSTGRES__CREDENTIALS__USERNAME=${POSTGRES_USER:-postgres}
+      - DESTINATION__POSTGRES__CREDENTIALS__PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - DESTINATION__POSTGRES__CREDENTIALS__DATABASE=${POSTGRES_DB:-opengrants}
+      - DESTINATION__POSTGRES__CREDENTIALS__PORT=${POSTGRES_PORT:-5432}
     env_file:
       - .env.local
     command:
       - /bin/sh
       - -c
       - |
+        if echo "$POSTGRES_HOST" | grep -q "digitalocean"; then
+          echo "=================================================="
+          echo "⚡ Connecting to DO Managed Postgres"
+          echo "   Host: $POSTGRES_HOST"
+          echo "   DB:   $POSTGRES_DB"
+          echo "=================================================="
+        else
+          echo "=================================================="
+          echo "🏠 Connecting to local Postgres"
+          echo "   Host: $POSTGRES_HOST"
+          echo "   DB:   $POSTGRES_DB"
+          echo "=================================================="
+        fi
         dbt parse --project-dir /app/dbt_project --profiles-dir /app/dbt_project 2>/dev/null || echo 'dbt parse skipped'
         exec dagster dev -h 0.0.0.0 -p 3000 -w workspace.yaml
 
