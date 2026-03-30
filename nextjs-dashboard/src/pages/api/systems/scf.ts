@@ -261,17 +261,20 @@ export default async function handler(
     `, []);
 
     // Geographic distribution of funded projects
+    // Regions of Operation is a multi-select in Airtable, stored as comma-separated string.
+    // Unnest to count each region individually.
     const geoDistribution = await safeQuery(`
       SELECT
-        "org.stellar.communityfund.regionsOfOperation" as region,
+        TRIM(region) as region,
         COUNT(*) as project_count,
         COALESCE(SUM("org.stellar.communityfund.totalAwardedUSD"), 0) as total_awarded_usd
-      FROM silver_scf_projects
+      FROM silver_scf_projects,
+        UNNEST(STRING_TO_ARRAY("org.stellar.communityfund.regionsOfOperation", ',')) as region
       WHERE "org.stellar.communityfund.regionsOfOperation" IS NOT NULL
         AND "org.stellar.communityfund.regionsOfOperation" != ''
         AND "org.stellar.communityfund.totalAwardedUSD" > 0
-      GROUP BY "org.stellar.communityfund.regionsOfOperation"
-      ORDER BY total_awarded_usd DESC
+      GROUP BY TRIM(region)
+      ORDER BY project_count DESC
     `, []);
 
     // Award type distribution
@@ -305,12 +308,18 @@ export default async function handler(
           COUNT(*) FILTER (WHERE "org.stellar.communityfund.sorobanUsed" = true)::numeric /
           NULLIF(COUNT(*), 0) * 100, 1
         ) as soroban_project_pct,
-        COALESCE(SUM("org.stellar.communityfund.totalPaidXLM"), 0) as total_paid_xlm
+        COALESCE(
+          (SELECT SUM("org.stellar.communityfund.totalPaidXLM")
+           FROM silver_scf_grant_applications
+           WHERE ("org.stellar.communityfund.totalPaidXLM" IS NOT NULL AND "org.stellar.communityfund.totalPaidXLM" > 0)),
+          0
+        ) as total_paid_xlm
       FROM silver_scf_projects
       WHERE "org.stellar.communityfund.totalAwardedUSD" > 0
     `, []);
 
     // Average phase durations across historical rounds (dates stored as 'Month DD, YYYY' strings)
+    // avg_round_days = true end-to-end: submission open → panel review close
     const phaseDurations = await safeQuery(`
       SELECT
         ROUND(AVG(CASE
@@ -329,6 +338,10 @@ export default async function handler(
           WHEN panel_close ~ E'^\\\\w+ \\\\d+, \\\\d{4}$' AND panel_open ~ E'^\\\\w+ \\\\d+, \\\\d{4}$'
           THEN TO_DATE(panel_close, 'Month DD, YYYY') - TO_DATE(panel_open, 'Month DD, YYYY')
           ELSE NULL END)) as avg_panel_days,
+        ROUND(AVG(CASE
+          WHEN panel_close ~ E'^\\\\w+ \\\\d+, \\\\d{4}$' AND sub_open ~ E'^\\\\w+ \\\\d+, \\\\d{4}$'
+          THEN TO_DATE(panel_close, 'Month DD, YYYY') - TO_DATE(sub_open, 'Month DD, YYYY')
+          ELSE NULL END)) as avg_round_days,
         COUNT(*) as rounds_with_dates
       FROM (
         SELECT

@@ -162,6 +162,7 @@ interface SCFData {
     avg_initial_review_days: number;
     avg_vote_days: number;
     avg_panel_days: number;
+    avg_round_days: number;
     rounds_with_dates: number;
   };
   roundPhases: Array<{
@@ -511,14 +512,9 @@ export default function SCFPage() {
                   <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                     <Text fontSize="xs" color="gray.500" mb={1}>Avg Round Duration</Text>
                     <Text fontSize="xl" fontWeight="semibold">
-                      {(
-                        (Number(data?.phaseDurations?.avg_submission_days || 0) +
-                         Number(data?.phaseDurations?.avg_initial_review_days || 0) +
-                         Number(data?.phaseDurations?.avg_vote_days || 0) +
-                         Number(data?.phaseDurations?.avg_panel_days || 0))
-                      ).toFixed(0)} days
+                      {Number(data?.phaseDurations?.avg_round_days || 0).toFixed(0)} days
                     </Text>
-                    <Text fontSize="xs" color="gray.400">submission → panel review</Text>
+                    <Text fontSize="xs" color="gray.400">submission open → panel close</Text>
                   </Box>
                 </SimpleGrid>
 

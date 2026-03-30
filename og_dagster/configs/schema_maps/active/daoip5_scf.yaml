@@ -169,7 +169,7 @@ schemas:
         openSource:
           source: "Open-Source?"
           type: boolean
-          transform: "lambda v: str(v).lower() in ['yes','true','1'] if v else False"
+          transform: "lambda v: str(v).lower() in ['yes','true','1','checked'] if v else False"
 
         github:
           source: "Github"
@@ -202,7 +202,7 @@ schemas:
         sorobanUsed:
           source: "Soroban?"
           type: boolean
-          transform: "lambda v: str(v).lower() in ['yes','true','1'] if v else False"
+          transform: "lambda v: str(v).lower() in ['yes','true','1','checked'] if v else False"
 
         thumbnail:
           source: "Thumbnail"
@@ -441,7 +441,7 @@ schemas:
         useSoroban:
           source: "Use Soroban?"
           type: boolean
-          transform: "lambda v: str(v).lower() in ['yes','true','1'] if v else False"
+          transform: "lambda v: str(v).lower() in ['yes','true','1','checked'] if v else False"
 
         goToMarketPlan:
           source: "Go-To-Market Plan"
