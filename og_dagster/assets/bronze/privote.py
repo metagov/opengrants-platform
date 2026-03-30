@@ -8,7 +8,7 @@ import polars as pl
 import requests
 from dagster import AssetOut, Output, multi_asset
 from sqlalchemy import text
-from utils.db import get_pg_engine
+from utils.db import get_pg_engine, upsert_platform_metadata
 from utils.graphql_helpers import (
     align_columns,
     flatten_dict,
@@ -509,6 +509,8 @@ def fetch_privote_data():
     logger.info(f"  • Deposits: {deposits_df.height}")
     logger.info(f"  • Tally Results: {tally_results_df.height}")
     logger.info(f"  • MACI Systems: {macis_df.height}")
+
+    upsert_platform_metadata(engine, "privote", data_source="Privote Subgraph / IPFS")
 
     # 8) Yield outputs
     yield Output(recipients_df, "bronze_privote_recipients")

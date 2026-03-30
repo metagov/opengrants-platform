@@ -29,6 +29,7 @@ import polars as pl
 import psycopg2
 from dagster import AssetOut, Output, get_dagster_logger, multi_asset
 
+from utils.db import get_pg_engine, upsert_platform_metadata
 from utils.graphql_helpers import (
     POSTGRES_DB,
     POSTGRES_HOST,
@@ -351,6 +352,8 @@ def load_gitcoin2_csv_data():
 
     summary = ", ".join(f"{k.replace('bronze_gitcoin2_', '')}: {v}" for k, v in counts.items())
     logger.info(f"Gitcoin2 CSV load complete — {summary}")
+
+    upsert_platform_metadata(get_pg_engine(), "gitcoin2", data_source="Gitcoin CSV snapshot")
 
     # Yield one Output per asset — row count as the value
     for _, table_name, _ in CSV_TABLE_MAP:

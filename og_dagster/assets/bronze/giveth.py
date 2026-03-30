@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from dagster import AssetOut, Output, multi_asset
 
-from utils.db import get_pg_engine
+from utils.db import get_pg_engine, upsert_platform_metadata
 from utils.graphql_helpers import (
     align_columns,
     flatten_dict,
@@ -450,6 +450,8 @@ def fetch_giveth_data():
     logger.info(
         f"✨ Rows written: rounds={len(qf_rounds_df)}, projects={len(projects_df)}"
     )
+
+    upsert_platform_metadata(engine, "giveth", data_source="Giveth GraphQL API")
 
     yield Output(qf_rounds_df, "bronze__giveth_qf_rounds")
     yield Output(projects_df, "bronze__giveth_projects")

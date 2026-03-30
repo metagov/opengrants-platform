@@ -7,7 +7,7 @@ import polars as pl
 from dagster import asset
 from configs.scf_airtable import SCF_BASE_ID, SCF_TABLES
 from utils.airtable_helpers import fetch_airtable_table
-from utils.db import drop_table_cascade
+from utils.db import drop_table_cascade, upsert_platform_metadata
 from utils.graphql_helpers import sanitize_for_sql
 
 
@@ -58,4 +58,5 @@ def bronze_scf_airtable_ingest(context):
             context.log.error(f"Failed fetching {table_name}: {e}")
             raise
 
+    upsert_platform_metadata(engine, "scf", data_source="Airtable API")
     context.log.info("Bronze SCF Airtable ingest complete.")

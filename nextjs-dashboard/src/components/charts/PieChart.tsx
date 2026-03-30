@@ -26,7 +26,7 @@ export const PieChart = ({
   tooltipFormatter,
 }: PieChartProps) => {
   const defaultLabel = ({ name, percent }: any) =>
-    `${name?.substring(0, 10)} ${(percent * 100).toFixed(0)}%`;
+    `${name} ${(percent * 100).toFixed(0)}%`;
 
   return (
     <ResponsiveContainer width="100%" height={height}>

@@ -8,7 +8,7 @@ import re
 import polars as pl
 from dagster import AssetOut, Output, multi_asset
 
-from utils.db import get_pg_engine
+from utils.db import get_pg_engine, upsert_platform_metadata
 from utils.graphql_helpers import logger, sanitize_for_sql
 
 RAW_DATA_PATH = os.getenv("RAW_DATA_PATH", "/app/raw_data")
@@ -160,6 +160,8 @@ def fetch_ens_data():
         if_table_exists="replace",
     )
     logger.info(f"Written {len(votes_df)} rows to bronze_ens_votes")
+
+    upsert_platform_metadata(engine, "ens", data_source="Snapshot API / JSON files")
 
     yield Output(proposals_df, "bronze__ens_proposals")
     yield Output(choices_df, "bronze__ens_project_choices")
