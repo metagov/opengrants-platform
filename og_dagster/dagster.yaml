@@ -1,4 +1,4 @@
 storage:
   postgres:
     postgres_url:
-      env: DAGSTER_STORAGE_URL
+      env: DAGSTER_METADATA_DB_URL

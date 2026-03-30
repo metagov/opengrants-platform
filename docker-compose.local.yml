@@ -66,7 +66,7 @@ services:
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_SSL=${POSTGRES_SSL:-}
-      - DAGSTER_STORAGE_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/opengrants
+      - DAGSTER_METADATA_DB_URL=postgresql+psycopg2://postgres:postgres@postgres:5432/opengrants
       - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://postgres:postgres@postgres:5432/opengrants}
       - GITCOIN2_RAW_DATA_DIR=/app/raw_data/Gitcoin/17_March_2026
       - DESTINATION__POSTGRES__CREDENTIALS__HOST=${POSTGRES_HOST:-postgres}
