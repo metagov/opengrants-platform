@@ -57,12 +57,12 @@ top_donor_concentration AS (
     SELECT
         "grantPoolId",
         ROUND(
-            SUM(donor_usd) FILTER (WHERE donor_rank <= 10) /
-            NULLIF(SUM(donor_usd), 0) * 100,
+            (SUM(donor_usd) FILTER (WHERE donor_rank <= 10) /
+            NULLIF(SUM(donor_usd), 0) * 100)::numeric,
         2) as top_10_donor_concentration_pct,
         ROUND(
-            SUM(donor_usd) FILTER (WHERE donor_rank <= 1) /
-            NULLIF(SUM(donor_usd), 0) * 100,
+            (SUM(donor_usd) FILTER (WHERE donor_rank <= 1) /
+            NULLIF(SUM(donor_usd), 0) * 100)::numeric,
         2) as top_donor_concentration_pct
     FROM (
         SELECT
@@ -129,7 +129,7 @@ SELECT
     -- For every $1 the community donated, how much total did projects receive?
     -- Ratio > 1 = matching is amplifying community signal
     ROUND(
-        COALESCE(
+        (COALESCE(
             NULLIF(gp."co.gitcoin.totalDistributed"::numeric, 0),
             ps.total_distributed_usd_raw, 0
         ) / NULLIF(
@@ -137,7 +137,7 @@ SELECT
                 NULLIF(gp."co.gitcoin.totalAmountDonatedInUsd"::numeric, 0),
                 rds.total_donated_usd_raw
             ), 0
-        ),
+        ))::numeric,
     2) as qf_amplification_ratio,
 
     -- BREADTH SIGNAL: avg donors per project in this round
@@ -150,8 +150,8 @@ SELECT
     2) as avg_donors_per_project,
 
     -- Per-donation stats (from raw donations)
-    ROUND(rds.avg_donation_usd, 4) as avg_donation_usd,
-    ROUND(rds.median_donation_usd, 4) as median_donation_usd,
+    ROUND(rds.avg_donation_usd::numeric, 4) as avg_donation_usd,
+    ROUND(rds.median_donation_usd::numeric, 4) as median_donation_usd,
     COALESCE(rds.projects_receiving_donations, 0) as projects_receiving_donations,
     COALESCE(ps.projects_paid_out, 0) as projects_paid_out,
 
@@ -160,7 +160,7 @@ SELECT
     tdc.top_donor_concentration_pct,
 
     -- Donor amount dispersion (lower = more democratic donation sizes)
-    ROUND(rds.donor_amount_stddev, 2) as donor_amount_stddev,
+    ROUND(rds.donor_amount_stddev::numeric, 2) as donor_amount_stddev,
 
     -- Timing
     gp."co.gitcoin.donationsStartTime" as donations_start,
