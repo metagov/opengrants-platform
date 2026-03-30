@@ -50,14 +50,24 @@ WITH platform_metrics AS (
     UNION ALL
 
     -- Gitcoin 2.0
+    -- total_funding_usd = capped matching pool + capped community donations
+    -- Excludes 15 outlier donations with astronomical values (raw token amounts, not USD).
+    -- Matching pool capped at $5M per round; donations capped at $50K per donation.
     SELECT
         'gitcoin2' as platform,
         (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_projects') }}) as total_projects,
         (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_grant_pools,
-        COUNT(*) as total_applications,
-        SUM(COALESCE("fundsApprovedInUSD", 0)) as total_funding_usd,
+        (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }}) as total_applications,
+        (
+            COALESCE((SELECT SUM(LEAST("totalGrantPoolSizeInUSD"::numeric, 5000000))
+                      FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}
+                      WHERE "totalGrantPoolSizeInUSD"::numeric > 0), 0)
+            +
+            COALESCE((SELECT SUM("amountInUsd")
+                      FROM {{ source('silver', 'silver_gitcoin2_donations') }}
+                      WHERE "amountInUsd" > 0 AND "amountInUsd" <= 50000), 0)
+        ) as total_funding_usd,
         'Quadratic Funding' as primary_mechanism
-    FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }}
 
 )
 

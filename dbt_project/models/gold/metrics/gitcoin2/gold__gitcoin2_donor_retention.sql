@@ -9,7 +9,7 @@ WITH donor_cohorts AS (
         "donorAddress",
         EXTRACT(YEAR FROM MIN("timestamp"::timestamp))::integer as cohort_year
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
-    WHERE "timestamp" IS NOT NULL
+    WHERE "timestamp" IS NOT NULL AND "amountInUsd" <= 50000
     GROUP BY "donorAddress"
 ),
 
@@ -38,6 +38,7 @@ donor_year_flags AS (
     JOIN {{ source('silver', 'silver_gitcoin2_donations') }} d
         ON dc."donorAddress" = d."donorAddress"
     WHERE dc.cohort_year >= 2019
+      AND d."amountInUsd" <= 50000
     GROUP BY dc."donorAddress", dc.cohort_year
 )
 

@@ -33,29 +33,36 @@ const platformRoutes: { [key: string]: string } = {
 
 function FundingChart({ platforms }: { platforms: any[] }) {
   const router = useRouter();
-  
-  const sortedPlatforms = [...platforms].sort(
-    (a, b) => parseFloat(String(b.total_funding_usd)) - parseFloat(String(a.total_funding_usd))
-  );
-  
+
+  const sortedPlatforms = [...platforms]
+    .filter(p => (parseFloat(String(p.total_funding_usd)) || 0) > 0)
+    .sort((a, b) => parseFloat(String(b.total_funding_usd)) - parseFloat(String(a.total_funding_usd)));
+
   const totalFunding = sortedPlatforms.reduce(
     (sum, p) => sum + (parseFloat(String(p.total_funding_usd)) || 0),
     0
   );
+
+  // Use sqrt scale so smaller platforms are visible alongside larger ones.
+  // Each segment width = sqrt(value) / sum(sqrt(values)) — preserves order
+  // while giving meaningful width to sub-1% platforms.
+  const sqrtValues = sortedPlatforms.map(p => Math.sqrt(parseFloat(String(p.total_funding_usd)) || 0));
+  const sqrtTotal = sqrtValues.reduce((a, b) => a + b, 0);
 
   return (
     <Box w="100%">
       <HStack w="100%" h="48px" borderRadius="lg" overflow="hidden" gap={0}>
         {sortedPlatforms.map((p, index) => {
           const value = parseFloat(String(p.total_funding_usd)) || 0;
-          const percentage = totalFunding > 0 ? (value / totalFunding) * 100 : 0;
+          const linearPct = totalFunding > 0 ? (value / totalFunding) * 100 : 0;
+          const sqrtPct = sqrtTotal > 0 ? (sqrtValues[index] / sqrtTotal) * 100 : 0;
           const color = platformHexColors[p.platform] || "#718096";
           const route = platformRoutes[p.platform];
-          
+
           return (
             <Box
               key={p.platform}
-              w={`${percentage}%`}
+              w={`${sqrtPct}%`}
               h="100%"
               bg={color}
               cursor={route ? "pointer" : "default"}
@@ -66,19 +73,22 @@ function FundingChart({ platforms }: { platforms: any[] }) {
                 zIndex: 10,
               }}
               position="relative"
-              title={`${platformDisplayNames[p.platform] || p.platform}: ${formatCurrency(value)} (${percentage.toFixed(1)}%)`}
+              title={`${platformDisplayNames[p.platform] || p.platform}: ${formatCurrency(value)} (${linearPct.toFixed(1)}% of total)`}
             />
           );
         })}
       </HStack>
-      
-      <VStack gap={3} mt={6} align="stretch">
+      <Text fontSize="10px" color="gray.400" textAlign="right" mt={1} fontFamily="Inter">
+        bar uses √ scale — hover segments for exact values
+      </Text>
+
+      <VStack gap={3} mt={4} align="stretch">
         {sortedPlatforms.map((p) => {
           const value = parseFloat(String(p.total_funding_usd)) || 0;
           const percentage = totalFunding > 0 ? (value / totalFunding) * 100 : 0;
           const color = platformHexColors[p.platform] || "#718096";
           const route = platformRoutes[p.platform];
-          
+
           return (
             <HStack
               key={p.platform}

@@ -59,6 +59,7 @@ token_stats AS (
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
     WHERE "co.gitcoin.tokenAddress" IS NOT NULL
       AND "co.gitcoin.tokenAddress" != ''
+      AND "amountInUsd" <= 50000
     GROUP BY
         "co.gitcoin.chainId"::integer,
         LOWER("co.gitcoin.tokenAddress")

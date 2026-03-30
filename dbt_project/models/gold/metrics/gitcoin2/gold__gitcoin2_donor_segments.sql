@@ -16,6 +16,7 @@ WITH donor_stats AS (
         MIN("timestamp") as first_donation_at,
         MAX("timestamp") as last_donation_at
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
+    WHERE "amountInUsd" <= 50000
     GROUP BY "donorAddress"
 ),
 

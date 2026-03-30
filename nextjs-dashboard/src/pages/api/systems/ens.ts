@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '../../../lib/db';
+import { safeQuery } from '../../../lib/safeQuery';
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,7 +10,7 @@ export default async function handler(
   }
 
   try {
-    const summaryResult = await query(`
+    const summaryResult = await safeQuery(`
       SELECT
         COUNT(DISTINCT "io.ens.proposalId") as total_rounds,
         COUNT(*) as total_applicants,
@@ -21,7 +21,7 @@ export default async function handler(
       WHERE "io.ens.score" IS NOT NULL
     `, []);
 
-    const voteStats = await query(`
+    const voteStats = await safeQuery(`
       SELECT
         SUM(CAST("io.ens.totalVotes" AS numeric)) as total_votes,
         SUM(CAST("io.ens.scoringTotal" AS numeric)) as total_scoring_power
@@ -38,7 +38,7 @@ export default async function handler(
       total_scoring_power: Number(voteStats[0]?.total_scoring_power) || 0,
     };
 
-    const rounds = await query(`
+    const rounds = await safeQuery(`
       SELECT
         id as round_id,
         name as round_name,
@@ -55,7 +55,7 @@ export default async function handler(
       ORDER BY "io.ens.endTs" DESC NULLS LAST
     `, []);
 
-    const roundTypeBreakdown = await query(`
+    const roundTypeBreakdown = await safeQuery(`
       SELECT
         "io.ens.roundType" as round_type,
         COUNT(DISTINCT "io.ens.proposalId") as round_count,
@@ -67,7 +67,7 @@ export default async function handler(
       ORDER BY round_count DESC
     `, []);
 
-    const topProjects = await query(`
+    const topProjects = await safeQuery(`
       SELECT
         name as project_name,
         SUM(CAST("io.ens.score" AS numeric)) as total_voting_power,
@@ -83,7 +83,7 @@ export default async function handler(
       LIMIT 20
     `, []);
 
-    const roundsParticipation = await query(`
+    const roundsParticipation = await safeQuery(`
       SELECT
         CAST("io.ens.roundNumber" AS numeric) as round_number,
         "io.ens.roundType" as round_type,

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '../../../lib/db';
+import { safeQuery } from '../../../lib/safeQuery';
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,13 +10,13 @@ export default async function handler(
   }
 
   try {
-    const metadata = await query(`
+    const metadata = await safeQuery(`
       SELECT platform, last_indexed_at, data_source, notes
       FROM platform_metadata
       WHERE platform = 'privote'
     `, []);
 
-    const allocations = await query(`
+    const allocations = await safeQuery(`
       SELECT 
         rank,
         medal,
@@ -30,7 +30,7 @@ export default async function handler(
       LIMIT 50
     `, []);
 
-    const summaryData = await query(`
+    const summaryData = await safeQuery(`
       SELECT 
         COUNT(*) as total_projects,
         SUM(allocation_eth) as total_allocated,
@@ -41,7 +41,7 @@ export default async function handler(
       FROM privote.ui_allocations
     `, []);
 
-    const applicationStats = await query(`
+    const applicationStats = await safeQuery(`
       SELECT 
         COUNT(*) as total_applications,
         SUM(CAST("fundsApprovedInUSD" AS numeric)) as total_approved_usd,
@@ -52,7 +52,7 @@ export default async function handler(
       FROM silver_privote_grant_applications
     `, []);
 
-    const roundInfo = await query(`
+    const roundInfo = await safeQuery(`
       SELECT 
         id as round_id,
         name as round_name,
@@ -63,7 +63,7 @@ export default async function handler(
       LIMIT 1
     `, []);
 
-    const topApplications = await query(`
+    const topApplications = await safeQuery(`
       SELECT 
         name as project_name,
         description,

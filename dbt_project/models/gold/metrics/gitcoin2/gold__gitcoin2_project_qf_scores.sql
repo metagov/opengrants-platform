@@ -27,6 +27,7 @@ WITH project_round_donations AS (
         MIN(d."timestamp") as first_donation_at,
         MAX(d."timestamp") as last_donation_at
     FROM {{ source('silver', 'silver_gitcoin2_donations') }} d
+    WHERE d."amountInUsd" <= 50000
     GROUP BY d."projectId", d."grantPoolId"
 ),
 

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { query } from '../../lib/db';
+import { safeQuery } from '../../lib/safeQuery';
 
 export default async function handler(
   req: NextApiRequest,

@@ -11,15 +11,17 @@
 
 WITH raw_donation_stats AS (
     -- Per-donation aggregation: counts, totals, avg, median
+    -- Exclude 15 outlier records (amountInUsd > $50K are raw token values, not USD)
     SELECT
         "grantPoolId",
         COUNT(*) as raw_donation_count,
         COUNT(DISTINCT "donorAddress") as unique_donors_raw,
-        COALESCE(SUM("amountInUsd"::numeric), 0) as total_donated_usd_raw,
+        COALESCE(SUM("amountInUsd"), 0) as total_donated_usd_raw,
         COUNT(DISTINCT "projectId") as projects_receiving_donations,
-        COALESCE(AVG("amountInUsd"::numeric), 0) as avg_donation_usd,
-        COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "amountInUsd"::numeric)::numeric, 0) as median_donation_usd
+        COALESCE(AVG("amountInUsd"), 0) as avg_donation_usd,
+        COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "amountInUsd")::numeric, 0) as median_donation_usd
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
+    WHERE "amountInUsd" <= 50000
     GROUP BY "grantPoolId"
 ),
 
@@ -28,9 +30,9 @@ per_donor_totals AS (
     SELECT
         "grantPoolId",
         "donorAddress",
-        SUM("amountInUsd"::numeric) as donor_total_usd
+        SUM("amountInUsd") as donor_total_usd
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
-    WHERE "amountInUsd" IS NOT NULL
+    WHERE "amountInUsd" IS NOT NULL AND "amountInUsd" <= 50000
     GROUP BY "grantPoolId", "donorAddress"
 ),
 
@@ -72,7 +74,7 @@ top_donor_concentration AS (
                 ORDER BY SUM("amountInUsd"::numeric) DESC
             ) as donor_rank
         FROM {{ source('silver', 'silver_gitcoin2_donations') }}
-        WHERE "amountInUsd" IS NOT NULL
+        WHERE "amountInUsd" IS NOT NULL AND "amountInUsd" <= 50000
         GROUP BY "grantPoolId", "donorAddress"
     ) ranked
     GROUP BY "grantPoolId"

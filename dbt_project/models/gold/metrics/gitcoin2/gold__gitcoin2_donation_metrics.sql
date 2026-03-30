@@ -4,18 +4,20 @@
 -- Detailed donation analytics from 497k donation records
 
 WITH donation_stats AS (
+    -- Exclude 15 outlier records with raw token values (not USD) where amountInUsd > $50K
     SELECT
         COUNT(*) as total_donations,
-        COALESCE(SUM("amountInUsd"::numeric), 0) as total_donated_usd,
+        COALESCE(SUM("amountInUsd"), 0) as total_donated_usd,
         COUNT(DISTINCT "donorAddress") as unique_donors,
         COUNT(DISTINCT "recipientAddress") as unique_recipients,
         COUNT(DISTINCT "grantPoolId") as rounds_with_donations,
         COUNT(DISTINCT "projectId") as projects_with_donations,
-        COALESCE(AVG("amountInUsd"::numeric), 0) as avg_donation_usd,
-        COALESCE(MIN("amountInUsd"::numeric), 0) as min_donation_usd,
-        COALESCE(MAX("amountInUsd"::numeric), 0) as max_donation_usd,
-        COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "amountInUsd"::numeric), 0) as median_donation_usd
+        COALESCE(AVG("amountInUsd"), 0) as avg_donation_usd,
+        COALESCE(MIN("amountInUsd"), 0) as min_donation_usd,
+        COALESCE(MAX("amountInUsd"), 0) as max_donation_usd,
+        COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "amountInUsd"), 0) as median_donation_usd
     FROM {{ source('silver', 'silver_gitcoin2_donations') }}
+    WHERE "amountInUsd" <= 50000
 ),
 
 donor_engagement AS (

@@ -1217,6 +1217,21 @@ export default function GitcoinPage() {
           </Tabs.Root>
         </Container>
       </Box>
+      <Box bg="gray.50" borderTop="1px" borderColor="gray.200" py={6}>
+        <Container maxW="7xl">
+          <VStack align="start" gap={2}>
+            <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+              Data Notes
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              <strong>Donation outliers excluded:</strong> 15 records with values exceeding $50,000 USD were excluded from all donation aggregates. These records contain raw on-chain token amounts (not USD) due to a known data quality issue in the source CSV snapshot. The excluded records represent 2 unique wallets with values up to $2.5 trillion per transaction. All donation counts, totals, averages, and chain metrics reflect the remaining 497,332 clean records.
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              <strong>Matching pool totals:</strong> Grant pool sizes are capped at $5M per round to exclude 3 rounds with anomalous values likely caused by the same raw token unit issue. This affects <em>total_matching_pool_usd</em> and <em>total_distributed_usd</em> fields.
+            </Text>
+          </VStack>
+        </Container>
+      </Box>
       <SupportFooter />
     </>
   );

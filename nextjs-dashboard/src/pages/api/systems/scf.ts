@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '../../../lib/db';
+import { safeQuery } from '../../../lib/safeQuery';
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,14 +11,14 @@ export default async function handler(
 
   try {
     // Platform metadata
-    const metadata = await query(`
+    const metadata = await safeQuery(`
       SELECT platform, last_indexed_at, data_source, notes
       FROM platform_metadata
       WHERE platform = 'scf'
     `, []);
 
     // Summary stats - get accurate totals from silver tables (only count completed rounds with payments)
-    const summaryTotals = await query(`
+    const summaryTotals = await safeQuery(`
       SELECT 
         SUM("org.stellar.communityfund.totalAwardedUSD") as total_awarded,
         SUM("org.stellar.communityfund.totalPaidUSD") as total_paid,
@@ -35,7 +35,7 @@ export default async function handler(
     };
 
     // Quarterly breakdown - include rounds with payments OR projects
-    const quarterlyData = await query(`
+    const quarterlyData = await safeQuery(`
       SELECT 
         "org.stellar.communityfund.quarterYear" as quarter_year,
         "org.stellar.communityfund.year" as year,
@@ -51,7 +51,7 @@ export default async function handler(
     `, []);
 
     // Category distribution from silver_scf_projects
-    const categoryData = await query(`
+    const categoryData = await safeQuery(`
       SELECT 
         "org.stellar.communityfund.category" as category,
         COUNT(*) as project_count,
@@ -64,7 +64,7 @@ export default async function handler(
     `, []);
 
     // All active rounds (with payments OR projects) - no limit for lazy loading
-    const roundsBreakdown = await query(`
+    const roundsBreakdown = await safeQuery(`
       SELECT 
         id as round_id,
         name as round_name,
@@ -86,7 +86,7 @@ export default async function handler(
     `, []);
 
     // Tranche/milestone metrics from silver_scf_grant_applications
-    const trancheMetrics = await query(`
+    const trancheMetrics = await safeQuery(`
       SELECT 
         COUNT(*) as total_applications,
         COUNT(CASE WHEN "org.stellar.communityfund.trancheCompletionPercent" = 100 THEN 1 END) as completed_tranches,
@@ -100,7 +100,7 @@ export default async function handler(
     `, []);
 
     // Tranche completion by status
-    const trancheByStatus = await query(`
+    const trancheByStatus = await safeQuery(`
       SELECT 
         "org.stellar.communityfund.trancheCompletion" as tranche_status,
         COUNT(*) as count,
@@ -113,7 +113,7 @@ export default async function handler(
     `, []);
 
     // Top projects by paid amount
-    const topProjects = await query(`
+    const topProjects = await safeQuery(`
       SELECT
         name as project_name,
         "org.stellar.communityfund.round" as round_name,
@@ -130,7 +130,7 @@ export default async function handler(
     `, []);
 
     // Milestone projects with dates for milestones tab
-    const milestoneProjects = await query(`
+    const milestoneProjects = await safeQuery(`
       SELECT
         name as project_name,
         "org.stellar.communityfund.round" as round_name,
@@ -147,7 +147,7 @@ export default async function handler(
     `, []);
 
     // Funding efficiency by round (awarded vs paid with payment rate)
-    const fundingEfficiency = await query(`
+    const fundingEfficiency = await safeQuery(`
       SELECT 
         name as round_name,
         CAST(REGEXP_REPLACE(name, '[^0-9]', '', 'g') AS INTEGER) as round_num,
@@ -162,7 +162,7 @@ export default async function handler(
     `, []);
 
     // Category performance with completion rates (limit to top 5)
-    const categoryPerformance = await query(`
+    const categoryPerformance = await safeQuery(`
       SELECT 
         "org.stellar.communityfund.category" as category,
         COUNT(*) as total_projects,
@@ -178,7 +178,7 @@ export default async function handler(
     `, []);
 
     // Repeat funding statistics - use grant pools total for consistency with summary
-    const repeatFundingStats = await query(`
+    const repeatFundingStats = await safeQuery(`
       WITH project_funding_counts AS (
         SELECT 
           "org.stellar.communityfund.project" as project_name,
@@ -199,7 +199,7 @@ export default async function handler(
     `, []);
 
     // Cohort analysis: Rounds with repeat-funded projects vs total funded
-    const cohortAnalysis = await query(`
+    const cohortAnalysis = await safeQuery(`
       WITH project_funding_counts AS (
         SELECT 
           "org.stellar.communityfund.project" as project_name,
@@ -242,7 +242,7 @@ export default async function handler(
     `, []);
 
     // Soroban adoption by quarter (Stellar-specific metric)
-    const sorobanAdoption = await query(`
+    const sorobanAdoption = await safeQuery(`
       SELECT
         gp."org.stellar.communityfund.quarterYear" as quarter,
         gp."org.stellar.communityfund.year" as year,
@@ -261,7 +261,7 @@ export default async function handler(
     `, []);
 
     // Geographic distribution of funded projects
-    const geoDistribution = await query(`
+    const geoDistribution = await safeQuery(`
       SELECT
         "org.stellar.communityfund.regionsOfOperation" as region,
         COUNT(*) as project_count,
@@ -275,7 +275,7 @@ export default async function handler(
     `, []);
 
     // Award type distribution
-    const awardTypeDistribution = await query(`
+    const awardTypeDistribution = await safeQuery(`
       SELECT
         "org.stellar.communityfund.awardType" as award_type,
         COUNT(*) as count,
@@ -292,7 +292,7 @@ export default async function handler(
     `, []);
 
     // Open source + Soroban scalar stats
-    const projectStats = await query(`
+    const projectStats = await safeQuery(`
       SELECT
         COUNT(*) as total_projects,
         COUNT(*) FILTER (WHERE "org.stellar.communityfund.openSource" = true) as open_source_count,
@@ -311,7 +311,7 @@ export default async function handler(
     `, []);
 
     // Average phase durations across historical rounds (dates stored as 'Month DD, YYYY' strings)
-    const phaseDurations = await query(`
+    const phaseDurations = await safeQuery(`
       SELECT
         ROUND(AVG(CASE
           WHEN sub_close ~ E'^\\\\w+ \\\\d+, \\\\d{4}$' AND sub_open ~ E'^\\\\w+ \\\\d+, \\\\d{4}$'
@@ -346,7 +346,7 @@ export default async function handler(
     `, []);
 
     // Round phase dates — all date fields per round for live phase computation
-    const roundPhases = await query(`
+    const roundPhases = await safeQuery(`
       SELECT
         id as round_id,
         name as round_name,

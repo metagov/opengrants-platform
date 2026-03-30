@@ -11,7 +11,8 @@ SELECT
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }} WHERE "isOpen"::boolean = true) as active_grant_pools,
     (SELECT COALESCE(SUM("totalGrantPoolSizeInUSD"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_matching_pool_usd,
     (SELECT COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_donated_via_rounds_usd,
-    (SELECT COALESCE(SUM("co.gitcoin.totalDistributed"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }}) as total_distributed_usd,
+    -- total_distributed: co.gitcoin.totalDistributed is in raw token units (not USD) — use capped matching pool as proxy
+    (SELECT COALESCE(SUM(LEAST("totalGrantPoolSizeInUSD"::numeric, 5000000)), 0) FROM {{ source('silver', 'silver_gitcoin2_grant_pools') }} WHERE "totalGrantPoolSizeInUSD"::numeric > 0) as total_distributed_usd,
 
     -- Projects Metrics
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_projects') }}) as total_projects,
@@ -22,11 +23,11 @@ SELECT
     0 as rejected_applications,
     0 as pending_applications,
 
-    -- Donations Metrics
+    -- Donations Metrics (exclude outliers: 15 records with astronomical values from raw token amounts)
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_donations') }}) as total_donations,
-    (SELECT COALESCE(SUM("amountInUsd"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_donations') }}) as total_donated_usd,
-    (SELECT COUNT(DISTINCT "donorAddress") FROM {{ source('silver', 'silver_gitcoin2_donations') }}) as unique_donors,
-    (SELECT COALESCE(AVG("amountInUsd"::numeric), 0) FROM {{ source('silver', 'silver_gitcoin2_donations') }}) as avg_donation_usd,
+    (SELECT COALESCE(SUM("amountInUsd"), 0) FROM {{ source('silver', 'silver_gitcoin2_donations') }} WHERE "amountInUsd" <= 50000) as total_donated_usd,
+    (SELECT COUNT(DISTINCT "donorAddress") FROM {{ source('silver', 'silver_gitcoin2_donations') }} WHERE "amountInUsd" <= 50000) as unique_donors,
+    (SELECT COALESCE(AVG("amountInUsd"), 0) FROM {{ source('silver', 'silver_gitcoin2_donations') }} WHERE "amountInUsd" <= 50000) as avg_donation_usd,
 
     -- Payouts Metrics
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_payouts') }}) as total_payouts,

@@ -35,6 +35,7 @@ donor_behavior AS (
         COALESCE(AVG(d."amountInUsd"::numeric), 0) as avg_donation_usd,
         COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY d."amountInUsd"::numeric), 0) as median_donation_usd
     FROM {{ source('silver', 'silver_gitcoin2_donations') }} d
+    WHERE d."amountInUsd" <= 50000
     GROUP BY LOWER(d."donorAddress")
 ),
 

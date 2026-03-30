@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '../../../lib/db';
+import { safeQuery } from '../../../lib/safeQuery';
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,13 +10,13 @@ export default async function handler(
   }
 
   try {
-    const metadata = await query(`
+    const metadata = await safeQuery(`
       SELECT platform, last_indexed_at, data_source, notes
       FROM platform_metadata
       WHERE platform = 'giveth'
     `, []);
 
-    const summaryTotals = await query(`
+    const summaryTotals = await safeQuery(`
       SELECT 
         COUNT(*) as total_rounds,
         SUM(CAST("io.giveth.allDonationsUsdValue" AS numeric)) as total_donations,
@@ -26,7 +26,7 @@ export default async function handler(
       FROM silver_giveth_grant_pools
     `, []);
 
-    const projectCount = await query(`
+    const projectCount = await safeQuery(`
       SELECT COUNT(*) as total_projects FROM silver_giveth_projects
     `, []);
 
@@ -40,7 +40,7 @@ export default async function handler(
       total_projects: Number(projectCount[0]?.total_projects) || 0,
     };
 
-    const rounds = await query(`
+    const rounds = await safeQuery(`
       SELECT 
         id as round_id,
         name as round_name,
@@ -59,7 +59,7 @@ export default async function handler(
       ORDER BY "io.giveth.beginDate" DESC NULLS LAST
     `, []);
 
-    const topProjects = await query(`
+    const topProjects = await safeQuery(`
       SELECT DISTINCT ON ("io.giveth.slug")
         name as project_name,
         "io.giveth.slug" as slug,
@@ -77,7 +77,7 @@ export default async function handler(
       .sort((a: any, b: any) => Number(b.total_donations) - Number(a.total_donations))
       .slice(0, 10);
 
-    const verificationBreakdown = await query(`
+    const verificationBreakdown = await safeQuery(`
       SELECT 
         "io.giveth.verificationStatus" as status,
         COUNT(*) as count
