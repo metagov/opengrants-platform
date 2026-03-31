@@ -548,7 +548,7 @@ export default function GitcoinPage() {
                     <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                       <Text fontSize="xs" color="gray.500" mb={1}>Repeat Donors</Text>
                       <Text fontSize="xl" fontWeight="semibold">{formatNumber(data.donationMetrics?.repeat_donors || 0)}</Text>
-                      <Text fontSize="xs" color="gray.400">{(data.donationMetrics?.repeat_donor_percentage || 0).toFixed(1)}% of donors</Text>
+                      <Text fontSize="xs" color="gray.400">{Number(data.donationMetrics?.repeat_donor_percentage || 0).toFixed(1)}% of donors</Text>
                     </Box>
                     <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                       <Text fontSize="xs" color="gray.500" mb={1}>One-Time Donors</Text>
