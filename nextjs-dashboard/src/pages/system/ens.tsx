@@ -198,7 +198,7 @@ export default function ENSPage() {
                 Data Enrichment In Progress
               </Badge>
               <Text fontSize="sm" color="blue.700" fontFamily="Inter">
-                We don't yet have USD grant value data for ENS — funding amounts are denominated in ENS voting power, not USD. Price enrichment is on the roadmap.
+                We don't yet have USD grant value data for ENS; Funding amounts are denominated in ENS voting power, not USD.
               </Text>
             </HStack>
           </Box>
