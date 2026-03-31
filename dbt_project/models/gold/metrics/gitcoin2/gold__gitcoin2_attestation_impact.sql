@@ -58,25 +58,25 @@ SELECT
     ROUND(COUNT(*)::numeric / SUM(COUNT(*)) OVER () * 100, 2) as pct_of_total_donors,
 
     -- Engagement depth
-    ROUND(AVG(total_donations), 2) as avg_donations_count,
-    ROUND(AVG(rounds_donated_to), 2) as avg_rounds_donated_to,
-    ROUND(AVG(projects_supported), 2) as avg_projects_supported,
-    ROUND(AVG(chains_donated_on), 2) as avg_chains_donated_on,
+    ROUND(AVG(total_donations)::numeric, 2) as avg_donations_count,
+    ROUND(AVG(rounds_donated_to)::numeric, 2) as avg_rounds_donated_to,
+    ROUND(AVG(projects_supported)::numeric, 2) as avg_projects_supported,
+    ROUND(AVG(chains_donated_on)::numeric, 2) as avg_chains_donated_on,
 
     -- Donation size
-    ROUND(AVG(total_donated_usd), 2) as avg_total_donated_usd,
-    ROUND(AVG(avg_donation_usd), 4) as avg_single_donation_usd,
+    ROUND(AVG(total_donated_usd)::numeric, 2) as avg_total_donated_usd,
+    ROUND(AVG(avg_donation_usd)::numeric, 4) as avg_single_donation_usd,
     ROUND(AVG(median_donation_usd)::numeric, 4) as avg_median_donation_usd,
     ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_donated_usd)::numeric, 2) as median_total_donated_usd,
 
     -- Volume share
-    ROUND(SUM(total_donated_usd), 2) as total_donated_usd_segment,
-    ROUND(SUM(total_donated_usd) / NULLIF(SUM(SUM(total_donated_usd)) OVER (), 0) * 100, 2) as pct_of_total_volume,
+    ROUND(SUM(total_donated_usd)::numeric, 2) as total_donated_usd_segment,
+    ROUND((SUM(total_donated_usd) / NULLIF(SUM(SUM(total_donated_usd)) OVER (), 0) * 100)::numeric, 2) as pct_of_total_volume,
 
     -- Passport-specific (null for non-attested group)
-    ROUND(AVG(attestation_count), 2) as avg_attestation_count,
-    ROUND(AVG(max_projects_contributed), 2) as avg_attested_projects_contributed,
-    ROUND(AVG(max_rounds_contributed), 2) as avg_attested_rounds_contributed,
+    ROUND(AVG(attestation_count)::numeric, 2) as avg_attestation_count,
+    ROUND(AVG(max_projects_contributed)::numeric, 2) as avg_attested_projects_contributed,
+    ROUND(AVG(max_rounds_contributed)::numeric, 2) as avg_attested_rounds_contributed,
 
     NOW() as calculated_at
 

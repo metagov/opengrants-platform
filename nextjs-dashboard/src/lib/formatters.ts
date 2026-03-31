@@ -1,21 +1,23 @@
-export const formatCurrency = (value: number) => {
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(2)}M`;
+export const formatCurrency = (value: number | string | null | undefined) => {
+  const n = Number(value) || 0;
+  if (n >= 1000000) {
+    return `$${(n / 1000000).toFixed(2)}M`;
   }
-  if (value >= 1000) {
-    return `$${(value / 1000).toFixed(0)}K`;
+  if (n >= 1000) {
+    return `$${(n / 1000).toFixed(0)}K`;
   }
-  return `$${value?.toFixed(0) || 0}`;
+  return `$${n.toFixed(0)}`;
 };
 
-export const formatNumber = (value: number) => {
-  if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(1)}M`;
+export const formatNumber = (value: number | string | null | undefined) => {
+  const n = Number(value) || 0;
+  if (n >= 1000000) {
+    return `${(n / 1000000).toFixed(1)}M`;
   }
-  if (value >= 1000) {
-    return `${(value / 1000).toFixed(1)}K`;
+  if (n >= 1000) {
+    return `${(n / 1000).toFixed(1)}K`;
   }
-  return value?.toFixed(0) || '0';
+  return n.toFixed(0);
 };
 
 export const formatETH = (value: number | undefined | null) => {
@@ -23,6 +25,6 @@ export const formatETH = (value: number | undefined | null) => {
   return `${num.toFixed(4)} ETH`;
 };
 
-export const formatPercent = (value: number) => {
-  return `${value.toFixed(1)}%`;
+export const formatPercent = (value: number | string | null | undefined) => {
+  return `${Number(value || 0).toFixed(1)}%`;
 };

@@ -77,14 +77,14 @@ SELECT
     ts.token_address,
     COALESCE(kt.symbol, 'UNKNOWN') as token_symbol,
     ts.donation_count,
-    ROUND(ts.total_donated_usd, 2) as total_donated_usd,
+    ROUND(ts.total_donated_usd::numeric, 2) as total_donated_usd,
     ts.unique_donors,
     ts.rounds_using_token,
     ts.projects_receiving,
-    ROUND(ts.avg_donation_usd, 4) as avg_donation_usd,
-    ROUND(ts.median_donation_usd, 4) as median_donation_usd,
-    ROUND(ts.total_donated_usd / NULLIF(ct.chain_total_usd, 0) * 100, 2) as pct_of_chain_volume,
-    ROUND(ct.chain_total_usd, 2) as chain_total_usd,
+    ROUND(ts.avg_donation_usd::numeric, 4) as avg_donation_usd,
+    ROUND(ts.median_donation_usd::numeric, 4) as median_donation_usd,
+    ROUND((ts.total_donated_usd / NULLIF(ct.chain_total_usd, 0) * 100)::numeric, 2) as pct_of_chain_volume,
+    ROUND(ct.chain_total_usd::numeric, 2) as chain_total_usd,
     NOW() as calculated_at
 
 FROM token_stats ts

@@ -55,15 +55,15 @@ SELECT
     ROUND(SUM(ever_returned)::numeric / NULLIF(COUNT(*), 0) * 100, 2) as ever_returned_pct,
 
     -- Cohort behavior averages
-    ROUND(AVG(lifetime_donated_usd), 2) as cohort_avg_donated_usd,
-    ROUND(SUM(lifetime_donated_usd), 2) as cohort_total_donated_usd,
-    ROUND(AVG(rounds_donated_to), 2) as cohort_avg_rounds_donated,
-    ROUND(AVG(projects_supported), 2) as cohort_avg_projects_supported,
-    ROUND(AVG(total_donations), 2) as cohort_avg_donation_count,
+    ROUND(AVG(lifetime_donated_usd)::numeric, 2) as cohort_avg_donated_usd,
+    ROUND(SUM(lifetime_donated_usd)::numeric, 2) as cohort_total_donated_usd,
+    ROUND(AVG(rounds_donated_to)::numeric, 2) as cohort_avg_rounds_donated,
+    ROUND(AVG(projects_supported)::numeric, 2) as cohort_avg_projects_supported,
+    ROUND(AVG(total_donations)::numeric, 2) as cohort_avg_donation_count,
 
     -- Returning donor subset stats
-    ROUND(AVG(lifetime_donated_usd) FILTER (WHERE ever_returned = 1), 2) as returning_donor_avg_donated_usd,
-    ROUND(AVG(lifetime_donated_usd) FILTER (WHERE ever_returned = 0), 2) as one_time_donor_avg_donated_usd,
+    ROUND(AVG(lifetime_donated_usd) FILTER (WHERE ever_returned = 1)::numeric, 2) as returning_donor_avg_donated_usd,
+    ROUND(AVG(lifetime_donated_usd) FILTER (WHERE ever_returned = 0)::numeric, 2) as one_time_donor_avg_donated_usd,
 
     NOW() as calculated_at
 

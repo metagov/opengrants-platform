@@ -700,7 +700,7 @@ export default function GitcoinPage() {
                         ]}
                         height={280}
                         showLegend
-                        tooltipFormatter={(value: number, name: string) => [value.toFixed(1), name]}
+                        tooltipFormatter={(value: number, name: string) => [Number(value).toFixed(1), name]}
                       />
                     </ChartCard>
                   </SimpleGrid>
@@ -711,7 +711,7 @@ export default function GitcoinPage() {
                         <Box key={idx} p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
                           <Text fontSize="xs" color="gray.500" mb={1}>{a.label}</Text>
                           <Text fontSize="xl" fontWeight="semibold" color={idx === 0 ? gitcoinColors.primary : undefined}>{formatNumber(a.donor_count)}</Text>
-                          <Text fontSize="xs" color="gray.400">{a.pct_of_donors.toFixed(1)}% of donors</Text>
+                          <Text fontSize="xs" color="gray.400">{Number(a.pct_of_donors).toFixed(1)}% of donors</Text>
                           <Text fontSize="xs" color="gray.500" mt={2}>Avg donated: {formatCurrency(a.avg_donated)}</Text>
                           <Text fontSize="xs" color="gray.500">Avg per tx: {formatCurrency(a.avg_single)}</Text>
                         </Box>

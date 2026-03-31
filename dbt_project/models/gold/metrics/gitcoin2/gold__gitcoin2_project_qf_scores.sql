@@ -109,14 +109,14 @@ SELECT
     -- QF signals
     r.unique_donors,
     r.donations_count,
-    ROUND(r.total_donated_usd, 2) as total_donated_usd,
-    ROUND(r.avg_donation_usd, 4) as avg_donation_usd,
-    ROUND(r.min_donation_usd, 4) as min_donation_usd,
-    ROUND(r.max_donation_usd, 2) as max_donation_usd,
-    ROUND(r.qf_score_estimate, 4) as qf_score_estimate,
+    ROUND(r.total_donated_usd::numeric, 2) as total_donated_usd,
+    ROUND(r.avg_donation_usd::numeric, 4) as avg_donation_usd,
+    ROUND(r.min_donation_usd::numeric, 4) as min_donation_usd,
+    ROUND(r.max_donation_usd::numeric, 2) as max_donation_usd,
+    ROUND(r.qf_score_estimate::numeric, 4) as qf_score_estimate,
 
     -- Project's share of the round's total community donations
-    ROUND(r.total_donated_usd / NULLIF(r.round_total_donated_usd, 0) * 100, 4) as pct_of_round_donations,
+    ROUND((r.total_donated_usd / NULLIF(r.round_total_donated_usd, 0) * 100)::numeric, 4) as pct_of_round_donations,
 
     -- Rankings
     r.qf_rank_in_round,

@@ -40,14 +40,14 @@ SELECT
     segment,
     COUNT(*) as donor_count,
     ROUND(COUNT(*)::numeric / SUM(COUNT(*)) OVER () * 100, 2) as pct_of_total_donors,
-    ROUND(AVG(rounds_donated_to), 2) as avg_rounds_donated_to,
-    ROUND(AVG(chains_donated_on), 2) as avg_chains_donated_on,
-    ROUND(AVG(total_donated_usd), 2) as avg_total_donated_usd,
+    ROUND(AVG(rounds_donated_to)::numeric, 2) as avg_rounds_donated_to,
+    ROUND(AVG(chains_donated_on)::numeric, 2) as avg_chains_donated_on,
+    ROUND(AVG(total_donated_usd)::numeric, 2) as avg_total_donated_usd,
     ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY total_donated_usd)::numeric, 4) as median_total_donated_usd,
-    ROUND(AVG(projects_supported), 2) as avg_projects_supported,
-    ROUND(AVG(total_donations), 2) as avg_donations_count,
-    ROUND(SUM(total_donated_usd), 2) as total_donated_usd_segment,
-    ROUND(SUM(total_donated_usd) / NULLIF(SUM(SUM(total_donated_usd)) OVER (), 0) * 100, 2) as pct_of_total_volume,
+    ROUND(AVG(projects_supported)::numeric, 2) as avg_projects_supported,
+    ROUND(AVG(total_donations)::numeric, 2) as avg_donations_count,
+    ROUND(SUM(total_donated_usd)::numeric, 2) as total_donated_usd_segment,
+    ROUND((SUM(total_donated_usd) / NULLIF(SUM(SUM(total_donated_usd)) OVER (), 0) * 100)::numeric, 2) as pct_of_total_volume,
     NOW() as calculated_at
 
 FROM segmented
