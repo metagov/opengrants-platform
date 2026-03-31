@@ -169,7 +169,7 @@ schemas:
         openSource:
           source: "Open-Source?"
           type: boolean
-          transform: "lambda v: str(v).lower() in ['yes','true','1','checked'] if v else False"
+          transform: "lambda v: str(v).lower().startswith('yes') or str(v).lower().startswith('partly') if v else False"
 
         github:
           source: "Github"
