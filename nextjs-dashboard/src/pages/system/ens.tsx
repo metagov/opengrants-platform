@@ -238,7 +238,7 @@ export default function ENSPage() {
                     { label: 'Small Grants', url: 'https://small-grants.eth.limo' },
                     { label: 'Snapshot Space', url: 'https://snapshot.org/#/small-grants.eth' },
                   ]}
-                  tags={['ENS', 'Web3', 'Ethereum', 'Public Goods', 'DAO Governance']}
+                  tags={['ENS', 'Web3', 'Ethereum', 'Public Goods', 'DAO Governance', 'In Progress']}
                   color={ENS_BLUE}
                 />
 

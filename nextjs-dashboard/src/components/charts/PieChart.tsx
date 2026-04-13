@@ -3,6 +3,7 @@ import {
   Pie,
   Cell,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 
@@ -13,6 +14,7 @@ interface PieChartProps {
   outerRadius?: number;
   label?: boolean | ((props: any) => string);
   labelLine?: boolean;
+  showLegend?: boolean;
   tooltipFormatter?: (value: number, name: string, props?: any) => [string, string];
 }
 
@@ -23,6 +25,7 @@ export const PieChart = ({
   outerRadius = 80,
   label = true,
   labelLine = false,
+  showLegend = false,
   tooltipFormatter,
 }: PieChartProps) => {
   const defaultLabel = ({ name, percent }: any) =>
@@ -46,6 +49,7 @@ export const PieChart = ({
           ))}
         </Pie>
         <Tooltip formatter={tooltipFormatter as any} />
+        {showLegend && <Legend wrapperStyle={{ fontSize: '12px' }} />}
       </RechartsPieChart>
     </ResponsiveContainer>
   );

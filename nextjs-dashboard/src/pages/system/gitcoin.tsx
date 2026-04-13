@@ -11,7 +11,6 @@ import {
   Tabs,
   Badge,
   Button,
-  Progress,
 } from '@chakra-ui/react';
 import { Navigation } from '../../components/Navigation';
 import { SystemHeader } from '../../components/SystemHeader';
@@ -319,14 +318,6 @@ export default function GitcoinPage() {
     donors: Number(y.total_donors) || 0,
   }));
 
-  const qfAmplificationData = (data.qfRoundAnalysis || []).slice(0, 20).map(r => ({
-    name: r.round_name ? r.round_name.slice(0, 28) + (r.round_name.length > 28 ? '…' : '') : `Round ${r.round_id?.slice(0, 6)}`,
-    ratio: Number(r.qf_amplification_ratio) || 0,
-    donors: Number(r.unique_donors) || 0,
-    donated: Number(r.community_donated_usd) || 0,
-    distributed: Number(r.total_distributed_usd) || 0,
-  }));
-
   const donorSegmentData = (data.donorSegments || []).map(s => ({
     segment: SEGMENT_LABELS[s.segment] || s.segment,
     key: s.segment,
@@ -367,9 +358,7 @@ export default function GitcoinPage() {
   const passportHolder = (data.attestationImpact || []).find(a => a.has_passport_attestation === true);
   const passportPct = Number(passportHolder?.pct_of_total_donors || 0).toFixed(1);
 
-  const approvalRate = (data.summary?.total_applications || 0) > 0
-    ? (((data.summary?.approved_applications || 0) / data.summary!.total_applications) * 100).toFixed(1)
-    : '0';
+
 
   const totalFunding = (data.summary?.total_matching_pool_usd || 0) + (data.summary?.total_donated_usd || 0);
 
@@ -429,11 +418,22 @@ export default function GitcoinPage() {
                     { label: 'Grants Stack', url: 'https://www.gitcoin.co/grants-stack' },
                     { label: 'Explorer', url: 'https://explorer.gitcoin.co' },
                   ]}
-                  tags={['Web3', 'Quadratic Funding', 'Multi-chain', 'Historical Data']}
+                  tags={['Web3', 'Quadratic Funding', 'Multi-chain', 'Historical Data', 'In Progress']}
                   color={gitcoinColors.primary}
                   lastIndexedAt="2026-03-17"
                   dataSource="CSV Snapshot — 17 March 2026"
                 />
+
+                <Box mb={4} px={4} py={3} bg="blue.50" borderRadius="md" borderLeftWidth="3px" borderLeftColor="blue.400">
+                  <HStack gap={2} align="center">
+                    <Badge colorScheme="blue" fontSize="xs" px={2} py={1} borderRadius="full">
+                      In Progress
+                    </Badge>
+                    <Text fontSize="sm" color="blue.700">
+                      Data enrichment is in progress — some metrics (approval rates, application counts) are still being computed and may show incomplete values.
+                    </Text>
+                  </HStack>
+                </Box>
 
                 <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
                   <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
@@ -452,9 +452,9 @@ export default function GitcoinPage() {
                     <Text fontSize="xs" color="gray.400">{formatNumber(data.summary?.total_applications || 0)} applications</Text>
                   </Box>
                   <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.100">
-                    <Text fontSize="xs" color="gray.500" mb={1}>Approval Rate</Text>
-                    <Text fontSize="xl" fontWeight="semibold">{approvalRate}%</Text>
-                    <Text fontSize="xs" color="gray.400">{formatNumber(data.summary?.approved_applications || 0)} approved</Text>
+                    <Text fontSize="xs" color="gray.500" mb={1}>Unique Donors</Text>
+                    <Text fontSize="xl" fontWeight="semibold">{formatNumber(data.summary?.unique_donors || 0)}</Text>
+                    <Text fontSize="xs" color="gray.400">across all rounds</Text>
                   </Box>
                 </SimpleGrid>
 
@@ -502,7 +502,8 @@ export default function GitcoinPage() {
                       data={mechanismChartData}
                       colors={CHAIN_COLORS}
                       height={300}
-                      label={({ name, percent }: any) => `${name?.split(' ')[0] || 'Other'} ${(percent * 100).toFixed(0)}%`}
+                      label={false}
+                      showLegend
                       tooltipFormatter={(value: number, name: string, props: any) => [
                         `${value} rounds (${formatCurrency(props.payload.funding)})`, name,
                       ]}
@@ -598,7 +599,8 @@ export default function GitcoinPage() {
                         data={applicationStatusData}
                         colors={applicationStatusColors}
                         height={300}
-                        label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        label={false}
+                        showLegend
                         tooltipFormatter={(value: number, name: string) => [`${formatNumber(value)} applications`, name]}
                       />
                     </ChartCard>
@@ -659,20 +661,6 @@ export default function GitcoinPage() {
                       <Text fontSize="xs" color="gray.400">of {formatNumber(data.summary?.unique_donors || 0)} donors</Text>
                     </Box>
                   </SimpleGrid>
-
-                  <ChartCard title="Top 20 Rounds by QF Amplification Ratio" subtitle="How many $ were distributed for every $1 donated by the community" height="440px">
-                    <BarChart
-                      data={qfAmplificationData}
-                      xKey="name"
-                      bars={[{ dataKey: 'ratio', name: 'Amplification (x)', color: gitcoinColors.primary }]}
-                      layout="vertical"
-                      height={440}
-                      tooltipFormatter={(value: number, _name: string, props: any) => [
-                        `${value}x  (${formatNumber(props.payload.donors)} donors, ${formatCurrency(props.payload.distributed)} distributed)`,
-                        'Amplification',
-                      ]}
-                    />
-                  </ChartCard>
 
                   <SimpleGrid columns={{ base: 1, md: 2 }} gap={6}>
                     <ChartCard title="Donor Community Segments" subtitle="Segments by participation pattern — micro donors power QF democratisation">
@@ -758,6 +746,8 @@ export default function GitcoinPage() {
                         bars={[{ dataKey: 'volume', name: 'Volume (USD)', color: gitcoinColors.secondary }]}
                         layout="vertical"
                         height={340}
+                        yAxisWidth={130}
+                        tickSize="xs"
                         tooltipFormatter={(value: number) => [formatCurrency(value), 'Volume']}
                       />
                     </ChartCard>
@@ -841,17 +831,6 @@ export default function GitcoinPage() {
                         </VStack>
                       </SimpleGrid>
 
-                      <VStack align="stretch" gap={2}>
-                        <HStack justify="space-between">
-                          <Text fontSize="xs" color="gray.500">Approval Rate</Text>
-                          <Text fontSize="xs" fontWeight="medium">{chain.approval_rate_pct}%</Text>
-                        </HStack>
-                        <Progress.Root value={chain.approval_rate_pct} size="sm">
-                          <Progress.Track bg="gray.100" borderRadius="full">
-                            <Progress.Range bg={gitcoinColors.accent} borderRadius="full" />
-                          </Progress.Track>
-                        </Progress.Root>
-                      </VStack>
                     </Box>
                   ))}
                 </SimpleGrid>
@@ -909,7 +888,7 @@ export default function GitcoinPage() {
                         </VStack>
                       </HStack>
 
-                      <SimpleGrid columns={{ base: 2, md: 5 }} gap={4}>
+                      <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
                         <VStack align="start" gap={0}>
                           <Text fontSize="xs" color="gray.500">Applications</Text>
                           <Text fontSize="md" fontWeight="medium">{round.total_applications || 0}</Text>
@@ -917,10 +896,6 @@ export default function GitcoinPage() {
                         <VStack align="start" gap={0}>
                           <Text fontSize="xs" color="gray.500">Approved</Text>
                           <Text fontSize="md" fontWeight="medium">{round.approved_applications || 0}</Text>
-                        </VStack>
-                        <VStack align="start" gap={0}>
-                          <Text fontSize="xs" color="gray.500">Approval Rate</Text>
-                          <Text fontSize="md" fontWeight="medium">{round.approval_rate_pct || 0}%</Text>
                         </VStack>
                         <VStack align="start" gap={0}>
                           <Text fontSize="xs" color="gray.500">Donations</Text>
