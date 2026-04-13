@@ -30,7 +30,7 @@ export default async function handler(
 
         safeQuery(`
           SELECT
-            project_id as id, project_name, chain_id,
+            project_id as id, project_name,
             COUNT(DISTINCT grant_pool_id) as rounds_participated,
             SUM(donations_count)::integer as total_donations,
             ROUND(SUM(total_donated_usd)::numeric, 2) as total_donated_usd,
@@ -38,7 +38,7 @@ export default async function handler(
             ROUND(MAX(qf_score_estimate)::numeric, 2) as best_qf_score
           FROM gold__gitcoin2_project_qf_scores
           WHERE total_donated_usd >= 50
-          GROUP BY project_id, project_name, chain_id
+          GROUP BY project_id, project_name
           ORDER BY SUM(total_donated_usd) DESC
           LIMIT 20
         `, []),
@@ -251,22 +251,40 @@ export default async function handler(
 
     // ── HISTORY SECTION ──────────────────────────────────────────────────────
     if (section === 'history') {
-      const roundsByYear = await safeQuery(`
-        SELECT
-          EXTRACT(YEAR FROM "co.gitcoin.donationsStartTime"::timestamp)::integer as year,
-          COUNT(*) as round_count,
-          COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) as total_matching_usd,
-          COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) as total_donated_usd,
-          COALESCE(SUM("co.gitcoin.uniqueDonorsCount"::integer), 0) as total_donors
-        FROM silver_gitcoin2_grant_pools
-        WHERE "co.gitcoin.donationsStartTime" IS NOT NULL
-          AND "co.gitcoin.donationsStartTime" != 'None'
-          AND "co.gitcoin.chainId"::integer IN (1, 10, 42, 137, 324, 1088, 1329, 8453, 42161, 42220, 43114, 534352)
-          AND "co.gitcoin.fundedAmountInUsd"::numeric >= 100
-          AND "co.gitcoin.totalAmountDonatedInUsd"::numeric > 0
-        GROUP BY EXTRACT(YEAR FROM "co.gitcoin.donationsStartTime"::timestamp)
-        ORDER BY year ASC
-      `, []);
+      const [roundsByYear] = await Promise.all([
+        safeQuery(`
+          SELECT
+            r.year,
+            r.round_count,
+            r.total_matching_usd,
+            r.total_donated_usd,
+            COALESCE(d.unique_donors, 0) as total_donors
+          FROM (
+            SELECT
+              EXTRACT(YEAR FROM "co.gitcoin.donationsStartTime"::timestamp)::integer as year,
+              COUNT(*) as round_count,
+              COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) as total_matching_usd,
+              COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) as total_donated_usd
+            FROM silver_gitcoin2_grant_pools
+            WHERE "co.gitcoin.donationsStartTime" IS NOT NULL
+              AND "co.gitcoin.donationsStartTime" != 'None'
+              AND "co.gitcoin.chainId"::integer IN (1, 10, 42, 137, 324, 1088, 1329, 8453, 42161, 42220, 43114, 534352)
+              AND "co.gitcoin.fundedAmountInUsd"::numeric >= 100
+              AND "co.gitcoin.totalAmountDonatedInUsd"::numeric > 0
+            GROUP BY EXTRACT(YEAR FROM "co.gitcoin.donationsStartTime"::timestamp)
+          ) r
+          LEFT JOIN (
+            SELECT
+              EXTRACT(YEAR FROM "timestamp"::timestamp)::integer as year,
+              COUNT(DISTINCT "donorAddress") as unique_donors
+            FROM silver_gitcoin2_donations
+            WHERE "amountInUsd" <= 50000
+              AND "timestamp" IS NOT NULL
+            GROUP BY EXTRACT(YEAR FROM "timestamp"::timestamp)
+          ) d ON r.year = d.year
+          ORDER BY r.year ASC
+        `, []),
+      ]);
 
       return res.status(200).json({ roundsByYear });
     }

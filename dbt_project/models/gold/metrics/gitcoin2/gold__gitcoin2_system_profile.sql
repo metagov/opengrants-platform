@@ -22,16 +22,16 @@ SELECT
     (SELECT COUNT(*) FROM real_rounds WHERE "isOpen"::boolean = true) as active_grant_pools,
     (SELECT COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) FROM real_rounds) as total_matching_pool_usd,
     (SELECT COALESCE(SUM("co.gitcoin.totalAmountDonatedInUsd"::numeric), 0) FROM real_rounds) as total_donated_via_rounds_usd,
-    (SELECT COALESCE(SUM("co.gitcoin.matchAmountInUsd"::numeric), 0) FROM real_rounds) as total_distributed_usd,
+    (SELECT COALESCE(SUM("co.gitcoin.totalDistributed"::numeric), 0) FROM real_rounds) as total_distributed_usd,
 
     -- Projects Metrics
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_projects') }}) as total_projects,
 
-    -- Applications Metrics (populated after silver_gitcoin2_grant_applications is materialized)
-    0 as total_applications,
-    0 as approved_applications,
-    0 as rejected_applications,
-    0 as pending_applications,
+    -- Applications Metrics
+    (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }}) as total_applications,
+    (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} WHERE status = 'approved') as approved_applications,
+    (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} WHERE status = 'rejected') as rejected_applications,
+    (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_grant_applications') }} WHERE status = 'pending') as pending_applications,
 
     -- Donations Metrics (exclude outliers: records with amountInUsd > $50K are raw token values)
     (SELECT COUNT(*) FROM {{ source('silver', 'silver_gitcoin2_donations') }} WHERE "amountInUsd" <= 50000) as total_donations,

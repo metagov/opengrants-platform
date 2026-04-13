@@ -275,7 +275,7 @@ export default function GitcoinPage() {
 
   const chainChartData = (data.chainMetrics || []).map((c, idx) => ({
     name: c.chain_name,
-    funding: Number(c.total_funding_volume_usd) || 0,
+    matching: Number(c.total_matching_pool_usd) || 0,
     rounds: Number(c.round_count) || 0,
     donations: Number(c.donation_volume_usd) || 0,
     color: CHAIN_COLORS[idx % CHAIN_COLORS.length],
@@ -283,8 +283,8 @@ export default function GitcoinPage() {
 
   const mechanismChartData = (data.fundingMechanisms || []).map(m => ({
     name: m.mechanism || 'Other',
-    value: Number(m.round_count) || 0,
-    funding: Number(m.total_pool_usd) || 0,
+    value: Number(m.total_pool_usd) || 0,
+    rounds: Number(m.round_count) || 0,
   }));
 
   const donationDistData = (data.donationDistribution || []).map(d => ({
@@ -360,7 +360,8 @@ export default function GitcoinPage() {
 
 
 
-  const totalFunding = (data.summary?.total_matching_pool_usd || 0) + (data.summary?.total_donated_usd || 0);
+  // Use pool-level donated amount (total_donated_via_rounds_usd) to stay consistent with matching pool source
+  const totalFunding = (data.summary?.total_matching_pool_usd || 0) + (data.summary?.total_donated_via_rounds_usd || 0);
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -490,10 +491,14 @@ export default function GitcoinPage() {
                     <BarChart
                       data={chainChartData.slice(0, 8)}
                       xKey="name"
-                      bars={[{ dataKey: 'funding', color: gitcoinColors.primary }]}
+                      bars={[
+                        { dataKey: 'donations', name: 'Community Donations', color: gitcoinColors.primary },
+                        { dataKey: 'matching', name: 'Matching Pool', color: gitcoinColors.accent },
+                      ]}
                       layout="vertical"
                       height={300}
-                      tooltipFormatter={(value: number) => [formatCurrency(value), 'Total Funding']}
+                      showLegend
+                      tooltipFormatter={(value: number, name: string) => [formatCurrency(value), name]}
                     />
                   </ChartCard>
 
@@ -505,7 +510,7 @@ export default function GitcoinPage() {
                       label={false}
                       showLegend
                       tooltipFormatter={(value: number, name: string, props: any) => [
-                        `${value} rounds (${formatCurrency(props.payload.funding)})`, name,
+                        `${formatCurrency(value)} (${props.payload.rounds} rounds)`, name,
                       ]}
                     />
                   </ChartCard>
@@ -835,13 +840,13 @@ export default function GitcoinPage() {
                   ))}
                 </SimpleGrid>
 
-                <ChartCard title="Donation Volume by Chain" height="400px">
+                <ChartCard title="Funding by Chain" height="400px">
                   <BarChart
                     data={chainChartData}
                     xKey="name"
                     bars={[
-                      { dataKey: 'donations', name: 'Donations', color: gitcoinColors.primary },
-                      { dataKey: 'funding', name: 'Matching Pool', color: gitcoinColors.accent },
+                      { dataKey: 'donations', name: 'Community Donations', color: gitcoinColors.primary },
+                      { dataKey: 'matching', name: 'Matching Pool', color: gitcoinColors.accent },
                     ]}
                     height={400}
                     rotateLabels

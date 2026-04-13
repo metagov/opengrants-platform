@@ -31,6 +31,7 @@ donor_engagement AS (
             "donorAddress",
             COUNT(*) as donor_donation_count
         FROM {{ source('silver', 'silver_gitcoin2_donations') }}
+        WHERE "amountInUsd" <= 50000
         GROUP BY "donorAddress"
     ) donor_counts
 ),
