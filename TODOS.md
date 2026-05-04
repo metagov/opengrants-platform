@@ -29,3 +29,15 @@
 
 
 ## Add a Grants System Init Json/yaml file to source the initial Grant system data like url for extensions and also which funind mechanism
+
+## Pre-deploy schema-mismatch tests for nextjs-dashboard API handlers
+**What:** Add automated checks that run before code reaches prod, in two tiers:
+  1. **Pre-push smoke script** (`nextjs-dashboard/scripts/predeploy.sh`) — boots `yarn dev` against the prod DB and curls every `/api/systems/*` endpoint, fails the push on any non-200. Wire to a git pre-push hook.
+  2. **Schema introspection test** (`nextjs-dashboard/scripts/check-schema.ts`) — statically extracts every quoted column reference (`"x.y.z"` patterns) from `pages/api/**/*.ts`, queries `information_schema.columns` against `DATABASE_URL`, fails with a diff if any referenced column is missing.
+  3. **Optional GitHub Action** (`.github/workflows/check.yml`) — runs both on PR using a read-only DATABASE_URL secret.
+**Why:** Commit `ddcd9ca` (SCF bronze→Airtable migration) renamed silver column namespace from `io.scf.*` to `org.stellar.communityfund.*`. The Next.js API at `pages/api/systems/scf/[roundNumber].ts` was missed during the rename and silently returned HTTP 500 in prod for every existing SCF round (rendered as "Round not found" in the UI). Bug shipped 2026-03-21 and was only caught 2026-05-04 because no test runs against the actual schema.
+**Pros:** Catches the entire class of column/table renames before deploy. Cheap (Tier 1 is a 30-min one-time setup; Tier 2 is one file). No staging environment needed — leverages the fact that local dev already points at the prod DB per `.env.example`.
+**Cons:** Tier 3 needs a read-only Postgres role on DigitalOcean and a GitHub secret. Tier 1 requires every dev to enable the git hook locally.
+**Context:** Discovered during root-cause investigation of the SCF round-page 404s. Same risk applies to all `/api/systems/*` handlers — gitcoin, ens, giveth, privote — any future silver-table migration could break them silently. The error handler in `lib/db.tsx` and `[roundNumber].ts` was hardened in the same fix to surface PG error codes (42703 → HTTP 503) so the next slip-through is at least visible from `curl`.
+**Depends on:** Nothing — can be done independently. Tier 3 depends on having a read-only DB role.
+**Added:** 2026-05-04

@@ -46,17 +46,17 @@ export default async function handler(
         id as project_id,
         name as project_name,
         description,
-        "io.scf.category" as category,
-        "io.scf.totalAwardedUSD" as total_awarded_usd,
-        "io.scf.totalPaidUSD" as total_paid_usd,
-        "io.scf.trancheCompletionPercent" as tranche_completion,
-        "io.scf.trancheCompletion" as tranche_status,
-        "io.scf.awardType" as award_type,
-        "io.scf.website" as website,
-        "io.scf.oneSentenceDescription" as one_sentence_description
+        "org.stellar.communityfund.category" as category,
+        "org.stellar.communityfund.totalAwardedUSD" as total_awarded_usd,
+        "org.stellar.communityfund.totalPaidUSD" as total_paid_usd,
+        "org.stellar.communityfund.trancheCompletionPercent" as tranche_completion,
+        "org.stellar.communityfund.trancheCompletion" as tranche_status,
+        "org.stellar.communityfund.awardType" as award_type,
+        "org.stellar.communityfund.website" as website,
+        "org.stellar.communityfund.oneSentenceDescription" as one_sentence_description
       FROM silver_scf_grant_applications
-      WHERE "io.scf.round" = $1 OR TRIM("io.scf.round") = $1
-      ORDER BY "io.scf.totalPaidUSD" DESC NULLS LAST, "io.scf.totalAwardedUSD" DESC NULLS LAST
+      WHERE "org.stellar.communityfund.round" = $1 OR TRIM("org.stellar.communityfund.round") = $1
+      ORDER BY "org.stellar.communityfund.totalPaidUSD" DESC NULLS LAST, "org.stellar.communityfund.totalAwardedUSD" DESC NULLS LAST
     `, [roundName]);
 
     // Platform metadata
@@ -72,8 +72,15 @@ export default async function handler(
       projects: projects || [],
       projectCount: projects?.length || 0
     });
-  } catch (error) {
-    console.error('Database error:', error);
+  } catch (error: any) {
+    const pgCode = error?.code;
+    console.error(`SCF round ${roundNumber} query failed [code=${pgCode ?? "n/a"}]:`, error?.message ?? error);
+    if (pgCode === '42703' || pgCode === '42P01') {
+      return res.status(503).json({
+        message: 'Schema mismatch — API column names are out of sync with the database. Check recent silver-table migrations.',
+        code: pgCode,
+      });
+    }
     res.status(500).json({ message: 'Internal server error' });
   }
 }

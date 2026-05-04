@@ -52,16 +52,17 @@ export async function query(text: string, params: any[] = []) {
     client = await pool.connect();
     const result = await client.query(text, params);
     return result.rows;
-  } catch (error) {
-    if (isProduction) {
-      console.error(
-        "Database query error occurred +error",
-        error instanceof Error ? error.message : error
-      );
-    } else {
-      console.error("Database query error:", error);
-    }
-    throw new Error("Database query failed");
+  } catch (error: any) {
+    const pgCode = error?.code;
+    const pgMessage = error?.message ?? String(error);
+    console.error(
+      `Database query error [code=${pgCode ?? "n/a"}]: ${pgMessage}`,
+      isProduction ? "" : { query: text, params }
+    );
+    const wrapped: any = new Error(pgMessage);
+    wrapped.code = pgCode;
+    wrapped.pgError = true;
+    throw wrapped;
   } finally {
     if (client) {
       client.release();
