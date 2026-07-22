@@ -1,0 +1,16 @@
+name: PG Atlas SBOM
+
+on:
+  push:
+    branches: [master]
+  release:
+    types: [published]
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: SCF-Public-Goods-Maintenance/pg-atlas-sbom-action@f2f44ed8cec916dd412c86ebcab796655656329f
