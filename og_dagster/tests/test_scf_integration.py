@@ -22,7 +22,7 @@ SCF_TEST_TABLES = {
         "table_id": table_id,
         "required_columns": SCF_REQUIRED_COLUMNS[table_name],
     }
-    for table_name, table_id in SCF_TEST_TABLES.items()
+    for table_name, table_id in SCF_TABLES.items()
 }
 
 

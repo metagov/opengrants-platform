@@ -20,7 +20,7 @@ from dagster import (
     SkipReason,
     sensor,
 )
-from configs.scf_airtable import SCF_BASE_ID, SCF_TABLES
+from configs.scf_airtable import SCF_BASE_ID, SCF_REQUIRED_COLUMNS, SCF_TABLES
 from utils.airtable_helpers import fetch_airtable_table
 
 
@@ -31,12 +31,17 @@ def _get_table_fingerprint(api_key: str) -> str:
     """
     id_sets = []
     for table_name, table_id in sorted(SCF_TABLES.items()):
+        # Fetch only a lightweight sentinel field to keep payloads small — we
+        # use record IDs (always returned), not field values. The field name
+        # differs per table, so pull the first required column of each table,
+        # which is guaranteed to exist. Passing a field that doesn't exist
+        # makes Airtable return 422 UNKNOWN_FIELD_NAME.
+        sentinel_field = SCF_REQUIRED_COLUMNS[table_name][0]
         records = fetch_airtable_table(
             base_id=SCF_BASE_ID,
             table_id=table_id,
             api_key=api_key,
-            # Fetch only a lightweight sentinel field — we only need IDs
-            extra_params={"fields[]": "Name", "pageSize": "100"},
+            extra_params={"fields[]": sentinel_field, "pageSize": "100"},
         )
         # Collect record IDs for this table
         ids = sorted(r.get("_airtable_id", "") for r in records)
