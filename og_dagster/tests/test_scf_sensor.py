@@ -12,7 +12,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dagster import build_sensor_context
 from configs.scf_airtable import SCF_REQUIRED_COLUMNS, SCF_TABLES
-from sensors.scf_sensor import airtable_scf_sensor, _get_table_fingerprint
+from sensors.scf_sensor import (
+    airtable_scf_sensor,
+    _count_modified_since,
+    _get_table_fingerprint,
+)
 
 
 def _build_context(cursor=None):
@@ -95,6 +99,44 @@ class TestGetTableFingerprint:
 
         assert fp1 == fp2
 
+    def test_fingerprint_changes_on_swap_beyond_first_ten_ids(self):
+        """
+        Deleting one record and adding another keeps the count the same; the
+        fingerprint must still change even when the swapped IDs sort after
+        the first 10 (the old fingerprint only hashed the first 10 IDs).
+        """
+        base = _fake_records("a", 20)
+        swapped = base[:-1] + [{"_airtable_id": "z_new"}]
+
+        with patch("sensors.scf_sensor.fetch_airtable_table") as mock_fetch:
+            mock_fetch.return_value = base
+            fp1 = _get_table_fingerprint("key123")
+            mock_fetch.return_value = swapped
+            fp2 = _get_table_fingerprint("key123")
+
+        assert fp1 != fp2
+
+
+class TestCountModifiedSince:
+    """Tests for the field-edit detector."""
+
+    def test_filters_each_table_by_last_modified_time(self):
+        with patch("sensors.scf_sensor.fetch_airtable_table") as mock_fetch:
+            mock_fetch.return_value = _fake_records("m", 2)
+            total = _count_modified_since("key123", "2026-10-01T12:00:00Z")
+
+        assert total == 2 * len(SCF_TABLES)
+        assert mock_fetch.call_count == len(SCF_TABLES)
+        for call in mock_fetch.call_args_list:
+            params = call.kwargs["extra_params"]
+            assert params["filterByFormula"] == (
+                "IS_AFTER(LAST_MODIFIED_TIME(), DATETIME_PARSE('2026-10-01T12:00:00Z'))"
+            )
+            table_name = next(
+                n for n, tid in SCF_TABLES.items() if tid == call.kwargs["table_id"]
+            )
+            assert params["fields[]"] == SCF_REQUIRED_COLUMNS[table_name][0]
+
 
 # ============================================================
 # airtable_scf_sensor tests
@@ -173,3 +215,63 @@ class TestAirtableScfSensor:
         # Should not crash — corrupt cursor resets to empty state (baseline)
         assert len(results) == 1
         assert "baseline" in str(results[0]).lower()
+
+    @patch("sensors.scf_sensor._count_modified_since")
+    @patch("sensors.scf_sensor._get_table_fingerprint")
+    def test_triggers_run_on_field_edit(self, mock_fp, mock_modified):
+        """Same record IDs but edited fields still trigger a run."""
+        mock_fp.return_value = "same_fingerprint"
+        mock_modified.return_value = 3
+        ctx = _build_context(
+            json.dumps({"fingerprint": "same_fingerprint", "checked_at": "2026-10-01T12:00:00Z"})
+        )
+
+        with patch.dict(os.environ, {"AIRTABLE_API_KEY": "key123"}):
+            results = list(airtable_scf_sensor(ctx))
+
+        mock_modified.assert_called_once_with("key123", "2026-10-01T12:00:00Z")
+        assert len(results) == 1
+        assert results[0].run_key.startswith("scf-edit-")
+
+    @patch("sensors.scf_sensor._count_modified_since")
+    @patch("sensors.scf_sensor._get_table_fingerprint")
+    def test_skips_when_no_edits_since_last_check(self, mock_fp, mock_modified):
+        mock_fp.return_value = "same_fingerprint"
+        mock_modified.return_value = 0
+        ctx = _build_context(
+            json.dumps({"fingerprint": "same_fingerprint", "checked_at": "2026-10-01T12:00:00Z"})
+        )
+
+        with patch.dict(os.environ, {"AIRTABLE_API_KEY": "key123"}):
+            results = list(airtable_scf_sensor(ctx))
+
+        assert "No changes detected" in str(results[0])
+
+    @patch("sensors.scf_sensor._count_modified_since")
+    @patch("sensors.scf_sensor._get_table_fingerprint")
+    def test_legacy_cursor_without_checked_at_starts_edit_tracking(self, mock_fp, mock_modified):
+        """Old cursors lack checked_at: don't query edits, but record a timestamp."""
+        mock_fp.return_value = "same_fingerprint"
+        ctx = _build_context(json.dumps({"fingerprint": "same_fingerprint"}))
+
+        with patch.dict(os.environ, {"AIRTABLE_API_KEY": "key123"}):
+            results = list(airtable_scf_sensor(ctx))
+
+        mock_modified.assert_not_called()
+        assert "No changes detected" in str(results[0])
+        assert "checked_at" in json.loads(ctx.cursor)
+
+    @patch("sensors.scf_sensor._count_modified_since")
+    @patch("sensors.scf_sensor._get_table_fingerprint")
+    def test_failed_edit_check_does_not_advance_cursor(self, mock_fp, mock_modified):
+        """A failed fetch must not move checked_at past edits it never saw."""
+        mock_fp.return_value = "same_fingerprint"
+        mock_modified.side_effect = RuntimeError("503")
+        cursor = json.dumps({"fingerprint": "same_fingerprint", "checked_at": "2026-10-01T12:00:00Z"})
+        ctx = _build_context(cursor)
+
+        with patch.dict(os.environ, {"AIRTABLE_API_KEY": "key123"}):
+            results = list(airtable_scf_sensor(ctx))
+
+        assert "Airtable fetch failed" in str(results[0])
+        assert json.loads(ctx.cursor)["checked_at"] == "2026-10-01T12:00:00Z"
