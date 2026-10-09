@@ -1,11 +1,17 @@
-"""Generate an OpenGrants SCF Intelligence Report from SDF Airtable CSV exports.
+"""Generate an OpenGrants SCF Intelligence Report from the OpenGrants datalake.
 
-Usage:
-    python3 scripts/scf_intelligence_report.py SNAPSHOT_DIR --rounds 42 43 44 45 \
-        [--prev-report 41] [--snapshot-date YYYY-MM-DD] > report.md
+Usage (silver + gold tables written by the Dagster pipeline):
+    DATABASE_URL=postgresql://... python3 scripts/scf_intelligence_report.py \
+        --rounds 42 43 44 45 --prev-report 41 > report.md
 
-SNAPSHOT_DIR is a raw_data/SCF/<date>/ folder with the three Airtable exports
-(Awarded Projects, Awarded Submissions, Build Award Rounds).
+Reads:
+    public.silver_scf_grant_applications   one row per award (DAOIP-5 grantApplication)
+    public.silver_scf_grant_pools          one row per round (DAOIP-5 grantPool)
+    public.silver_scf_projects             one row per project (DAOIP-5 project)
+    gold.gold__scf_system_profile          totals, used to reconcile the report against gold
+
+Offline / tests: pass a raw_data/SCF/<date>/ CSV snapshot folder instead of a database:
+    python3 scripts/scf_intelligence_report.py --snapshot raw_data/SCF/23_February_2026 --rounds 37 38 39 40
 
 Figures cover Build awards with a non-zero awarded amount. The historical cohort is
 every tranche-era round (SCF #30 onwards) before the first reported round, so all
@@ -14,17 +20,23 @@ placeholders for the analyst; every number is computed here.
 """
 import argparse
 import csv
+import datetime as dt
+import os
 import re
 import statistics as st
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 csv.field_size_limit(10**9)
 TRANCHE_ERA_START = 30
 MAX_ASK = 150_000
+EXT = "org.stellar.communityfund."
+GOLD_SCHEMAS = ("gold", "public_gold", "public")
 
 
 def money(v):
+    if isinstance(v, (int, float)):
+        return float(v)
     v = re.sub(r"[^0-9.]", "", v or "")
     try:
         return float(v) if v else 0.0
@@ -33,7 +45,9 @@ def money(v):
 
 
 def pct(v):
-    v = re.sub(r"[^0-9.]", "", v or "")
+    if v is None or isinstance(v, (int, float)):
+        return None if v is None else float(v)
+    v = re.sub(r"[^0-9.]", "", v)
     return float(v) if v else None
 
 
@@ -50,12 +64,79 @@ def share(n, d):
     return f"{n / d:.0%}" if d else "—"
 
 
-def load(d):
+def scf_project_id(name):
+    # Same transform as og_dagster/configs/schema_maps/active/daoip5_scf.yaml (projectId)
+    name = (name or "").strip().strip('"')
+    return f"daoip-5:scf:project:{name.lower().replace(' ', '_')}" if name else None
+
+
+def award(round_name, project_id, project, category, awarded, paid, completion, award_type):
+    return {
+        "round": rnum(round_name),
+        "project_id": project_id,
+        "project": (project or "").strip().strip('"'),
+        "category": (category or "").strip() or "Uncategorised",
+        "awarded": money(awarded),
+        "paid": money(paid),
+        "completion": pct(completion),
+        "build": (award_type or "").strip() == "Build",
+    }
+
+
+def load_datalake(url):
+    """Silver tables for detail, gold profile for reconciliation."""
+    from sqlalchemy import create_engine, text
+
+    if url.startswith("postgresql+psycopg2://"):
+        url = "postgresql://" + url[len("postgresql+psycopg2://"):]
+    engine = create_engine(url)
+    with engine.connect() as c:
+        apps = c.execute(text(f'''
+            SELECT "grantPoolName", "projectId", "{EXT}project" AS project, "{EXT}category" AS category,
+                   "{EXT}totalAwardedUSD" AS awarded, "{EXT}totalPaidUSD" AS paid,
+                   "{EXT}trancheCompletionPercent" AS completion, "{EXT}awardType" AS award_type
+            FROM silver_scf_grant_applications''')).all()
+        pools = c.execute(text(f'''
+            SELECT name, "{EXT}quarterYear" AS quarter, "{EXT}appliedSubmissions" AS applied
+            FROM silver_scf_grant_pools''')).all()
+        project_ids = {r[0] for r in c.execute(text("SELECT id FROM silver_scf_projects"))}
+        gold = None
+        for schema in GOLD_SCHEMAS:
+            try:
+                gold = c.execute(text(
+                    f'SELECT total_applications, total_funding_distributed_usd FROM "{schema}".gold__scf_system_profile'
+                )).first()
+                gold = {"schema": schema, "applications": gold[0], "funding": float(gold[1] or 0)}
+                break
+            except Exception:
+                c.rollback()
+    return {
+        "awards": [award(*r) for r in apps],
+        "pools": {rnum(r[0]): {"quarter": r[1] or "", "applied": r[2]} for r in pools if rnum(r[0])},
+        "project_ids": project_ids,
+        "gold": gold,
+        "silver_totals": {"applications": len(apps),
+                          "funding": sum(money(r[4]) for r in apps)},
+    }
+
+
+def load_snapshot(d):
     def rd(prefix):
         (f,) = [p for p in Path(d).iterdir() if p.name.startswith(prefix) and p.suffix == ".csv"]
         return list(csv.DictReader(open(f, encoding="utf-8-sig")))
 
-    return rd("Awarded Projects"), rd("Awarded Submissions"), rd("Build Award Rounds")
+    projects, subs, rounds = rd("Awarded Projects"), rd("Awarded Submissions"), rd("Build Award Rounds")
+    return {
+        "awards": [award(s["Round"], scf_project_id(s.get("Project")), s.get("Project"),
+                         s.get("Category (from Project)"), s.get("Total Awarded (USD)"),
+                         s.get("Total Paid (USD)"), s.get("Tranche Completion %"), s.get("Award Type"))
+                   for s in subs],
+        "pools": {rnum(r["Name"]): {"quarter": r.get("Quarter, Year", ""), "applied": r.get("Applied Submissions")}
+                  for r in rounds if rnum(r["Name"])},
+        "project_ids": {scf_project_id(p.get("Title")) for p in projects},
+        "gold": None,
+        "silver_totals": None,
+    }
 
 
 def table(headers, rows):
@@ -66,39 +147,33 @@ def table(headers, rows):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("snapshot")
+    ap.add_argument("--snapshot", help="CSV snapshot folder instead of $DATABASE_URL (offline/tests)")
     ap.add_argument("--rounds", nargs="+", type=int, required=True)
     ap.add_argument("--prev-report", type=int)
     ap.add_argument("--snapshot-date", default=None)
     a = ap.parse_args()
 
-    projects, subs, rounds = load(a.snapshot)
+    if a.snapshot:
+        data = load_snapshot(a.snapshot)
+        source = f"CSV snapshot {Path(a.snapshot).name}"
+        snap_date = a.snapshot_date or Path(a.snapshot).name
+    else:
+        url = os.environ.get("DATABASE_URL")
+        if not url:
+            ap.error("set DATABASE_URL to the OpenGrants datalake, or pass --snapshot")
+        data = load_datalake(url)
+        source = "OpenGrants datalake (silver_scf_* tables, gold__scf_system_profile)"
+        snap_date = a.snapshot_date or dt.date.today().isoformat()
     targets = sorted(a.rounds)
     first = targets[0]
-    snap_date = a.snapshot_date or Path(a.snapshot).name
 
-    all_awards = []
-    for s in subs:
-        n = rnum(s["Round"])
-        amt = money(s.get("Total Awarded (USD)"))
-        if n is None or amt <= 0:
-            continue
-        all_awards.append({
-            "build": (s.get("Award Type") or "").strip() == "Build",
-            "round": n,
-            "project": (s.get("Project") or "").strip().strip('"'),
-            "category": (s.get("Category (from Project)") or "").strip() or "Uncategorised",
-            "awarded": amt,
-            "paid": money(s.get("Total Paid (USD)")),
-            "completion": pct(s.get("Tranche Completion %")),
-        })
+    all_awards = [x for x in data["awards"] if x["round"] is not None and x["awarded"] > 0]
     # Build awards drive every table; any award type counts as funding history.
     awards = [x for x in all_awards if x["build"]]
-
     tgt = [x for x in awards if x["round"] in targets]
     base = [x for x in awards if TRANCHE_ERA_START <= x["round"] < first]
     pre = [x for x in all_awards if x["round"] < TRANCHE_ERA_START]
-    rmeta = {rnum(r["Name"]): r for r in rounds if rnum(r["Name"]) is not None}
+    rmeta = data["pools"]
 
     title_rounds = ", ".join(f"#{r}" for r in targets)
     L = []
@@ -110,7 +185,7 @@ def main():
     )
     L.append(table(["", ""], [
         ["**Rounds**", title_rounds],
-        ["**Data snapshot**", f"{snap_date} (SDF Airtable)"],
+        ["**Data**", f"{source}, as of {snap_date}"],
         ["**Historical cohort**", f"Build awards, SCF #{TRANCHE_ERA_START}–#{first - 1} ({len(base)} awards)"],
         ["**Previous report**", f"SCF #{a.prev_report} Intelligence Report" if a.prev_report else "—"],
     ]))
@@ -125,9 +200,10 @@ def main():
     for r in targets:
         xs = [x["awarded"] for x in tgt if x["round"] == r]
         m = rmeta.get(r, {})
+        applied = int(money(m.get("applied"))) if m.get("applied") not in (None, "") else None
         rows.append([
-            f"SCF #{r}", m.get("Quarter, Year", ""), m.get("Applied Submissions", "") or "—",
-            len(xs), share(len(xs), int(m.get("Applied Submissions") or 0)) if m.get("Applied Submissions") else "—",
+            f"SCF #{r}", m.get("quarter", ""), applied if applied is not None else "—",
+            len(xs), share(len(xs), applied) if applied else "—",
             usd(sum(xs)) if xs else "—", usd(st.mean(xs)) if xs else "—", usd(st.median(xs)) if xs else "—",
             share(sum(1 for v in xs if v >= MAX_ASK), len(xs)),
         ])
@@ -139,19 +215,20 @@ def main():
                     "Average", "Median", f"At max ask ({usd(MAX_ASK)})"], rows))
     empty = [r for r in targets if not any(x["round"] == r for x in tgt)]
     if empty:
-        L.append(f"\n> ⚠️ No awards recorded yet for {', '.join(f'SCF #{r}' for r in empty)} in this "
-                 "snapshot. Re-run with a newer export before publishing.")
+        L.append(f"\n> ⚠️ No awards recorded for {', '.join(f'SCF #{r}' for r in empty)} in this data. "
+                 "Check the SCF pipeline has run since those rounds closed before publishing.")
     L.append("\n**Observations:**\n\n- TODO(analyst)\n")
 
     # II. Returning projects
     L.append("## II. Returning projects\n")
     hist = defaultdict(list)
+    key = lambda x: x["project_id"] or x["project"]
     for x in all_awards:
-        hist[x["project"]].append(x)
+        hist[key(x)].append(x)
     rows = []
     for x in sorted(tgt, key=lambda x: (x["round"], x["project"])):
-        prior = sorted((p for p in hist[x["project"]] if p["round"] < x["round"]), key=lambda p: p["round"])
-        if not prior or not x["project"]:
+        prior = sorted((p for p in hist[key(x)] if p["round"] < x["round"]), key=lambda p: p["round"])
+        if not prior or not key(x):
             continue
         last = prior[-1]
         lifetime = sum(p["awarded"] for p in prior)
@@ -166,8 +243,8 @@ def main():
     else:
         L.append("_No returning projects among the awards in these rounds._")
     L.append(f"\n{len(rows)} of {len(tgt)} awards in these rounds went to projects funded before.\n")
-    L.append("_Projects are matched by their linked Airtable project name; renamed projects may be "
-             "missed (see `docs/data-quality/scf_canonical_id_data_loss_report_2026-10-09.md`)._\n")
+    L.append("_Projects are matched by DAOIP-5 `projectId`. IDs are derived from Airtable names, so "
+             "renamed projects may be missed (see `docs/data-quality/scf_canonical_id_data_loss_report_2026-10-09.md`)._\n")
     L.append("**Observations:**\n\n- TODO(analyst)\n")
 
     # III. Funding distribution
@@ -232,13 +309,19 @@ def main():
         L.append("- TODO(analyst): what moved since the last report, and follow-ups on what it flagged.\n")
 
     # Data quality
-    proj_titles = {(p.get("Title") or "").strip() for p in projects}
-    orphans = [s for s in subs if rnum(s["Round"]) in targets and money(s.get("Total Awarded (USD)")) > 0
-               and (s.get("Project") or "").strip().strip('"') not in proj_titles]
+    orphans = [x for x in all_awards if x["round"] in targets and x["project_id"] not in data["project_ids"]]
     L.append("## Data quality and caveats\n")
-    L.append(f"- Snapshot: {snap_date}. Rounds still voting or paying out at that date are partial.")
-    L.append(f"- Awards in these rounds with no linked Airtable project: {len(orphans)}"
-             + (f" ({usd(sum(money(s.get('Total Awarded (USD)')) for s in orphans))})." if orphans else "."))
+    L.append(f"- Data as of {snap_date}. Rounds still voting or paying out at that date are partial.")
+    L.append(f"- Awards in these rounds whose `projectId` has no row in `silver_scf_projects`: {len(orphans)}"
+             + (f" ({usd(sum(x['awarded'] for x in orphans))})." if orphans else "."))
+    g, sv = data["gold"], data["silver_totals"]
+    if g and sv:
+        ok = g["applications"] == sv["applications"] and abs(g["funding"] - sv["funding"]) < 1
+        L.append(f"- Gold reconciliation (`{g['schema']}.gold__scf_system_profile`): gold reports "
+                 f"{g['applications']} applications / {usd(g['funding'])} vs silver {sv['applications']} / "
+                 f"{usd(sv['funding'])} — " + ("✅ match." if ok else "⚠️ mismatch: rerun dbt before publishing."))
+    elif sv:
+        L.append("- Gold reconciliation: `gold__scf_system_profile` not found; run dbt before publishing.")
     L.append("- Tables count Build awards only. Earlier award types (Activation, Community, Legacy) count "
              "as prior funding history in section II and in the pre-tranche row of section III.")
     L.append("- Project identity follows Airtable names, which change; see the ID stability report.\n")
@@ -248,7 +331,9 @@ def main():
              f"(tranche structure introduced) to #{first - 1}.")
     L.append("- **Fully complete:** tranche completion = 100%. **Average completion:** mean tranche completion %.")
     L.append(f"- **Max ask:** award ≥ {usd(MAX_ASK)}.")
-    L.append("- **Reproduce:** `python3 scripts/scf_intelligence_report.py <snapshot> --rounds "
+    L.append("- **Source tables:** `silver_scf_grant_applications` (awards), `silver_scf_grant_pools` "
+             "(rounds, applied counts), `silver_scf_projects` (project IDs), `gold__scf_system_profile` (totals check).")
+    L.append("- **Reproduce:** `DATABASE_URL=... python3 scripts/scf_intelligence_report.py --rounds "
              + " ".join(str(r) for r in targets) + (f" --prev-report {a.prev_report}" if a.prev_report else "") + "`")
     print("\n".join(L))
 
