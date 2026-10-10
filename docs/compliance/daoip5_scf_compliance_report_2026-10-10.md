@@ -3,6 +3,13 @@
 **Sources assessed:** scf
 **Methodology:** `docs/compliance/daoip5_assessment_methodology.md`
 
+> **How to read this report.** This is the field-level check of the SCF schema map. The result
+> that matters is the required fields: **all 14 DAOIP-5 required fields are backed by source data,
+> with no fabricated values (0 P0).** The 62% below counts *all* fields, including optional ones
+> SCF doesn't record, so it is not a compliance rate. The headline compliance metric is
+> round-level: 100% of finished SCF rounds indexed in DAOIP-5 (March 2026 report), re-confirmed
+> for SCF #42–#45 with `scripts/daoip5_round_compliance.py` after PR #3 is deployed.
+
 ## Summary
 
 | Source | Grant Pools | Projects | Grant Applications | Overall | P0 |
