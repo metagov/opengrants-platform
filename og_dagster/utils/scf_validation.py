@@ -187,7 +187,18 @@ def _check_table(res: ValidationResult, section: str, df: pl.DataFrame, live: Op
     if dups:
         examples = [i for i, n in df.group_by("id").len().iter_rows() if n > 1]
         if section != "grant_applications":
-            res.add(t, "id_unique", "block", f"{dups} duplicate IDs.", examples)
+            # IDs are derived from Airtable titles, so two records with the same title already share
+            # an ID in production (#4). Only a duplicate that live doesn't already have is new.
+            live_dup_ids = {i for i in live.ids if i and live.ids.count(i) > 1} if live else set()
+            new_dups = sorted(set(examples) - live_dup_ids)
+            if live and live.rows and new_dups:
+                res.add(t, "id_unique", "block",
+                        f"{len(new_dups)} IDs are newly duplicated ({dups} duplicate rows; live has "
+                        f"{live_dups}).", new_dups)
+            else:
+                res.add(t, "id_unique", "warn",
+                        f"{dups} duplicate IDs, all already duplicated in the live table (known issue, "
+                        f"#4); live has {live_dups}.", examples)
         elif live and live.rows and _pct(dups, df.height) - _pct(live_dups, live.rows) > MAX_DUP_SHARE_RISE_PCT:
             # New awards for returning projects add shared IDs as a matter of course (#4), so
             # only a jump in the share of shared IDs is a problem.

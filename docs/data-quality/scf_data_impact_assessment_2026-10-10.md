@@ -108,7 +108,7 @@ rebuilt. Publishing is all or nothing, so the three tables never come from diffe
 | Check | Blocks when | Warns when |
 | --- | --- | --- |
 | Not empty, IDs present, ID prefix, names present | Any row fails | — |
-| Unique IDs | Projects or rounds have duplicates; the share of shared application IDs rises by more than 5 points | Applications share IDs (known issue, #4) |
+| Unique IDs | A project or round ID is duplicated that wasn't duplicated in live; the share of shared application IDs rises by more than 5 points | Duplicates already in live, and applications sharing IDs (known issue, #4) |
 | Amounts valid | Any negative or non-finite USD/XLM amount | — |
 | Row count | Falls more than 5% compared with live | Falls at all |
 | Funding total | Total awarded falls more than 2% compared with live | Falls at all |

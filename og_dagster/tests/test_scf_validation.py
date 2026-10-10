@@ -114,13 +114,27 @@ def test_bad_ids_and_negative_amounts_block(engine):
     assert ("silver_scf_grant_applications", "amounts_valid") in blocked
 
 
-def test_duplicate_project_ids_block_but_known_application_duplicates_warn(engine):
+def test_known_application_duplicates_warn(engine):
     frames = make_frames()
-    frames["projects"] = pl.concat([frames["projects"], frames["projects"].head(1)])
     frames["grant_applications"] = pl.concat([frames["grant_applications"], frames["grant_applications"].head(1)])
     res = validate_scf_candidates(engine, frames)
-    assert ("silver_scf_projects", "id_unique") in checks(res, "block")
     assert ("silver_scf_grant_applications", "id_unique") in checks(res, "warn")
+
+
+def test_project_duplicates_already_live_warn_but_new_ones_block(engine):
+    live = make_frames()
+    live["projects"] = pl.concat([live["projects"], live["projects"].head(1)])
+    publish(engine, live)
+
+    same = make_frames()
+    same["projects"] = pl.concat([same["projects"], same["projects"].head(1)])
+    res = validate_scf_candidates(engine, same)
+    assert res.passed and ("silver_scf_projects", "id_unique") in checks(res, "warn")
+
+    new = make_frames()
+    new["projects"] = pl.concat([new["projects"], new["projects"].slice(1, 1)])
+    res = validate_scf_candidates(engine, new)
+    assert ("silver_scf_projects", "id_unique") in checks(res, "block")
 
 
 def test_new_orphan_references_block(engine):
