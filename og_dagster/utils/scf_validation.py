@@ -331,12 +331,27 @@ def _live_orphans(engine) -> Dict[str, int]:
     return out
 
 
+def _bronze_has_created_time(engine) -> bool:
+    insp = inspect(engine)
+    return insp.has_table("bronze_scf_submissions") and "_airtable_created_time" in {
+        c["name"] for c in insp.get_columns("bronze_scf_submissions")
+    }
+
+
 def validate_scf_candidates(engine, frames: Dict[str, pl.DataFrame]) -> ValidationResult:
     """Validate candidate frames keyed by section ('projects', 'grant_applications', 'grant_pools')."""
     res = ValidationResult()
     for section in SECTIONS:
         _check_table(res, section, frames[section], load_live(engine, section))
     _check_cross_table(res, frames, _live_orphans(engine))
+
+    # createdAt comes from Airtable's createdTime, which bronze only stores once it has been
+    # re-ingested by the current pipeline. Until then createdAt is empty for a known reason.
+    if not _bronze_has_created_time(engine):
+        for f in res.findings:
+            if f.check == "fields_populated" and "`createdAt`" in f.message:
+                f.severity = "warn"
+                f.message += " Bronze has no `_airtable_created_time` yet; the next bronze run fills it."
     return res
 
 

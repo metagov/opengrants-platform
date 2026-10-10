@@ -161,7 +161,9 @@ Accepted; tracked in `TODOS.md` ("SCF data backup follow-ups").
 - A full SCF snapshot is about **5.9 MB of JSON** (submissions 4.6 MB, projects 1.25 MB, rounds
   0.11 MB). Postgres compresses large text automatically, and gzip brings it to about 1.75 MB.
 - Only tables whose content changed are archived. Even at 30 changes a month to the largest table,
-  that's under 150 MB a month before compression.
+  that's under 150 MB a month before compression. The sensor now also fires on record edits, so a
+  busy month of edits could push this into the hundreds of MB. Check the size of
+  `archive_scf_bronze_snapshots` monthly until the pattern is known.
 - If that grows uncomfortable, a retention job can thin old snapshots to weekly after 90 days.
   Never delete a table's first snapshot of each quarter.
 

@@ -11,9 +11,8 @@ Use it before deploying a change to the SCF pipeline, to check the gate won't bl
     DATABASE_URL=<read-only URL> python3 scripts/scf_validation_dryrun.py
 
 Before the createdAt change (PR #3) is deployed, production bronze has no
-`_airtable_created_time`, so `createdAt` comes out empty and the gate reports it as a blocking
-`fields_populated` finding. That one is expected until the first post-deploy bronze run; the
-script labels it.
+`_airtable_created_time`, so `createdAt` comes out empty. The gate reports that as a warning, not a
+block, until the next bronze run fills it.
 """
 import contextlib
 import io
@@ -25,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "og_dagster"))
 
-from sqlalchemy import create_engine, inspect, text  # noqa: E402
+from sqlalchemy import create_engine, text  # noqa: E402
 
 import utils.translate_to_silver as tts  # noqa: E402
 from utils.graphql_helpers import sanitize_for_sql  # noqa: E402
@@ -44,10 +43,6 @@ def main():
         sys.exit("set DATABASE_URL (read-only access is enough)")
     engine = create_engine(re.sub(r"^postgres(ql)?(\+\w+)?://", "postgresql+psycopg2://", url))
 
-    has_created_time = "_airtable_created_time" in {
-        c["name"] for c in inspect(engine).get_columns("bronze_scf_submissions")
-    }
-
     frames = {}
     for section in SECTIONS:
         with contextlib.redirect_stdout(io.StringIO()):
@@ -56,21 +51,12 @@ def main():
 
     result = validate_scf_candidates(engine, frames)
 
-    expected = []
-    if not has_created_time:
-        expected = [f for f in result.blocking if f.check == "fields_populated" and "`createdAt`" in f.message]
-        for f in expected:
-            f.severity = "warn"
-            f.message += " Expected before the createdAt change is deployed; ignored for this dry run."
-
     status = "passed" if result.passed else "blocked"
     report = render_report(result, "dry-run (nothing written)", status)
     report = report.replace("✅ Passed — published", "✅ Would pass (dry run)").replace(
         "⛔ Blocked — live data unchanged", "⛔ Would block (dry run)")
     print(report)
     print(f"Dry run: the gate would have {'PUBLISHED' if result.passed else 'BLOCKED'} this data.")
-    if expected:
-        print("Note: bronze has no _airtable_created_time yet, so the createdAt finding was treated as expected.")
     sys.exit(0 if result.passed else 1)
 
 

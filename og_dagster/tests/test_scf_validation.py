@@ -168,3 +168,23 @@ def test_xlm_rate_gaps_and_missing_awards_are_not_overpayments(engine):
     warned = checks(validate_scf_candidates(engine, frames), "warn")
     assert ("silver_scf_grant_applications", "paid_within_award") not in warned
     assert ("silver_scf_grant_applications", "award_recorded") in warned
+
+
+def test_empty_created_at_warns_until_bronze_has_created_time(engine):
+    live = make_frames()
+    live["grant_applications"] = live["grant_applications"].with_columns(pl.lit("2025-01-01T00:00:00Z").alias("createdAt"))
+    publish(engine, live)
+    frames = make_frames()
+    frames["grant_applications"] = frames["grant_applications"].with_columns(
+        pl.lit(None, dtype=pl.Utf8).alias("createdAt"))
+
+    with engine.begin() as c:
+        c.execute(text('CREATE TABLE bronze_scf_submissions ("Round" TEXT)'))
+    res = validate_scf_candidates(engine, frames)
+    assert ("silver_scf_grant_applications", "fields_populated") in checks(res, "warn")
+    assert res.passed
+
+    with engine.begin() as c:
+        c.execute(text('ALTER TABLE bronze_scf_submissions ADD COLUMN "_airtable_created_time" TEXT'))
+    res = validate_scf_candidates(engine, frames)
+    assert ("silver_scf_grant_applications", "fields_populated") in checks(res, "block")

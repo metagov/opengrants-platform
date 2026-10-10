@@ -20,7 +20,10 @@ import os
 from datetime import datetime, timezone
 
 from dagster import (
+    DagsterInvariantViolationError,
+    DagsterRunStatus,
     RunRequest,
+    RunsFilter,
     SensorEvaluationContext,
     SkipReason,
     sensor,
@@ -83,12 +86,31 @@ def _count_modified_since(api_key: str, since_iso: str) -> int:
     return total
 
 
+SCF_JOB = "etl_scf_full_job"
+_ACTIVE_STATUSES = [
+    DagsterRunStatus.QUEUED,
+    DagsterRunStatus.NOT_STARTED,
+    DagsterRunStatus.STARTING,
+    DagsterRunStatus.STARTED,
+]
+
+
+def _scf_run_active(context: SensorEvaluationContext) -> bool:
+    """True if an SCF pipeline run is queued or running. Overlapping runs would race on the
+    bronze drop and the silver replace."""
+    try:
+        instance = context.instance
+    except DagsterInvariantViolationError:  # no instance (e.g. unit tests)
+        return False
+    return bool(instance.get_runs(filters=RunsFilter(job_name=SCF_JOB, statuses=_ACTIVE_STATUSES), limit=1))
+
+
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @sensor(
-    job_name="etl_scf_full_job",
+    job_name=SCF_JOB,
     minimum_interval_seconds=120,
     description="Polls Airtable for SCF data changes. Triggers ETL when any "
     "table gains or loses records, or when existing records are edited.",
@@ -97,6 +119,12 @@ def airtable_scf_sensor(context: SensorEvaluationContext):
     api_key = os.getenv("AIRTABLE_API_KEY")
     if not api_key:
         yield SkipReason("AIRTABLE_API_KEY not set.")
+        return
+
+    # Wait for an active run to finish. The cursor is left as is, so changes made meanwhile are
+    # still detected on the first tick after the run ends.
+    if _scf_run_active(context):
+        yield SkipReason("An SCF pipeline run is already queued or running.")
         return
 
     # Load previous fingerprint from cursor
