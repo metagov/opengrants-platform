@@ -40,7 +40,8 @@ def bronze_scf_airtable_ingest(context):
                 continue
 
             df = pl.DataFrame(records)
-            # Drop internal Airtable record ID before writing to bronze
+            # Drop internal Airtable record ID before writing to bronze.
+            # `_airtable_created_time` is kept: silver maps it to DAOIP-5 createdAt.
             if "_airtable_id" in df.columns:
                 df = df.drop("_airtable_id")
 

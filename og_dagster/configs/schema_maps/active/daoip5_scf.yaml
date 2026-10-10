@@ -1,12 +1,12 @@
 # ============================================================
 # DAOIP-5 Unified Schema Map — Stellar Community Fund (SCF)
-# Version: 1.0.11 — Fix image URL extraction; NULL for empty attestationIssuersURI/relevantTo; unify all extensions to org.stellar.communityfund
+# Version: 1.0.12 — createdAt from Airtable record createdTime (was a fabricated constant)
 # Generated: 2025-11-20
 # ============================================================
 
 manifest:
   schema_name: daoip5_scf
-  version: "1.0.11"
+  version: "1.0.12"
   source_system: "Stellar Community Fund (Airtable API)"
   last_updated: "2025-11-20T00:00:00Z"
   description: >
@@ -247,9 +247,11 @@ schemas:
         required: true
 
       createdAt:
-        source: null
+        # Airtable record creation time (API `createdTime`). Null when the source has no
+        # timestamp (e.g. CSV snapshots) rather than a fabricated constant.
+        source: "_airtable_created_time"
         type: datetime
-        transform: "lambda _: '2025-01-01T00:00:00Z'"
+        transform: "lambda v: v.strip() if v and str(v).strip() else None"
 
       description:
         source: "One-Sentence-Description"

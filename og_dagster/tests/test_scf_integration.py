@@ -73,8 +73,8 @@ class TestSCFAirtableIntegration:
         for record in records:
             all_columns.update(record.keys())
 
-        # Remove internal field
-        all_columns.discard("_airtable_id")
+        # Remove internal fields
+        all_columns -= {"_airtable_id", "_airtable_created_time"}
 
         for col in config["required_columns"]:
             assert col in all_columns, (
@@ -100,7 +100,7 @@ class TestSCFAirtableIntegration:
 
         for record in records[:5]:  # Check first 5 records
             for key, value in record.items():
-                if key == "_airtable_id":
+                if key in ("_airtable_id", "_airtable_created_time"):
                     continue
                 assert isinstance(value, str), (
                     f"{table_name}.{key} returned {type(value).__name__} "
