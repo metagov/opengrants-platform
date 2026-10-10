@@ -383,6 +383,14 @@ export default function SCFPage() {
             color={brandColors.olive}
           />
 
+          <Box mb={8}>
+            <Link href="/system/scf/projects">
+              <Text as="span" color={brandColors.teal} fontSize="sm" fontWeight="medium" cursor="pointer">
+                Browse every funded project and its funding history →
+              </Text>
+            </Link>
+          </Box>
+
           <SimpleGrid columns={{ base: 1, md: 4 }} gap={6} mb={12}>
             <MetricCard
               label="Total Awarded"

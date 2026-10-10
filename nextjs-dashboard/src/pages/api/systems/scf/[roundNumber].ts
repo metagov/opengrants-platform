@@ -44,6 +44,7 @@ export default async function handler(
     const projects = await query(`
       SELECT 
         id as project_id,
+        "projectId" as daoip5_project_id,
         name as project_name,
         description,
         "org.stellar.communityfund.category" as category,

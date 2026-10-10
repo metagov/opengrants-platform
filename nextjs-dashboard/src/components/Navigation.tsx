@@ -41,7 +41,7 @@ export const Navigation = () => {
       py={4}
     >
       <HStack justify="space-between">
-        <HStack gap={8}>
+        <HStack gap={8} flexWrap="wrap" rowGap={2}>
           <Link href="/" passHref legacyBehavior>
             <ChakraLink
               fontSize="lg"
@@ -54,13 +54,14 @@ export const Navigation = () => {
               OpenGrants
             </ChakraLink>
           </Link>
-          <HStack gap={6}>
+          <HStack gap={6} flexWrap="wrap" rowGap={2}>
             <NavLink href="/ecosystem">Ecosystem</NavLink>
             <NavLink href="/system/ens">ENS</NavLink>
             <NavLink href="/system/giveth">Giveth</NavLink>
             <NavLink href="/system/scf">SCF</NavLink>
             <NavLink href="/system/gitcoin">Gitcoin</NavLink>
             <NavLink href="/system/privote">Privote (GG24 Privacy)</NavLink>
+            <NavLink href="/about">About</NavLink>
           </HStack>
         </HStack>
       </HStack>

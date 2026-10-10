@@ -35,7 +35,8 @@ class TestFetchAirtableTable:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "records": [
-                {"id": "rec1", "fields": {"Name": "Project A", "Total Awarded": "$10,000"}},
+                {"id": "rec1", "createdTime": "2026-05-14T09:30:00.000Z",
+                 "fields": {"Name": "Project A", "Total Awarded": "$10,000"}},
                 {"id": "rec2", "fields": {"Name": "Project B", "Total Awarded": "$20,000"}},
             ]
         }
@@ -47,6 +48,8 @@ class TestFetchAirtableTable:
         assert records[0]["Name"] == "Project A"
         assert records[1]["Total Awarded"] == "$20,000"
         assert records[0]["_airtable_id"] == "rec1"
+        assert records[0]["_airtable_created_time"] == "2026-05-14T09:30:00.000Z"
+        assert records[1]["_airtable_created_time"] == ""
         mock_get.assert_called_once()
 
         # Verify cellFormat=string is passed

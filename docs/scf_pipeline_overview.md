@@ -10,16 +10,16 @@ The SCF pipeline is **event-driven via a Dagster record-count polling sensor** (
 
 ### How It Works
 
-Every **2 minutes**, the sensor fetches record IDs from all three SCF Airtable tables and computes an MD5 fingerprint across the combined result. If the fingerprint differs from the last recorded state, the full SCF ETL pipeline (`etl_scf_full_job`: bronze → silver → gold) is triggered automatically.
+Every **2 minutes**, the sensor fetches record IDs from all three SCF Airtable tables and computes an MD5 fingerprint across the combined result. It also asks Airtable for any records whose `LAST_MODIFIED_TIME()` is after the previous check. If the fingerprint differs from the last recorded state, or any record was edited, the full SCF ETL pipeline (`etl_scf_full_job`: bronze → silver → gold) is triggered automatically.
 
 | Property | Value |
 | --- | --- |
 | **Poll interval** | Every 2 minutes (`minimum_interval_seconds=120`) |
-| **Change detection** | MD5 fingerprint over record IDs + counts across all 3 tables |
+| **Change detection** | MD5 fingerprint over all record IDs + counts across all 3 tables (adds/removes), plus a `LAST_MODIFIED_TIME()` filter since the last check (field edits) |
 | **Trigger** | `etl_scf_full_job` — full bronze → silver → gold run |
 | **Maximum end-to-end lag** | 10–15 minutes (poll interval + pipeline execution time) |
 | **First-run behaviour** | Records baseline fingerprint, does not trigger — fires on the next detected change |
-| **State persistence** | Dagster cursor (JSON) — survives restarts |
+| **State persistence** | Dagster cursor (JSON: `fingerprint`, `checked_at`) — survives restarts |
 | **Failure handling** | Airtable fetch errors yield `SkipReason`, do not crash the sensor |
 
 ### What Triggers a Pipeline Run
@@ -30,8 +30,9 @@ A run is triggered whenever the total set of record IDs across any of the three 
 - A new submission added to `Awarded Submissions [Build Only]`
 - A new project added to `Awarded Projects [Build Only]`
 - An existing record being deleted from any of the above
+- A **field value edited** in an existing record (e.g., an award amount corrected)
 
-Changes to **field values within existing records** (e.g., updating an award amount) do not trigger the sensor, since the fingerprint is based on record IDs and counts only. These changes are picked up on the next scheduled manual snapshot export.
+`checked_at` only advances after a successful Airtable fetch, so edits made during a failed tick are picked up by the next successful one.
 
 ### Sensor Location
 

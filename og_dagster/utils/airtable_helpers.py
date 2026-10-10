@@ -59,6 +59,8 @@ def fetch_airtable_table(
         for record in records:
             row = record.get("fields", {})
             row["_airtable_id"] = record.get("id", "")
+            # Record creation time (ISO 8601) from the Airtable API; used as DAOIP-5 createdAt.
+            row["_airtable_created_time"] = record.get("createdTime", "")
             all_records.append(row)
 
         logger.info(f"Page {page}: fetched {len(records)} records")

@@ -8,6 +8,7 @@ from dagster import asset
 from configs.scf_airtable import SCF_BASE_ID, SCF_TABLES
 from utils.airtable_helpers import fetch_airtable_table
 from utils.db import drop_table_cascade, upsert_platform_metadata
+from utils.scf_archive import archive_bronze_snapshot
 from utils.graphql_helpers import sanitize_for_sql
 
 
@@ -39,8 +40,18 @@ def bronze_scf_airtable_ingest(context):
                 context.log.warning(f"No records returned for {table_name}")
                 continue
 
+            # Archive before overwriting: bronze is dropped and replaced below, so this is
+            # the only copy of the previous state. If archiving fails, the exception aborts
+            # the run and bronze is left untouched.
+            archived = archive_bronze_snapshot(engine, table_name, records, run_id=context.run_id)
+            context.log.info(
+                f"Archived {table_name} snapshot ({len(records)} records)" if archived
+                else f"{table_name} unchanged since last snapshot; nothing archived"
+            )
+
             df = pl.DataFrame(records)
-            # Drop internal Airtable record ID before writing to bronze
+            # Drop internal Airtable record ID before writing to bronze.
+            # `_airtable_created_time` is kept: silver maps it to DAOIP-5 createdAt.
             if "_airtable_id" in df.columns:
                 df = df.drop("_airtable_id")
 
