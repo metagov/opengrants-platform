@@ -87,8 +87,8 @@ def load_datalake(url):
     """Silver tables for detail, gold profile for reconciliation."""
     from sqlalchemy import create_engine, text
 
-    if url.startswith("postgresql+psycopg2://"):
-        url = "postgresql://" + url[len("postgresql+psycopg2://"):]
+    # Pin the psycopg2 driver: newer SQLAlchemy defaults plain postgresql:// to psycopg 3.
+    url = re.sub(r"^postgres(ql)?(\+\w+)?://", "postgresql+psycopg2://", url)
     engine = create_engine(url)
     with engine.connect() as c:
         apps = c.execute(text(f'''
