@@ -16,6 +16,7 @@ import { Navigation } from '../../../components/Navigation';
 import { SystemHeader } from '../../../components/SystemHeader';
 import { MetricCard } from '../../../components/MetricCard';
 import { brandColors } from '../../../theme/colors';
+import { projectPath } from '../../../lib/scfIds';
 
 interface RoundData {
   metadata: {
@@ -42,6 +43,7 @@ interface RoundData {
   };
   projects: Array<{
     project_id: string;
+    daoip5_project_id: string | null;
     project_name: string;
     description: string;
     category: string;
@@ -216,9 +218,17 @@ export default function SCFRoundPage() {
                 <HStack justify="space-between" align="start" mb={3} flexWrap="wrap" gap={2}>
                   <VStack align="start" gap={1} flex={1}>
                     <HStack gap={2} flexWrap="wrap">
-                      <Text fontSize="md" fontWeight="semibold">
-                        {project.project_name}
-                      </Text>
+                      {projectPath(project.daoip5_project_id) ? (
+                        <Link href={projectPath(project.daoip5_project_id)!}>
+                          <Text fontSize="md" fontWeight="semibold" color={brandColors.teal} cursor="pointer" _hover={{ textDecoration: 'underline' }}>
+                            {project.project_name}
+                          </Text>
+                        </Link>
+                      ) : (
+                        <Text fontSize="md" fontWeight="semibold">
+                          {project.project_name}
+                        </Text>
+                      )}
                       {project.website && (
                         <a href={project.website} target="_blank" rel="noopener noreferrer">
                           <Text fontSize="xs" color={brandColors.teal}>↗</Text>
