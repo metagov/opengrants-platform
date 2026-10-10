@@ -1,9 +1,9 @@
 # TODOS
 
 ## [IMPORTANT, before Q3 submissions] Fix "paid exceeds award" on Tansu and the other affected SCF projects
-**What:** The Tansu project page (`/system/scf/project/tansu_-_soroban_versioning`) shows the "Paid exceeds award in source data" flag: $246,720 paid against $147,360 awarded (167%). The excess is all in the SCF #30 award: $198,720 paid against $99,360 awarded, exactly double, so the payment looks double-counted in the SDF Airtable. Across SCF, 36 applications show more paid than awarded, $1.12M over in total.
-  1. List all 36 affected rows (the accuracy gate reports them under `paid_within_award`; or query `silver_scf_grant_applications` where `totalPaidUSD > fundsApprovedInUSD`).
-  2. Confirm each with SDF against the Airtable payment records, starting with Tansu SCF #30.
+**What:** The Tansu project page (`/system/scf/project/tansu_-_soroban_versioning`) shows the "Paid exceeds award in source data" flag. Exact production figures are **not yet confirmed**: earlier numbers came from the CSV exports and must not be used. Run `scripts/scf_paid_over_award.py` against the production datalake (read-only user) to get the affected applications, rounds and amounts.
+  1. Run `DATABASE_URL=<read-only prod URL> python3 scripts/scf_paid_over_award.py --out docs/data-quality/scf_paid_over_award_<date>.md` and commit the report. Use only these production figures in the Q3 submission.
+  2. Confirm each row with SDF against the Airtable payment records, starting with Tansu.
   3. Fix it at the source (SDF corrects Airtable) where possible. Where it can't be fixed in time, cap displayed paid at awarded in the dashboard and API, show "paid figure under review", and document the correction.
   4. Re-run the pipeline and confirm the flag clears and the accuracy gate's `paid_within_award` warning count falls.
 **Why:** Q3 deliverables, the SCF #42–#45 Intelligence Report and the project pages all cite paid totals. Submitting with a visibly wrong figure on a well-known project like Tansu undermines the data's credibility with reviewers and PG Atlas.
@@ -89,7 +89,7 @@
   2. **Per-round data work.** When a round closes, confirm the sensor ingested it, then run the Intelligence Report (`scripts/scf_intelligence_report.py`) and post it before the vote. Regenerate DAOIP-5 compliance quarterly (`scripts/daoip5_compliance_check.py`, `scripts/daoip5_round_compliance.py`).
   3. **ID stewardship.** Follow issue #4: keep IDs stable, record aliases on renames and merges, adopt PG-minted `canonical_id`s, and answer intake lookups.
   4. **Downstream support.** PG Atlas (SBOM action, ID exports, schema changes), PG Maintenance intake reviewers, and MCP and API consumers. Say where requests arrive: SCF repo issues and PRs, the Q4 PG Discord thread, email.
-  5. **Data-quality escalation to SDF.** Report what the pipeline can't fix: blank project links, paid > awarded (36 rows found in Oct 2026), renamed projects.
+  5. **Data-quality escalation to SDF.** Report what the pipeline can't fix: blank project links, paid > awarded (list from `scripts/scf_paid_over_award.py` against production), renamed projects.
   6. **Operations.** Uptime via `health_endpoint` on the project page, alerts on failed runs, read-only DB access for reports, credential rotation.
   7. **Contacts.** Who is tagged on SCF threads: Anke currently tags @sam-mccarthy07, but Rashmi does the submissions.
 **Why:** In Q3 we missed the deliverables and proposal deadlines, found the ID-loss problem only after SCF raised it, and reconstructed the process from emails and PR comments. A written protocol makes this repeatable, and doubles as the maintenance reserve plan reviewers now ask for.

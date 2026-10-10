@@ -115,9 +115,9 @@ rebuilt. Publishing is all or nothing, so the three tables never come from diffe
 | IDs stable | More than max(5, 2%) of live IDs would disappear | Any live ID would disappear (listed by name) |
 | Schema stable | A live column is missing | New columns |
 | Fields populated | A column that was at least 95% filled loses 20 points or more | — |
-| References resolve | More applications point at a missing round or project than live does | Known orphans (2 today) |
-| Totals reconcile | Projects or rounds total awarded differs from applications by more than 10% | Differs by more than 1% (1.4% today) |
-| Paid within award | — | Paid exceeds awarded (36 applications, source data) |
+| References resolve | More applications point at a missing round or project than live does | Orphans already present in live |
+| Totals reconcile | Projects or rounds total awarded differs from applications by more than 10% | Differs by more than 1% |
+| Paid within award | — | Paid exceeds awarded (source data) |
 
 Most checks compare against what is live, not against fixed rules. Known issues already in
 production are reported without freezing the pipeline, and anything that makes them worse stops it.
@@ -176,13 +176,17 @@ Accepted; tracked in `TODOS.md` ("SCF data backup follow-ups").
 - **More frequent writes.** The sensor now also fires on edits, and every run still rewrites all
   SCF tables and rebuilds gold. Optimizing this is tracked in `TODOS.md` ("Optimize SCF
   sensor-triggered writes").
-- **Paid exceeds awarded in the source.** 36 applications ($1.12M over), including Tansu's
-  SCF #30 award ($198,720 paid against $99,360 awarded). The gate only warns, so these figures are
-  live. Fixing them before the Q3 submission is tracked in `TODOS.md`.
+- **Paid exceeds awarded in the source.** Production has awards with more paid than awarded,
+  including Tansu (flagged on its project page). The gate only warns, so these figures are live.
+  Production counts and amounts are not yet confirmed: run `scripts/scf_paid_over_award.py`
+  against the production datalake. Fixing them before the Q3 submission is tracked in `TODOS.md`.
 - **IDs already lost before this change** (Mar–Oct 2026, when no snapshots were taken) can only be
   recovered from PG Atlas's ingested IDs or from Airtable revision history.
 
 ## Verification
+> The CSV exports below were used only as **test input** for the pipeline code. None of the
+> figures in this section describe production data.
+
 **How I tested it:** I ran the real pipeline steps against a local Postgres, feeding in the
 Nov 2025 and Feb 2026 exports.
 
