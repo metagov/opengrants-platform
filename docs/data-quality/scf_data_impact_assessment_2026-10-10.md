@@ -117,7 +117,7 @@ rebuilt. Publishing is all or nothing, so the three tables never come from diffe
 | Fields populated | A column that was at least 95% filled loses 20 points or more | — |
 | References resolve | More applications point at a missing round or project than live does | Orphans already present in live |
 | Totals reconcile | Projects or rounds total awarded differs from applications by more than 10% | Differs by more than 1% |
-| Paid within award | — | Paid exceeds awarded (source data) |
+| Paid within award | — | Paid exceeds awarded by more than 2.5% (allowance for XLM exchange rates); payments with no award amount are reported separately |
 
 Most checks compare against what is live, not against fixed rules. Known issues already in
 production are reported without freezing the pipeline, and anything that makes them worse stops it.
@@ -182,6 +182,9 @@ Accepted; tracked in `TODOS.md` ("SCF data backup follow-ups").
   rounds with no award amount recorded, or XLM exchange-rate differences. See
   [scf_paid_over_award_2026-10-10.md](scf_paid_over_award_2026-10-10.md). The gate only warns, so
   these figures are live. Fixing them before the Q3 submission is tracked in `TODOS.md`.
+  Two fixes on our side now narrow the flag to likely recording errors (11 applications,
+  $445,103): gaps of up to 2.5% are ignored because SCF pays in XLM and each payout's USD value is
+  fixed on the payment date, and $0 awards show as "award amount not recorded".
 - **IDs already lost before this change** (Mar–Oct 2026, when no snapshots were taken) can only be
   recovered from PG Atlas's ingested IDs or from Airtable revision history.
 

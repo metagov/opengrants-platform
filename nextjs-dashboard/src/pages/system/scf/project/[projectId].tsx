@@ -19,6 +19,7 @@ import { SystemHeader } from '../../../../components/SystemHeader';
 import { MetricCard } from '../../../../components/MetricCard';
 import { brandColors } from '../../../../theme/colors';
 import { formatCurrency } from '../../../../lib/formatters';
+import { paidStatus } from '../../../../lib/scfPaid';
 
 interface Award {
   application_id: string;
@@ -137,6 +138,12 @@ export default function SCFProjectPage() {
   const { project, summary, awards } = data;
   const name = project.project_name || awards[0]?.submission_title || project.project_id;
   const paidPct = summary.total_awarded_usd > 0 ? (summary.total_paid_usd / summary.total_awarded_usd) * 100 : 0;
+  const awardStatuses = awards.map((a) => paidStatus(a.total_awarded_usd, a.total_paid_usd));
+  const paidSubtitle = awardStatuses.includes('over')
+    ? 'Source data records more paid than awarded'
+    : awardStatuses.includes('award_missing')
+      ? 'Some award amounts not recorded in source data'
+      : `${paidPct.toFixed(0)}% of awarded`;
   const apiPath = `/api/systems/scf/project/${encodeURIComponent(String(projectId))}`;
   const rounds = awards.map((a) => a.round_name);
   const span =
@@ -185,7 +192,7 @@ export default function SCFProjectPage() {
             <MetricCard
               label="Total Paid"
               value={formatCurrency(summary.total_paid_usd)}
-              subtitle={paidPct > 100.5 ? 'Source data records more paid than awarded' : `${paidPct.toFixed(0)}% of awarded`}
+              subtitle={paidSubtitle}
             />
             <MetricCard label="SCF Awards" value={summary.award_count} subtitle={rounds.join(', ')} />
             <MetricCard
@@ -230,9 +237,14 @@ export default function SCFProjectPage() {
                             {formatCurrency(a.total_awarded_usd)}
                           </Text>
                           <Text fontSize="xs" color="gray.500">{formatCurrency(a.total_paid_usd)} paid</Text>
-                          {Number(a.total_paid_usd) > Number(a.total_awarded_usd) + 1 && (
-                            <Text fontSize="xs" color="orange.600" title="SDF's source data records more paid than awarded for this award.">
+                          {paidStatus(a.total_awarded_usd, a.total_paid_usd) === 'over' && (
+                            <Text fontSize="xs" color="orange.600" title="SDF's source data records more paid than awarded for this award, beyond normal XLM exchange-rate differences.">
                               Paid exceeds award in source data
+                            </Text>
+                          )}
+                          {paidStatus(a.total_awarded_usd, a.total_paid_usd) === 'award_missing' && (
+                            <Text fontSize="xs" color="gray.600" title="SDF's source data has payments for this award but no award amount.">
+                              Award amount not recorded in source data
                             </Text>
                           )}
                         </VStack>

@@ -60,7 +60,9 @@ MAX_VANISHED_IDS = 5
 MAX_VANISHED_PCT = 2.0
 MAX_DUP_SHARE_RISE_PCT = 5.0
 NULL_JUMP_PCT = 20.0          # block if a column that was at least 95% filled loses this much
-PAID_OVER_AWARDED_TOLERANCE = 1.005
+# SCF pays in XLM and fixes each payout's USD value on the payment date, so paid can land a little
+# above the USD award. Gaps up to 2.5% are exchange-rate noise. Matches nextjs-dashboard/src/lib/scfPaid.ts.
+PAID_OVER_AWARDED_TOLERANCE = 1.025
 MAX_SOURCE_MISMATCH_PCT = 10.0
 
 RUNS_TABLE = "scf_validation_runs"
@@ -285,12 +287,19 @@ def _check_cross_table(res: ValidationResult, frames: Dict[str, pl.DataFrame], l
 
     paid, awarded = "org.stellar.communityfund.totalPaidUSD", "fundsApprovedInUSD"
     if paid in apps.columns and awarded in apps.columns:
-        over = apps.filter(pl.col(paid) > pl.col(awarded) * PAID_OVER_AWARDED_TOLERANCE)
+        has_award = pl.col(awarded).fill_null(0) > 0
+        over = apps.filter(has_award & (pl.col(paid) > pl.col(awarded) * PAID_OVER_AWARDED_TOLERANCE))
         if over.height:
             excess = float((over[paid] - over[awarded]).sum())
             res.add(t, "paid_within_award", "warn",
-                    f"{over.height} applications record more paid than awarded (${excess:,.0f} over); "
-                    "this comes from the source data.", over["name"].to_list())
+                    f"{over.height} applications record more paid than awarded beyond the "
+                    f"{(PAID_OVER_AWARDED_TOLERANCE - 1) * 100:.1f}% XLM exchange-rate allowance "
+                    f"(${excess:,.0f} over); this comes from the source data.", over["name"].to_list())
+        missing = apps.filter(~has_award & (pl.col(paid).fill_null(0) > 0))
+        if missing.height:
+            res.add(t, "award_recorded", "warn",
+                    f"{missing.height} applications have payments but no award amount in the source data "
+                    f"(${float(missing[paid].sum()):,.0f} paid).", missing["name"].to_list())
 
     # The three tables are separate Airtable views of the same awards; their totals should agree.
     totals = {s: res.stats[SECTIONS[s]].get("funding_total_usd") for s in SECTIONS}

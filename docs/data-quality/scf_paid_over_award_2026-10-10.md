@@ -6,6 +6,27 @@ Generated 2026-10-10 11:31 UTC from the live `silver_scf_*` tables with
 - **45** of 933 applications, **$1,329,289** paid above award in total.
 - **61** projects with project-level paid above awarded.
 
+## Fixes applied (2026-10-10)
+
+Two changes on our side, so the flag only marks likely recording errors. Both apply to the project
+pages, the pipeline's accuracy check and `scripts/scf_paid_over_award.py`.
+
+1. **2.5% allowance for XLM exchange rates.** SCF pays in XLM, and each payout's USD value is fixed
+   on the payment date, so USD paid can land slightly above the USD award. We ignore gaps of up to
+   2.5% for this reason. Previously the allowance was 0.5% on the project total and $1 per award.
+2. **"Award amount not recorded" instead of "paid exceeds award"** when the award is $0. These are
+   legacy awards with no award amount in the source, not overpayments.
+
+Applied to the production figures below:
+
+| | Before | After |
+| --- | --- | --- |
+| Flagged "paid exceeds award" | 45 applications, $1,329,289 | **11 applications, $445,103** |
+| Shown as "award amount not recorded" | — | 26 applications, $872,887 paid |
+| Treated as exchange-rate difference (not flagged) | — | 8 applications, $11,301 |
+
+The figures and tables below are the original report, generated before these fixes.
+
 ## What the 45 applications are
 
 Grouped by the ratio of paid to awarded. The causes are inferred from the pattern; each needs

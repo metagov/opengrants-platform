@@ -15,15 +15,25 @@ from datetime import datetime, timezone
 
 from sqlalchemy import create_engine, text
 
-TOLERANCE = 1.005  # same as the dashboard flag and the accuracy gate
+# SCF pays in XLM; each payout's USD value is fixed on the payment date, so gaps up to 2.5% are
+# exchange-rate noise. Same as the dashboard flag and the accuracy gate.
+TOLERANCE = 1.025
 
 APPS = """
 SELECT "projectId", name, "grantPoolName",
        CAST("fundsApprovedInUSD" AS FLOAT) AS awarded,
        CAST("org.stellar.communityfund.totalPaidUSD" AS FLOAT) AS paid
 FROM silver_scf_grant_applications
-WHERE CAST("org.stellar.communityfund.totalPaidUSD" AS FLOAT)
+WHERE CAST("fundsApprovedInUSD" AS FLOAT) > 0
+  AND CAST("org.stellar.communityfund.totalPaidUSD" AS FLOAT)
       > CAST("fundsApprovedInUSD" AS FLOAT) * :tol
+"""
+MISSING_AWARD = """
+SELECT "projectId", name, "grantPoolName",
+       CAST("org.stellar.communityfund.totalPaidUSD" AS FLOAT) AS paid
+FROM silver_scf_grant_applications
+WHERE COALESCE(CAST("fundsApprovedInUSD" AS FLOAT), 0) = 0
+  AND CAST("org.stellar.communityfund.totalPaidUSD" AS FLOAT) > 0
 """
 PROJECTS = """
 SELECT id, name,
@@ -58,13 +68,17 @@ def main():
         projects = c.execute(text(PROJECTS), {"tol": TOLERANCE}).all()
         apps = sorted(apps, key=lambda r: r[4] - r[3], reverse=True)
         projects = sorted(projects, key=lambda r: r[3] - r[2], reverse=True)
+        missing = sorted(c.execute(text(MISSING_AWARD)).all(), key=lambda r: r[3], reverse=True)
         total_apps = c.execute(text("SELECT COUNT(*) FROM silver_scf_grant_applications")).scalar()
 
     excess = sum(p - w for _, _, _, w, p in apps)
     lines = [
         "# SCF awards with more paid than awarded (production)", "",
         f"Generated {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC} from the live `silver_scf_*` tables.", "",
-        f"- **{len(apps)}** of {total_apps} applications, **{money(excess)}** paid above award in total.",
+        f"- **{len(apps)}** of {total_apps} applications, **{money(excess)}** paid above award in total, "
+        f"beyond a {(TOLERANCE - 1) * 100:.1f}% allowance for XLM exchange-rate differences.",
+        f"- **{len(missing)}** applications have payments but no award amount recorded "
+        f"({money(sum(r[3] for r in missing))} paid).",
         f"- **{len(projects)}** projects with project-level paid above awarded.", "",
         "## Applications", "",
         "| Project | Application | Round | Awarded | Paid | Over by | Paid / awarded |",
@@ -73,6 +87,10 @@ def main():
     for pid, name, rnd, w, p in apps:
         ratio = f"{p / w:.2f}×" if w else "—"
         lines.append(f"| `{(pid or '').split(':')[-1]}` | {name} | {rnd} | {money(w)} | {money(p)} | {money(p - w)} | {ratio} |")
+    lines += ["", "## Applications with no award amount recorded", "",
+              "| Project | Application | Round | Paid |", "|---|---|---|---|"]
+    for pid, name, rnd, p in missing:
+        lines.append(f"| `{(pid or '').split(':')[-1]}` | {name} | {rnd} | {money(p)} |")
     lines += ["", "## Projects", "",
               "| Project | Awarded | Paid | Over by |", "|---|---|---|---|"]
     for pid, name, w, p in projects:
