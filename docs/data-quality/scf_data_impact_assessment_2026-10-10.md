@@ -44,10 +44,11 @@ Related: [ID instability investigation](scf_canonical_id_data_loss_report_2026-1
 | Metadata | `platform_metadata` | Upsert | Latest only | — |
 | Snapshots | `raw_data/SCF/*` | Committed by hand | Nov 2025, Feb 2026 (plus Jul 2025 on Drive) | Taken irregularly. Production has read Airtable live since March 2026, so nothing in between was kept. |
 
-**Database-level backups:** DigitalOcean managed Postgres takes daily automatic backups with a
-limited retention window. That retention has **not been verified** for this cluster. It protects
-against losing the database, not against a bad pipeline run silently overwriting good data,
-which is the risk here.
+**Database-level backups:** DigitalOcean managed Postgres supports point-in-time recovery: the
+cluster can be restored to any transaction **from the last 7 days** (confirmed for this cluster).
+That protects against losing the database, and against a bad overwrite that is noticed within
+a week. It does not help when a bad run is noticed later. Most of the ID losses in the
+investigation report were found months afterwards, so the pipeline archive below is still needed.
 
 ## 2. Impact of each change
 
@@ -135,6 +136,8 @@ previous copy, and bronze is not served to users. Gold has no checks of its own 
 that `dbt build` already runs.
 
 ### 3.4 Still to do (needs access I don't have from this environment)
+Accepted; tracked in `TODOS.md` ("SCF data backup follow-ups").
+
 1. **Before starting the #4 migration**, take a one-off full dump of SCF bronze, silver and archive
    tables and keep it outside the database (DigitalOcean Spaces, or an encrypted file kept by the
    maintainer):
@@ -143,8 +146,8 @@ that `dbt build` already runs.
      -t platform_metadata -Fc -f scf_pre_registry_$(date +%F).dump
    ```
    The read-only `report_reader` role can run this, because it only needs `SELECT`.
-2. **Confirm the DigitalOcean backup retention** for `opengrants-db`, and enable point-in-time
-   recovery if the plan allows it.
+2. ~~Confirm the DigitalOcean backup retention.~~ **Done:** point-in-time recovery to any
+   transaction from the last 7 days. Anything older relies on the archive and offsite copies.
 3. **Keep an offsite copy of the archive.** The archive lives in the same database it protects.
    Export it monthly (`--export`) to Spaces or a release artifact. It's about 2 MB per full
    snapshot gzipped.
@@ -170,12 +173,26 @@ that `dbt build` already runs.
   §3.4 (3) is in place.
 - **Silver and gold aren't archived directly.** They're rebuildable from archived bronze, given
   the schema map version used at the time, which is in git history.
+- **More frequent writes.** The sensor now also fires on edits, and every run still rewrites all
+  SCF tables and rebuilds gold. Optimizing this is tracked in `TODOS.md` ("Optimize SCF
+  sensor-triggered writes").
+- **Paid exceeds awarded in the source.** 36 applications ($1.12M over), including Tansu's
+  SCF #30 award ($198,720 paid against $99,360 awarded). The gate only warns, so these figures are
+  live. Fixing them before the Q3 submission is tracked in `TODOS.md`.
 - **IDs already lost before this change** (Mar–Oct 2026, when no snapshots were taken) can only be
   recovered from PG Atlas's ingested IDs or from Airtable revision history.
 
 ## Verification
-I ran the real bronze and silver SCF assets against a local Postgres, with the Airtable fetch
-stubbed to return committed snapshot data:
+**How I tested it:** I ran the real pipeline steps against a local Postgres, feeding in the
+Nov 2025 and Feb 2026 exports.
+
+- Running the Feb data a second time stored no new copy.
+- All 9 project IDs that vanished between Nov and Feb were kept, with their original names.
+- Restoring the Nov copy gave back exactly the same rows as the original export (537, 734 and
+  41 records).
+- The 7 new archive unit tests pass.
+
+In detail, with the Airtable fetch stubbed to return committed snapshot data:
 
 | Step | Result |
 | --- | --- |

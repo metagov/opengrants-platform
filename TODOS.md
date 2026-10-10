@@ -1,5 +1,46 @@
 # TODOS
 
+## [IMPORTANT, before Q3 submissions] Fix "paid exceeds award" on Tansu and the other affected SCF projects
+**What:** The Tansu project page (`/system/scf/project/tansu_-_soroban_versioning`) shows the "Paid exceeds award in source data" flag: $246,720 paid against $147,360 awarded (167%). The excess is all in the SCF #30 award: $198,720 paid against $99,360 awarded, exactly double, so the payment looks double-counted in the SDF Airtable. Across SCF, 36 applications show more paid than awarded, $1.12M over in total.
+  1. List all 36 affected rows (the accuracy gate reports them under `paid_within_award`; or query `silver_scf_grant_applications` where `totalPaidUSD > fundsApprovedInUSD`).
+  2. Confirm each with SDF against the Airtable payment records, starting with Tansu SCF #30.
+  3. Fix it at the source (SDF corrects Airtable) where possible. Where it can't be fixed in time, cap displayed paid at awarded in the dashboard and API, show "paid figure under review", and document the correction.
+  4. Re-run the pipeline and confirm the flag clears and the accuracy gate's `paid_within_award` warning count falls.
+**Why:** Q3 deliverables, the SCF #42–#45 Intelligence Report and the project pages all cite paid totals. Submitting with a visibly wrong figure on a well-known project like Tansu undermines the data's credibility with reviewers and PG Atlas.
+**Pros:** Accurate paid figures in the Q3 submission and the Intelligence Report; one of the open data-quality items with SDF closed.
+**Cons:** Depends on SDF responding before the submission; the fallback (capping in the UI) hides rather than fixes the source error.
+**Context:** Found while building the D4a project view (PR #3). The UI flag and the gate warning both already exist; this item is about correcting the numbers.
+**Depends on:** SDF access to the Airtable payment records.
+**Added:** 2026-10-10
+
+## Optimize SCF sensor-triggered writes
+**What:** Make each sensor-triggered SCF run write less:
+  1. Skip the run, or stop after bronze, when the fetched Airtable content hash matches the latest archived snapshot (the archive already computes it).
+  2. Write bronze to a staging table and swap it in, instead of `DROP … CASCADE` then write.
+  3. Rebuild only the silver tables whose bronze inputs changed, and only rebuild the SCF gold models.
+  4. Debounce bursts of edits (e.g. wait for a few minutes of no changes before running).
+  5. Batch the published-ID upserts into one statement instead of one per row.
+**Why:** Since the sensor also fires on record edits (PR #3), runs are more frequent. Each one drops and rewrites every SCF table and rebuilds all of gold, even when nothing relevant changed. That's wasted database load, a longer window where bronze is empty, and more churn for the dashboard and API.
+**Pros:** Fewer writes and dbt builds, shorter empty-table windows, lower DB load and cost.
+**Cons:** More moving parts in the sensor and assets. Needs tests for the skip and debounce logic.
+**Context:** `og_dagster/sensors/scf_sensor.py`, `og_dagster/assets/bronze/scf.py`, `og_dagster/utils/scf_archive.py`. See `docs/data-quality/scf_data_impact_assessment_2026-10-10.md` §2 and §5.
+**Depends on:** Nothing.
+**Added:** 2026-10-10
+
+## SCF data backup follow-ups (from the data impact assessment, §3.4)
+**What:** The backups that need production access:
+  1. **Before starting the #4 migration**, take a full `pg_dump` of SCF bronze, silver, archive and `platform_metadata` tables and keep it outside the database (DigitalOcean Spaces or an encrypted file kept by the maintainer). The read-only role can run it.
+  2. **DigitalOcean point-in-time recovery: confirmed.** The cluster can restore to any transaction from the last 7 days. Nothing to enable. Bad data noticed after 7 days can only be recovered from the pipeline archive or an offsite dump.
+  3. **Keep an offsite copy of the archive.** Export it monthly (`scripts/scf_archive_restore.py --export`) to Spaces or a release artifact. About 2 MB gzipped per full snapshot.
+  4. **Seed `archive_scf_published_ids` with history** from the committed Nov 2025 and Feb 2026 snapshots and the Jul 2025 Drive export.
+  5. **Ask PG Atlas for its ingested SCF ID list** (#4, question 3).
+**Why:** The archive lives in the same database it protects, and DigitalOcean's 7-day window is too short to catch slow-to-notice overwrites.
+**Pros:** A way back from any bad run or a failed #4 migration.
+**Cons:** Item 3 needs a scheduled job or someone to remember it monthly.
+**Context:** `docs/data-quality/scf_data_impact_assessment_2026-10-10.md` §3.4.
+**Depends on:** Production DB access (read-only is enough for 1, 3 and 4).
+**Added:** 2026-10-10
+
 ## Upgrade Airtable webhook from cursor polling to push-based notifications
 **What:** When Dagster is publicly accessible, switch the Airtable sensor from cursor polling to push-based `notificationUrl` webhooks for near-instant pipeline triggers.
 **Why:** Eliminates polling overhead (~30-60s latency) and reduces unnecessary API calls.
