@@ -176,10 +176,12 @@ Accepted; tracked in `TODOS.md` ("SCF data backup follow-ups").
 - **More frequent writes.** The sensor now also fires on edits, and every run still rewrites all
   SCF tables and rebuilds gold. Optimizing this is tracked in `TODOS.md` ("Optimize SCF
   sensor-triggered writes").
-- **Paid exceeds awarded in the source.** Production has awards with more paid than awarded,
-  including Tansu (flagged on its project page). The gate only warns, so these figures are live.
-  Production counts and amounts are not yet confirmed: run `scripts/scf_paid_over_award.py`
-  against the production datalake. Fixing them before the Q3 submission is tracked in `TODOS.md`.
+- **Paid exceeds awarded in the source.** In production, 45 of 933 applications record more paid
+  than awarded, $1,329,289 in total. Six of them ($353,660) look like payments recorded twice,
+  including Tansu's SCF #30 award ($198,720 paid against $99,360 awarded). Most of the rest are legacy
+  rounds with no award amount recorded, or XLM exchange-rate differences. See
+  [scf_paid_over_award_2026-10-10.md](scf_paid_over_award_2026-10-10.md). The gate only warns, so
+  these figures are live. Fixing them before the Q3 submission is tracked in `TODOS.md`.
 - **IDs already lost before this change** (Mar–Oct 2026, when no snapshots were taken) can only be
   recovered from PG Atlas's ingested IDs or from Airtable revision history.
 

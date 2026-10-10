@@ -1,16 +1,20 @@
 # TODOS
 
 ## [IMPORTANT, before Q3 submissions] Fix "paid exceeds award" on Tansu and the other affected SCF projects
-**What:** The Tansu project page (`/system/scf/project/tansu_-_soroban_versioning`) shows the "Paid exceeds award in source data" flag. Exact production figures are **not yet confirmed**: earlier numbers came from the CSV exports and must not be used. Run `scripts/scf_paid_over_award.py` against the production datalake (read-only user) to get the affected applications, rounds and amounts.
-  1. Run `DATABASE_URL=<read-only prod URL> python3 scripts/scf_paid_over_award.py --out docs/data-quality/scf_paid_over_award_<date>.md` and commit the report. Use only these production figures in the Q3 submission.
-  2. Confirm each row with SDF against the Airtable payment records, starting with Tansu.
-  3. Fix it at the source (SDF corrects Airtable) where possible. Where it can't be fixed in time, cap displayed paid at awarded in the dashboard and API, show "paid figure under review", and document the correction.
-  4. Re-run the pipeline and confirm the flag clears and the accuracy gate's `paid_within_award` warning count falls.
-**Why:** Q3 deliverables, the SCF #42–#45 Intelligence Report and the project pages all cite paid totals. Submitting with a visibly wrong figure on a well-known project like Tansu undermines the data's credibility with reviewers and PG Atlas.
-**Pros:** Accurate paid figures in the Q3 submission and the Intelligence Report; one of the open data-quality items with SDF closed.
-**Cons:** Depends on SDF responding before the submission; the fallback (capping in the UI) hides rather than fixes the source error.
-**Context:** Found while building the D4a project view (PR #3). The UI flag and the gate warning both already exist; this item is about correcting the numbers.
-**Depends on:** SDF access to the Airtable payment records.
+**What:** Production has **45 of 933** SCF applications with more paid than awarded, **$1,329,289** over in total. The report is in `docs/data-quality/scf_paid_over_award_2026-10-10.md`, from `scripts/scf_paid_over_award.py` run against production on 2026-10-10. Grouped by likely cause:
+  1. **Recorded twice: 6 rows, $353,660. Fix before Q3 submissions.**
+     - Paid exactly 2× the award: Tansu SCF #30 ($198,720 paid, $99,360 awarded) and DevAsign SCF #39 ($160,000 / $80,000).
+     - Overpaid by exactly a tranche (1/3 or 2/3 of the award): Mobula Labs SCF #34, WebSoroban IDE SCF #38, Unstoppable Wallet SCF #34, Soroban Optimistic Oracle SCF #33.
+     - Ask SDF to correct the payment records in Airtable, then re-run the pipeline and check the Tansu flag clears.
+  2. **Unclear: 5 rows, $91,443.** Trustful SCF #30, Quidroo SCF #9, Free Voting Platform SCF #5, Content DAO SCF #31, FijiCoin SCF #8. Ask SDF whether these were top-ups, duplicate payments or wrong award amounts.
+  3. **Award recorded as $0: 26 legacy rows (SCF #2–#9), $872,887.** These aren't overpayments; the award amount is missing in the source. Ask SDF for the legacy award amounts. Meanwhile, change the dashboard flag to "award amount not recorded" when awarded is $0.
+  4. **XLM exchange-rate noise: 8 rows paid 1–2.2% over, $11,301.** Not errors. Raise the tolerance from 0.5% to 2.5% in the dashboard flag (`nextjs-dashboard/src/pages/system/scf/project/[projectId].tsx`) and in `PAID_OVER_AWARDED_TOLERANCE` (`og_dagster/utils/scf_validation.py`).
+  5. **Project-level totals (61 projects) are less reliable.** Some, such as Stellar Light ($13,000 awarded, $178,000 paid), have no application-level overpayment, so the project's "Total Awarded" probably leaves out some awards. Tansu's project total ($124,360 over) is the $99,360 SCF #30 duplicate plus $25,000 not explained by any flagged application. Raise both with SDF.
+**Why:** Paid totals appear on the project pages and in the Gateway API. Submitting while Tansu's page shows a doubled payment undermines the data's credibility with reviewers and PG Atlas. The Q3 draft and the SCF #42–#45 Intelligence Report don't cite paid USD figures, so they need no change.
+**Pros:** Accurate paid figures; groups 3 and 4 are fixes on our side that remove most of the noise (34 of 45 rows) without waiting for SDF.
+**Cons:** Groups 1, 2 and 5 depend on SDF responding before the submission.
+**Context:** Found while building the D4a project view (PR #3). The UI flag and the accuracy gate's `paid_within_award` warning already surface these rows.
+**Depends on:** SDF access to the Airtable payment records (groups 1, 2, 3, 5). Groups 3 and 4 code changes: nothing.
 **Added:** 2026-10-10
 
 ## Optimize SCF sensor-triggered writes
@@ -89,7 +93,7 @@
   2. **Per-round data work.** When a round closes, confirm the sensor ingested it, then run the Intelligence Report (`scripts/scf_intelligence_report.py`) and post it before the vote. Regenerate DAOIP-5 compliance quarterly (`scripts/daoip5_compliance_check.py`, `scripts/daoip5_round_compliance.py`).
   3. **ID stewardship.** Follow issue #4: keep IDs stable, record aliases on renames and merges, adopt PG-minted `canonical_id`s, and answer intake lookups.
   4. **Downstream support.** PG Atlas (SBOM action, ID exports, schema changes), PG Maintenance intake reviewers, and MCP and API consumers. Say where requests arrive: SCF repo issues and PRs, the Q4 PG Discord thread, email.
-  5. **Data-quality escalation to SDF.** Report what the pipeline can't fix: blank project links, paid > awarded (list from `scripts/scf_paid_over_award.py` against production), renamed projects.
+  5. **Data-quality escalation to SDF.** Report what the pipeline can't fix: blank project links, paid > awarded (45 production applications on 2026-10-10; see `docs/data-quality/scf_paid_over_award_2026-10-10.md`), renamed projects.
   6. **Operations.** Uptime via `health_endpoint` on the project page, alerts on failed runs, read-only DB access for reports, credential rotation.
   7. **Contacts.** Who is tagged on SCF threads: Anke currently tags @sam-mccarthy07, but Rashmi does the submissions.
 **Why:** In Q3 we missed the deliverables and proposal deadlines, found the ID-loss problem only after SCF raised it, and reconstructed the process from emails and PR comments. A written protocol makes this repeatable, and doubles as the maintenance reserve plan reviewers now ask for.
