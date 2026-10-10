@@ -63,8 +63,8 @@ const LAYERS = [
 const ACCESS = [
   {
     title: "Dashboard",
-    body: "Browse funding by ecosystem and by round on this site. Start with the Ecosystem overview or pick a program in the navigation bar.",
-    link: { href: "/ecosystem", label: "Open the Ecosystem overview" },
+    body: "Browse funding by ecosystem, by round and by project on this site. Every SCF-funded project has its own page with its full funding history.",
+    link: { href: "/system/scf/projects", label: "Browse SCF projects" },
   },
   {
     title: "Gateway API",
@@ -74,9 +74,9 @@ const ACCESS = [
   },
   {
     title: "MCP server",
-    body: "Lets AI agents and assistants (Claude, Cursor, and other MCP clients) query OpenGrants data directly with tools such as list_grant_pools and list_grant_applications.",
+    body: "Lets AI agents and assistants (Claude, Cursor, and other MCP clients) query OpenGrants data directly, with tools generated from the Gateway API such as list_grant_pools and list_grant_applications.",
     link: {
-      href: "https://github.com/metagov/Grants-Gateway-API/tree/main/mcp-server",
+      href: "https://github.com/metagov/Grants-Gateway-API/tree/main/mcp",
       label: "Setup instructions",
     },
   },
