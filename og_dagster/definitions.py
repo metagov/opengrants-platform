@@ -26,6 +26,7 @@ from assets.silver.scf.scf import (
     silver_scf_grant_applications,
     silver_scf_grant_pools,
     silver_scf_projects,
+    silver_scf_validation_gate,
 )
 from assets.silver.gitcoin2.gitcoin2 import (
     silver_gitcoin2_grant_pools,
@@ -140,6 +141,7 @@ silver_giveth_etl_job = define_asset_job(
 silver_scf_etl_job = define_asset_job(
     name="silver_scf_etl_job",
     selection=AssetSelection.assets(
+        silver_scf_validation_gate,
         silver_scf_projects,
         silver_scf_grant_applications,
         silver_scf_grant_pools,
@@ -198,6 +200,7 @@ etl_scf_full_job = define_asset_job(
     name="etl_scf_full_job",
     selection=AssetSelection.assets(
         bronze_scf_airtable_ingest,
+        silver_scf_validation_gate,
         silver_scf_projects,
         silver_scf_grant_applications,
         silver_scf_grant_pools,
@@ -256,6 +259,7 @@ defs = Definitions(
         silver_giveth_projects,
         silver_giveth_grant_pools,
         silver_privote_transform,
+        silver_scf_validation_gate,
         silver_scf_projects,
         silver_scf_grant_applications,
         silver_scf_grant_pools,
