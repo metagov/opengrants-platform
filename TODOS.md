@@ -41,3 +41,19 @@
 **Context:** Discovered during root-cause investigation of the SCF round-page 404s. Same risk applies to all `/api/systems/*` handlers — gitcoin, ens, giveth, privote — any future silver-table migration could break them silently. The error handler in `lib/db.tsx` and `[roundNumber].ts` was hardened in the same fix to surface PG error codes (42703 → HTTP 503) so the next slip-through is at least visible from `curl`.
 **Depends on:** Nothing — can be done independently. Tier 3 depends on having a read-only DB role.
 **Added:** 2026-05-04
+
+## Write an SCF maintenance and support protocol
+**What:** A short runbook (`docs/scf_support_protocol.md`) for what OpenGrants does for SCF, and when. Each section should name an owner and a response time. It should cover:
+  1. **Quarterly award cycle.** Q3 2026 dates for reference: deliverables due ~Oct 1, renewal PR ~Oct 7, D&R and community vote ~Oct 22. Deliverables go on a `deliverables/opengrants-<quarter>` branch; proposals on `proposals/opengrants-<quarter>`. Both edit only `docs/projects/opengrants.md` in the SCF repo. Include the maintenance/other budget split, and evidence dated inside the quarter.
+  2. **Per-round data work.** When a round closes, confirm the sensor ingested it, then run the Intelligence Report (`scripts/scf_intelligence_report.py`) and post it before the vote. Regenerate DAOIP-5 compliance quarterly (`scripts/daoip5_compliance_check.py`, `scripts/daoip5_round_compliance.py`).
+  3. **ID stewardship.** Follow issue #4: keep IDs stable, record aliases on renames and merges, adopt PG-minted `canonical_id`s, and answer intake lookups.
+  4. **Downstream support.** PG Atlas (SBOM action, ID exports, schema changes), PG Maintenance intake reviewers, and MCP and API consumers. Say where requests arrive: SCF repo issues and PRs, the Q4 PG Discord thread, email.
+  5. **Data-quality escalation to SDF.** Report what the pipeline can't fix: blank project links, paid > awarded (36 rows found in Oct 2026), renamed projects.
+  6. **Operations.** Uptime via `health_endpoint` on the project page, alerts on failed runs, read-only DB access for reports, credential rotation.
+  7. **Contacts.** Who is tagged on SCF threads: Anke currently tags @sam-mccarthy07, but Rashmi does the submissions.
+**Why:** In Q3 we missed the deliverables and proposal deadlines, found the ID-loss problem only after SCF raised it, and reconstructed the process from emails and PR comments. A written protocol makes this repeatable, and doubles as the maintenance reserve plan reviewers now ask for.
+**Pros:** Fewer missed deadlines, faster responses to PG Atlas and PG Maintenance, and quarterly reports that are cheap to write.
+**Cons:** Needs a periodic refresh as SCF's process changes; it changed twice in Q3.
+**Context:** Built from the Q3 2026 cycle: Anke's Oct 2 email and PR comments on SCF-Public-Goods-Maintenance PR #126, issue #143 (canonical IDs), and the proposer instructions at https://scf-public-goods-maintenance.github.io/pg-award/proposer-instructions/.
+**Depends on:** Issue #4 (stable IDs) for section 3. Nothing else.
+**Added:** 2026-10-10
