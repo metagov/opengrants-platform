@@ -117,7 +117,7 @@ rebuilt. Publishing is all or nothing, so the three tables never come from diffe
 | Fields populated | A column that was at least 95% filled loses 20 points or more | — |
 | References resolve | More applications point at a missing round or project than live does | Orphans already present in live |
 | Totals reconcile | Projects or rounds total awarded differs from applications by more than 10% | Differs by more than 1% |
-| Paid within award | — | Paid exceeds awarded (source data) |
+| Paid within award | — | Paid exceeds awarded by more than 2.5% (allowance for XLM exchange rates); payments with no award amount are reported separately |
 
 Most checks compare against what is live, not against fixed rules. Known issues already in
 production are reported without freezing the pipeline, and anything that makes them worse stops it.
@@ -161,7 +161,9 @@ Accepted; tracked in `TODOS.md` ("SCF data backup follow-ups").
 - A full SCF snapshot is about **5.9 MB of JSON** (submissions 4.6 MB, projects 1.25 MB, rounds
   0.11 MB). Postgres compresses large text automatically, and gzip brings it to about 1.75 MB.
 - Only tables whose content changed are archived. Even at 30 changes a month to the largest table,
-  that's under 150 MB a month before compression.
+  that's under 150 MB a month before compression. The sensor now also fires on record edits, so a
+  busy month of edits could push this into the hundreds of MB. Check the size of
+  `archive_scf_bronze_snapshots` monthly until the pattern is known.
 - If that grows uncomfortable, a retention job can thin old snapshots to weekly after 90 days.
   Never delete a table's first snapshot of each quarter.
 
@@ -176,10 +178,15 @@ Accepted; tracked in `TODOS.md` ("SCF data backup follow-ups").
 - **More frequent writes.** The sensor now also fires on edits, and every run still rewrites all
   SCF tables and rebuilds gold. Optimizing this is tracked in `TODOS.md` ("Optimize SCF
   sensor-triggered writes").
-- **Paid exceeds awarded in the source.** Production has awards with more paid than awarded,
-  including Tansu (flagged on its project page). The gate only warns, so these figures are live.
-  Production counts and amounts are not yet confirmed: run `scripts/scf_paid_over_award.py`
-  against the production datalake. Fixing them before the Q3 submission is tracked in `TODOS.md`.
+- **Paid exceeds awarded in the source.** In production, 45 of 933 applications record more paid
+  than awarded, $1,329,289 in total. Six of them ($353,660) look like payments recorded twice,
+  including Tansu's SCF #30 award ($198,720 paid against $99,360 awarded). Most of the rest are legacy
+  rounds with no award amount recorded, or XLM exchange-rate differences. See
+  [scf_paid_over_award_2026-10-10.md](scf_paid_over_award_2026-10-10.md). The gate only warns, so
+  these figures are live. Fixing them before the Q3 submission is tracked in `TODOS.md`.
+  Two fixes on our side now narrow the flag to likely recording errors (11 applications,
+  $445,103): gaps of up to 2.5% are ignored because SCF pays in XLM and each payout's USD value is
+  fixed on the payment date, and $0 awards show as "award amount not recorded".
 - **IDs already lost before this change** (Mar–Oct 2026, when no snapshots were taken) can only be
   recovered from PG Atlas's ingested IDs or from Airtable revision history.
 

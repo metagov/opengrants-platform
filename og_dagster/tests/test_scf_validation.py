@@ -155,3 +155,36 @@ def test_outcome_recorded_and_reported(engine):
     assert rows[0][2] == len(res.blocking) and json.loads(rows[0][3])
     report = render_report(res, "run-1", "blocked")
     assert "Blocked" in report and "scf/accept_validation=true" in report
+
+
+def test_xlm_rate_gaps_and_missing_awards_are_not_overpayments(engine):
+    frames = make_frames()
+    apps = frames["grant_applications"]
+    paid = [a * 1.02 for a in apps["fundsApprovedInUSD"]]          # within the 2.5% allowance
+    approved = apps["fundsApprovedInUSD"].to_list()
+    approved[0], paid[0] = 0.0, 500.0                               # legacy award with no amount
+    frames["grant_applications"] = apps.with_columns(
+        pl.Series("fundsApprovedInUSD", approved), pl.Series(PAID, paid))
+    warned = checks(validate_scf_candidates(engine, frames), "warn")
+    assert ("silver_scf_grant_applications", "paid_within_award") not in warned
+    assert ("silver_scf_grant_applications", "award_recorded") in warned
+
+
+def test_empty_created_at_warns_until_bronze_has_created_time(engine):
+    live = make_frames()
+    live["grant_applications"] = live["grant_applications"].with_columns(pl.lit("2025-01-01T00:00:00Z").alias("createdAt"))
+    publish(engine, live)
+    frames = make_frames()
+    frames["grant_applications"] = frames["grant_applications"].with_columns(
+        pl.lit(None, dtype=pl.Utf8).alias("createdAt"))
+
+    with engine.begin() as c:
+        c.execute(text('CREATE TABLE bronze_scf_submissions ("Round" TEXT)'))
+    res = validate_scf_candidates(engine, frames)
+    assert ("silver_scf_grant_applications", "fields_populated") in checks(res, "warn")
+    assert res.passed
+
+    with engine.begin() as c:
+        c.execute(text('ALTER TABLE bronze_scf_submissions ADD COLUMN "_airtable_created_time" TEXT'))
+    res = validate_scf_candidates(engine, frames)
+    assert ("silver_scf_grant_applications", "fields_populated") in checks(res, "block")

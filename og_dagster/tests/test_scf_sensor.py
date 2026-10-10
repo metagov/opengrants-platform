@@ -275,3 +275,28 @@ class TestAirtableScfSensor:
 
         assert "Airtable fetch failed" in str(results[0])
         assert json.loads(ctx.cursor)["checked_at"] == "2026-10-01T12:00:00Z"
+
+
+# ============================================================
+# Overlapping runs
+# ============================================================
+
+
+class TestActiveRunGuard:
+    """The sensor must not start a run while one is queued or running."""
+
+    def test_skips_and_keeps_cursor_while_a_run_is_active(self):
+        cursor = json.dumps({"fingerprint": "old", "checked_at": "2026-10-10T00:00:00Z"})
+        ctx = _build_context(cursor=cursor)
+        with patch("sensors.scf_sensor._scf_run_active", return_value=True), \
+             patch.dict(os.environ, {"AIRTABLE_API_KEY": "key123"}), \
+             patch("sensors.scf_sensor._get_table_fingerprint") as fp:
+            results = list(airtable_scf_sensor(ctx))
+        assert len(results) == 1 and "already queued or running" in results[0].skip_message
+        fp.assert_not_called()
+        # Cursor untouched, so changes made during the run are caught afterwards.
+        assert ctx.cursor == cursor
+
+    def test_no_instance_is_not_treated_as_active(self):
+        from sensors.scf_sensor import _scf_run_active
+        assert _scf_run_active(_build_context()) is False

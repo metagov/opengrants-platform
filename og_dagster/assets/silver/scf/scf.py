@@ -2,7 +2,7 @@ from dagster import AssetKey, Failure, MetadataValue, asset
 from utils.data_quality import write_data_quality_report
 from utils.translate_to_silver import build_silver
 from utils.graphql_helpers import sanitize_for_sql
-from utils.scf_archive import record_published_ids
+from utils.scf_archive import ensure_archive_tables, record_published_ids
 from utils.scf_validation import (
     OVERRIDE_TAG,
     SECTIONS,
@@ -58,6 +58,11 @@ def silver_scf_validation_gate(context):
                 "report": str(report) if report else "not written",
             },
         )
+    # Create the archive tables here, once, so the three silver steps (run in parallel) don't race
+    # on CREATE TABLE IF NOT EXISTS.
+    with engine.begin() as conn:
+        ensure_archive_tables(conn)
+
     if status == "overridden":
         context.log.warning(f"{len(result.blocking)} blocking findings overridden by run tag {OVERRIDE_TAG}")
 
@@ -66,7 +71,20 @@ def silver_scf_validation_gate(context):
         "warnings": len(result.warnings),
         "report": str(report) if report else "not written",
     })
-    return {"frames": frames, "null_issues": null_issues}
+    return {"run_id": context.run_id, "frames": frames, "null_issues": null_issues}
+
+
+def _gated(context, gate_output, section):
+    """The frame the gate validated in this run. A gate output from an earlier run would publish
+    stale data (or be missing after a restart), so silver must be materialized with the gate."""
+    if gate_output.get("run_id") != context.run_id:
+        raise Failure(
+            description=(
+                "SCF silver tables must be materialized together with silver_scf_validation_gate "
+                "(run etl_scf_full_job or silver_scf_etl_job), so they publish freshly checked data."
+            )
+        )
+    return gate_output["frames"][section], gate_output["null_issues"][section]
 
 
 @asset(
@@ -75,8 +93,7 @@ def silver_scf_validation_gate(context):
 )
 def silver_scf_projects(context, silver_scf_validation_gate):
     # Publish exactly the frame the gate validated.
-    df_silver = silver_scf_validation_gate["frames"]["projects"]
-    null_issues = silver_scf_validation_gate["null_issues"]["projects"]
+    df_silver, null_issues = _gated(context, silver_scf_validation_gate, "projects")
     df_silver.write_database(
         table_name="silver_scf_projects",
         connection=context.resources.database_engine,
@@ -97,8 +114,7 @@ def silver_scf_projects(context, silver_scf_validation_gate):
 )
 def silver_scf_grant_applications(context, silver_scf_validation_gate):
     # Publish exactly the frame the gate validated.
-    df_silver = silver_scf_validation_gate["frames"]["grant_applications"]
-    null_issues = silver_scf_validation_gate["null_issues"]["grant_applications"]
+    df_silver, null_issues = _gated(context, silver_scf_validation_gate, "grant_applications")
     df_silver.write_database(
         table_name="silver_scf_grant_applications",
         connection=context.resources.database_engine,
@@ -119,8 +135,7 @@ def silver_scf_grant_applications(context, silver_scf_validation_gate):
 )
 def silver_scf_grant_pools(context, silver_scf_validation_gate):
     # Publish exactly the frame the gate validated.
-    df_silver = silver_scf_validation_gate["frames"]["grant_pools"]
-    null_issues = silver_scf_validation_gate["null_issues"]["grant_pools"]
+    df_silver, null_issues = _gated(context, silver_scf_validation_gate, "grant_pools")
     df_silver.write_database(
         table_name="silver_scf_grant_pools",
         connection=context.resources.database_engine,
