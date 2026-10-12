@@ -25,6 +25,7 @@ from sqlalchemy import text
 
 SNAPSHOTS = "archive_scf_bronze_snapshots"
 PUBLISHED_IDS = "archive_scf_published_ids"
+UPSERT_BATCH = 500
 
 
 def _now() -> str:
@@ -86,16 +87,27 @@ def record_published_ids(engine, entity: str, rows: Iterable[Tuple[str, Optional
     """Upsert (daoip5_id, name) pairs published by silver. New IDs get first_seen_at;
     every ID present this run gets last_seen_at bumped. Returns the number of new IDs."""
     now = _now()
-    rows = [(i, n) for i, n in rows if i]
+    # First name wins for a repeated ID; Postgres also rejects one key twice in a single upsert.
+    names = {}
+    for i, n in rows:
+        if i and i not in names:
+            names[i] = n
+    items = list(names.items())
     with engine.begin() as conn:
         ensure_archive_tables(conn)
         before = conn.execute(text(f"SELECT COUNT(*) FROM {PUBLISHED_IDS} WHERE entity = :e"), {"e": entity}).scalar()
-        for daoip5_id, name in rows:
+        # One statement per batch: a round trip per ID made this a minute per run against remote Postgres.
+        for start in range(0, len(items), UPSERT_BATCH):
+            batch = items[start:start + UPSERT_BATCH]
+            values = ", ".join(f"(:e, :i{k}, :n{k}, :now, :now)" for k in range(len(batch)))
+            params = {"e": entity, "now": now}
+            for k, (daoip5_id, name) in enumerate(batch):
+                params[f"i{k}"], params[f"n{k}"] = daoip5_id, name
             conn.execute(
                 text(f"""INSERT INTO {PUBLISHED_IDS} (entity, daoip5_id, name, first_seen_at, last_seen_at)
-                         VALUES (:e, :i, :n, :now, :now)
-                         ON CONFLICT (entity, daoip5_id) DO UPDATE SET last_seen_at = :now"""),
-                {"e": entity, "i": daoip5_id, "n": name, "now": now},
+                         VALUES {values}
+                         ON CONFLICT (entity, daoip5_id) DO UPDATE SET last_seen_at = excluded.last_seen_at"""),
+                params,
             )
         after = conn.execute(text(f"SELECT COUNT(*) FROM {PUBLISHED_IDS} WHERE entity = :e"), {"e": entity}).scalar()
     return after - before
