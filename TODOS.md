@@ -17,6 +17,19 @@
 **Depends on:** SDF access to the Airtable payment records (groups 1, 2, 3, 5). Groups 3 and 4 code changes: nothing.
 **Added:** 2026-10-10
 
+## Diagnostic check for missing SCF tables (before runs and deploys)
+**What:** Add a read-only check that fails loudly when a published SCF table is missing or empty:
+  1. A script (`scripts/scf_health_check.py`) that reports, for every `bronze_scf_*`, `silver_scf_*` and `archive_scf_*` table: whether it exists, in which database and schema, its row count, and when silver last published (`max(last_seen_at)` in `archive_scf_published_ids`).
+  2. Run it at the start of `etl_scf_full_job` and after it finishes, and after every Gateway and Dagster deploy.
+  3. A scheduled check (e.g. hourly) that alerts when a silver SCF table is missing or empty.
+  4. In the Gateway SCF adapter, log the database error instead of silently returning `{data: [], totalCount: 0}`, and have `/health` report SCF tables missing.
+**Why:** On 2026-10-12 PG Atlas found `/projects?system=scf` and `/grantPools?system=scf` returning nothing because `silver_scf_projects` no longer existed. The adapter hid the error and nothing alerted us, so an outside user noticed first, and we couldn't tell when or why the table disappeared.
+**Pros:** Missing tables are caught within an hour instead of by API users; the timestamp narrows down the cause.
+**Cons:** One more scheduled job and alert channel to maintain.
+**Context:** `server/adapters/scf.ts` in Grants-Gateway-API (returns empty on any error), `og_dagster/assets/silver/scf/scf.py`, `og_dagster/utils/scf_archive.py`.
+**Depends on:** Nothing.
+**Added:** 2026-10-12
+
 ## Optimize SCF sensor-triggered writes
 **What:** Make each sensor-triggered SCF run write less:
   1. Skip the run, or stop after bronze, when the fetched Airtable content hash matches the latest archived snapshot (the archive already computes it).
