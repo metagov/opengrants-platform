@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from utils.scf_archive import (
     PUBLISHED_IDS,
+    UPSERT_BATCH,
     SNAPSHOTS,
     archive_bronze_snapshot,
     canonical_payload,
@@ -76,3 +77,15 @@ class TestPublishedIds:
 
     def test_null_ids_ignored(self, engine):
         assert record_published_ids(engine, "grantApplication", [(None, "x"), ("", "y")]) == 0
+
+    def test_repeated_ids_in_one_run_keep_first_name(self, engine):
+        rows = [("daoip-5:scf:project:a", "A"), ("daoip-5:scf:project:a", "A dup")]
+        assert record_published_ids(engine, "project", rows) == 1
+        assert _rows(engine, f"SELECT name FROM {PUBLISHED_IDS}") == [("A",)]
+
+    def test_more_ids_than_one_batch(self, engine):
+        n = UPSERT_BATCH * 2 + 7
+        rows = [(f"daoip-5:scf:grantApplication:{i}", str(i)) for i in range(n)]
+        assert record_published_ids(engine, "grantApplication", rows) == n
+        assert record_published_ids(engine, "grantApplication", rows) == 0
+        assert len(_rows(engine, f"SELECT 1 FROM {PUBLISHED_IDS}")) == n

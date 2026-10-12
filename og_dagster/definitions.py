@@ -198,14 +198,24 @@ etl_ens_full_job = define_asset_job(
 
 etl_scf_full_job = define_asset_job(
     name="etl_scf_full_job",
+    # Only the gold models built from SCF silver (11 of 33); rebuilding the Gitcoin-only models
+    # on every Airtable change made the sensor-triggered run much slower.
     selection=AssetSelection.assets(
         bronze_scf_airtable_ingest,
         silver_scf_validation_gate,
         silver_scf_projects,
         silver_scf_grant_applications,
         silver_scf_grant_pools,
-    ) | AssetSelection.assets(gold_dbt_assets),
-    description="Full SCF pipeline: Airtable -> Bronze -> Silver -> Gold (dbt).",
+    ).downstream() & (
+        AssetSelection.assets(
+            bronze_scf_airtable_ingest,
+            silver_scf_validation_gate,
+            silver_scf_projects,
+            silver_scf_grant_applications,
+            silver_scf_grant_pools,
+        ) | AssetSelection.assets(gold_dbt_assets)
+    ),
+    description="Full SCF pipeline: Airtable -> Bronze -> Silver -> Gold (dbt, SCF-dependent models only).",
 )
 
 etl_giveth_full_job = define_asset_job(

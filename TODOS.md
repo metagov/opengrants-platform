@@ -36,7 +36,7 @@
   2. Write bronze to a staging table and swap it in, instead of `DROP … CASCADE` then write.
   3. Rebuild only the silver tables whose bronze inputs changed, and only rebuild the SCF gold models.
   4. Debounce bursts of edits (e.g. wait for a few minutes of no changes before running).
-  5. Batch the published-ID upserts into one statement instead of one per row.
+  5. ~~Batch the published-ID upserts into one statement instead of one per row.~~ **Done (2026-10-12):** batches of 500; the projects step spent ~60s here on 2026-10-12.
 **Why:** Since the sensor also fires on record edits (PR #3), runs are more frequent. Each one drops and rewrites every SCF table and rebuilds all of gold, even when nothing relevant changed. That's wasted database load, a longer window where bronze is empty, and more churn for the dashboard and API.
 **Pros:** Fewer writes and dbt builds, shorter empty-table windows, lower DB load and cost.
 **Cons:** More moving parts in the sensor and assets. Needs tests for the skip and debounce logic.
