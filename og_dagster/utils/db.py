@@ -6,6 +6,8 @@ from sqlalchemy import create_engine, text
 
 import duckdb
 
+from utils.db_env import database_url, pg_parts
+
 logger = get_dagster_logger()
 
 # utils/db.py
@@ -62,21 +64,11 @@ def get_pg_engine():
     Prefers DATABASE_URL if set (production/Render), otherwise falls back
     to individual POSTGRES_* vars (local Docker Compose).
     """
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        # Ensure psycopg2 driver prefix
-        if database_url.startswith("postgresql://"):
-            database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    if os.getenv("DATABASE_URL"):
         logger.info("Connecting to PostgreSQL via DATABASE_URL")
-        return create_engine(database_url)
-
-    pg_user = os.getenv("POSTGRES_USER", "postgres")
-    pg_pass = os.getenv("POSTGRES_PASSWORD", "postgres")
-    pg_host = os.getenv("POSTGRES_HOST", "postgres")
-    pg_db = os.getenv("POSTGRES_DB", "opengrants")
-    pg_port = os.getenv("POSTGRES_PORT", "5432")
-
-    conn_str = f"postgresql+psycopg2://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
-
-    logger.info(f"Connecting to PostgreSQL at {pg_host}:{pg_port}/{pg_db}")
-    return create_engine(conn_str)
+    else:
+        p = pg_parts()
+        logger.info(
+            f"Connecting to PostgreSQL at {p['POSTGRES_HOST']}:{p['POSTGRES_PORT']}/{p['POSTGRES_DB']}"
+        )
+    return create_engine(database_url())
