@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '../../../../../lib/db';
+import { isConnectionError, query } from '../../../../../lib/db';
 import { toProjectId } from '../../../../../lib/scfIds';
 
 const EXT = 'org.stellar.communityfund.';
@@ -78,7 +78,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const metadata = await query(
       `SELECT platform, last_indexed_at, data_source FROM platform_metadata WHERE platform = 'scf'`,
       [],
-    ).catch(() => []);
+    ).catch((e: unknown) => {
+      // Metadata is optional, but a dead database must still surface as a 500
+      if (isConnectionError(e)) throw e;
+      return [];
+    });
 
     res.status(200).json({
       metadata: metadata[0] || null,
