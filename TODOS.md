@@ -1,5 +1,29 @@
 # TODOS
 
+## [P1] SCF round-date gaps and data-quality warnings
+**What:** Gaps and warnings found while investigating the 2026-10-14 dashboard outage. None are schema changes: every column the SCF API reads exists, and archived Airtable snapshots (2026-10-10 → 10-12) show no added or dropped fields. They are source-data gaps.
+  1. **Rounds #42–#46 have no Submission Open/Close or Initial Review Open/Close dates** in Airtable. The fields exist but are empty. #42–#45 also have no Award Submission Open date. #41 and earlier are complete.
+     - **Effect on the SCF page:** the timeline shows Submissions and Initial Review as "unknown" for #42+. `phaseDurations` in `nextjs-dashboard/src/pages/api/systems/scf.ts` silently drops #42+ from `avg_submission_days` and `avg_round_days` (both need `submissionOpenDate`), so those averages go stale with every new round. The current phase is still right, because `computeCurrentPhase` falls back to Airtable's `phase` field.
+     - **Ask SDF** whether the Submission and Initial Review phases were dropped or merged into Award Submission from #42 on, and for the real dates if they still exist.
+     - **Then either** get Airtable backfilled, **or** hide phases with no dates for newer rounds and compute round length from the earliest date a round has.
+     - **Not missing:** the application deadline for #42–#46 is recorded as `awardSubmissionCloseDate` (#42 Mar 15, #43 Apr 26, #44 Jun 14, #45 Aug 16, #46 Nov 8, 2026).
+  2. **Sparse fields used by the dashboard:**
+     - Panel, notification and cohort dates exist only for 2025–26 rounds; e.g. panel review is filled for 13 of 48 rounds and cohort for 4 of 48.
+     - `regionsOfOperation` is filled for 283 of 734 projects, so the geography chart covers about 39% of projects.
+     - `trancheCompletion` is filled for 387 of 933 applications, so tranche and milestone metrics cover about 41%.
+     - Decide whether to backfill these, label the coverage in the UI, or both.
+  3. **Accuracy-gate warnings** (latest `scf_validation_runs`, 2026-10-12; non-blocking):
+     - 200 application IDs are shared by more than one award, and 2 project IDs are duplicated (`swiftex`, `wellspring`). Known issue #4.
+     - 2 applications reference a `projectId` that doesn't exist.
+     - 11 applications were paid more than awarded beyond the 2.5% XLM allowance ($445,102), and 26 have payments but no award amount ($872,885). Tracked in "Fix paid exceeds award" below.
+  4. **Payment rate over 100% in the award-type breakdown:** Legacy v3.0 at 100.4%, v1.0 at 101.8%. Check whether this is XLM drift or the overpayments in item 3.
+**Why:** The SCF page and the Gateway API show phase timelines, averages and coverage-limited charts as if complete. Reviewers and PG Atlas will read stale averages and partial charts as authoritative.
+**Pros:** Accurate round timelines; averages that stay current; clear coverage labels.
+**Cons:** Items 1–3 mostly depend on SDF fixing Airtable.
+**Context:** Found 2026-10-14 by comparing the SCF API's column references with the live silver tables, checking fill rates, and diffing the `archive_scf_bronze_snapshots` payloads. Related: the "paid exceeds award" item below, and known issue #4.
+**Depends on:** SDF answers on the #42+ round format; Airtable access for backfills.
+**Added:** 2026-10-14
+
 ## [IMPORTANT, before Q3 submissions] Fix "paid exceeds award" on Tansu and the other affected SCF projects
 **What:** Production has **45 of 933** SCF applications with more paid than awarded, **$1,329,289** over in total. The report is in `docs/data-quality/scf_paid_over_award_2026-10-10.md`, from `scripts/scf_paid_over_award.py` run against production on 2026-10-10. Grouped by likely cause:
   1. **Recorded twice: 6 rows, $353,660. Fix before Q3 submissions.**
