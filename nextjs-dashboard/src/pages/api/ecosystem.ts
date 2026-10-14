@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '../../lib/db';
 import { safeQuery } from '../../lib/safeQuery';
 
 export default async function handler(
@@ -15,7 +14,7 @@ export default async function handler(
 
     // Gold queries are wrapped individually — a stale or rebuilding gold table
     // won't crash the entire endpoint; affected sections just return empty.
-    const ecosystemData = await query(`
+    const ecosystemData = await safeQuery(`
       SELECT
         platform,
         total_projects,
@@ -27,17 +26,14 @@ export default async function handler(
         funding_share_pct
       FROM gold__ecosystem_overview
       ORDER BY total_funding_usd DESC NULLS LAST
-    `).catch((e: Error) => {
-      console.error('ecosystem_overview query failed:', e.message);
-      return [];
-    });
+    `);
 
     // Lite mode: only return platforms (for landing page bar chart)
     if (lite) {
       return res.status(200).json({ platforms: ecosystemData || [] });
     }
 
-    const crossPlatform = await query(`
+    const crossPlatform = await safeQuery(`
       SELECT
         project_name,
         platforms_present,
@@ -51,12 +47,9 @@ export default async function handler(
       WHERE platforms_present > 1
       ORDER BY total_funding_across_platforms DESC
       LIMIT 10
-    `).catch((e: Error) => {
-      console.error('cross_platform query failed:', e.message);
-      return [];
-    });
+    `);
 
-    const scfSummary = await query(`
+    const scfSummary = await safeQuery(`
       SELECT
         total_grant_pools as total_rounds,
         total_funding_distributed_usd as total_awarded,
@@ -64,13 +57,10 @@ export default async function handler(
         avg_funding_per_project as avg_per_round
       FROM gold__scf_system_profile
       LIMIT 1
-    `).catch((e: Error) => {
-      console.error('scf_system_profile query failed:', e.message);
-      return [];
-    });
+    `);
 
     // Cross-platform comparison: Average grant size per platform
-    const avgGrantSize = await query(`
+    const avgGrantSize = await safeQuery(`
       SELECT
         'SCF' as platform,
         AVG(CAST("fundsApprovedInUSD" AS numeric)) as avg_grant_size,
@@ -102,13 +92,10 @@ export default async function handler(
         SUM(CAST("fundsApprovedInUSD" AS numeric)) as total_funding
       FROM silver_gitcoin2_grant_applications
       WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
-    `).catch((e: Error) => {
-      console.error('avgGrantSize query failed:', e.message);
-      return [];
-    });
+    `);
 
     // Funding distribution curve data (top projects per platform)
-    const fundingDistribution = await query(`
+    const fundingDistribution = await safeQuery(`
       WITH scf_ranked AS (
         SELECT
           'SCF' as platform,
@@ -156,10 +143,7 @@ export default async function handler(
       UNION ALL
       SELECT * FROM gitcoin2_ranked WHERE rank <= 20
       ORDER BY platform, rank
-    `).catch((e: Error) => {
-      console.error('fundingDistribution query failed:', e.message);
-      return [];
-    });
+    `);
 
     res.status(200).json({
       platforms: ecosystemData || [],
