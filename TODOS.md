@@ -24,6 +24,20 @@
 **Depends on:** SDF answers on the #42+ round format; Airtable access for backfills.
 **Added:** 2026-10-14
 
+## Fix vulnerable dependencies flagged by GitHub Dependabot
+**What:** GitHub reports **47 open vulnerabilities** on `master`: 3 critical, 21 high, 20 moderate and 3 low. Full list: https://github.com/metagov/opengrants-platform/security/dependabot
+  1. Triage the 3 critical and 21 high alerts first. For each, note the package, the manifest it's in, and whether production actually loads that code.
+  2. Upgrade to the patched versions, starting with the production services: `nextjs-dashboard/` (`package.json` + `pnpm-lock.yaml`), `requirements.txt` (Dagster image), `dlt_pipelines/requirements.txt`. The root `package-lock.json` comes after those.
+  3. Pin `next` in `nextjs-dashboard/package.json`. It is currently `"latest"`, so every Render build can pull a different major version.
+  4. Rebuild and smoke-test each service after upgrading: dashboard API routes return 200, and Dagster parses and runs `bronze_scf_job`.
+  5. Close or dismiss each alert in GitHub with a reason.
+**Why:** The dashboard and its API are public, and critical or high alerts in their dependencies may be exploitable.
+**Pros:** Fewer known vulnerabilities; reproducible builds once `next` is pinned.
+**Cons:** Major-version upgrades (Next.js, dagster, dbt) can break the build. Do one service per PR.
+**Context:** Reported by GitHub on push to PR #9 (2026-10-14). The alert details couldn't be read from the Codespace token (Dependabot API returned 403), so open the link above with repo admin access.
+**Depends on:** Repo access to Dependabot alerts.
+**Added:** 2026-10-14
+
 ## [IMPORTANT, before Q3 submissions] Fix "paid exceeds award" on Tansu and the other affected SCF projects
 **What:** Production has **45 of 933** SCF applications with more paid than awarded, **$1,329,289** over in total. The report is in `docs/data-quality/scf_paid_over_award_2026-10-10.md`, from `scripts/scf_paid_over_award.py` run against production on 2026-10-10. Grouped by likely cause:
   1. **Recorded twice: 6 rows, $353,660. Fix before Q3 submissions.**
