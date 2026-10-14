@@ -177,12 +177,12 @@ export default async function handler(
 
         safeQuery(`
           SELECT
-            has_passport_attestation, donor_count, pct_of_total_donors,
+            has_passport AS has_passport_attestation, donor_count, pct_of_total_donors,
             avg_donations_count, avg_rounds_donated_to, avg_projects_supported,
             avg_chains_donated_on, avg_total_donated_usd, avg_single_donation_usd,
             total_donated_usd_segment, pct_of_total_volume
           FROM gold__gitcoin2_attestation_impact
-          ORDER BY has_passport_attestation DESC
+          ORDER BY has_passport DESC
         `, []),
 
         safeQuery(`
@@ -236,7 +236,7 @@ export default async function handler(
         SELECT
           round_id, round_name, funding_mechanism, is_active, chain_id,
           strategy_name, matching_pool_usd, total_donations_count,
-          unique_donors_count, total_amount_donated_usd, match_amount_usd,
+          unique_donors_count, total_amount_donated_usd,
           total_distributed_usd, total_applications, approved_applications,
           approval_rate_pct, verified_donations_count, verified_donations_usd,
           payouts_count, payouts_total_usd,
@@ -293,6 +293,7 @@ export default async function handler(
 
   } catch (error) {
     console.error('Gitcoin2 API error:', error);
-    res.status(500).json({ message: 'Internal server error', error: String(error) });
+    // Log details server-side only — the raw error can include DB usernames and SQL
+    res.status(500).json({ message: 'Internal server error' });
   }
 }
