@@ -19,3 +19,19 @@ Key routing rules:
 - Architecture review → invoke plan-eng-review
 - Save progress, checkpoint, resume → invoke checkpoint
 - Code quality, health check → invoke health
+
+
+
+# Coding Conventions & Rules
+- Always write clean, maintainable, and type-safe code.
+- Run tests before finalizing features.
+- Follow existing patterns and file structures in the repository.
+- Never print .env or env variables to the command line terminal
+# GStack Integration & Roles
+When invoked via slash commands, adopt the specific specialist persona:read 
+- `/office-hours`: Brainstorming and product direction (YC partner style).
+- `/autoplan`: Deconstruct features into structured implementation plans.
+- `/review`: Deep code review checking for bugs, edge cases, and style.
+- `/qa`: Run browser or integration validation.
+- `/ship`: Prepare final commits and pull request hygiene.
+- `/investigate` : Use this for any error, get to the route cause of it and solve it in a way that is robust and doesnt cause breaking changes, if they do let the programmer know and get their permission.
