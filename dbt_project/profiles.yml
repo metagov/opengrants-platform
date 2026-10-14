@@ -1,4 +1,6 @@
 # dbt_project/profiles.yml
+# Credentials: DESTINATION__POSTGRES__CREDENTIALS__* if set, otherwise the shared
+# POSTGRES_* vars (see og_dagster/utils/db_env.py), otherwise local Docker defaults.
 opengrants:
   target: dev_postgres
 
@@ -6,21 +8,21 @@ opengrants:
 
     dev_postgres:
       type: postgres
-      host: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__HOST') }}"
-      user: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__USERNAME') }}"
-      password: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PASSWORD') }}"
-      dbname: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__DATABASE') }}"
-      port: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PORT') | int }}"
+      host: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__HOST', env_var('POSTGRES_HOST', 'postgres')) }}"
+      user: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__USERNAME', env_var('POSTGRES_USER', 'postgres')) }}"
+      password: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PASSWORD', env_var('POSTGRES_PASSWORD', 'postgres')) }}"
+      dbname: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__DATABASE', env_var('POSTGRES_DB', 'opengrants')) }}"
+      port: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PORT', env_var('POSTGRES_PORT', '5432')) | int }}"
       schema: public
       threads: 4
 
     prod_postgres:
       type: postgres
-      host: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__HOST') }}"
-      user: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__USERNAME') }}"
-      password: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PASSWORD') }}"
-      dbname: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__DATABASE') }}"
-      port: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PORT') | int }}"
+      host: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__HOST', env_var('POSTGRES_HOST', 'postgres')) }}"
+      user: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__USERNAME', env_var('POSTGRES_USER', 'postgres')) }}"
+      password: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PASSWORD', env_var('POSTGRES_PASSWORD', 'postgres')) }}"
+      dbname: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__DATABASE', env_var('POSTGRES_DB', 'opengrants')) }}"
+      port: "{{ env_var('DESTINATION__POSTGRES__CREDENTIALS__PORT', env_var('POSTGRES_PORT', '5432')) | int }}"
       schema: public
       sslmode: require
       sslrootcert: /app/ca.crt
