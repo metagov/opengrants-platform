@@ -70,6 +70,37 @@ export async function query(text: string, params: any[] = []) {
   }
 }
 
+// SQLSTATE classes/codes and Node network errors meaning the database itself is
+// unusable (bad credentials, unreachable, shutting down) rather than one query
+// being wrong. Callers that fall back to empty results must rethrow these so the
+// route returns 500 instead of a 200 with no data.
+const CONNECTION_SQLSTATE_PREFIXES = ["08", "28"];
+const CONNECTION_SQLSTATES = new Set(["3D000", "53300", "57P01", "57P02", "57P03"]);
+const CONNECTION_NODE_CODES = new Set([
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "ETIMEDOUT",
+  "EHOSTUNREACH",
+]);
+
+export function isConnectionError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const code = (err as { code?: unknown }).code;
+  if (typeof code === "string") {
+    if (CONNECTION_NODE_CODES.has(code) || CONNECTION_SQLSTATES.has(code)) return true;
+    if (code.length === 5 && CONNECTION_SQLSTATE_PREFIXES.includes(code.slice(0, 2))) return true;
+  }
+  const message = (err as { message?: unknown }).message;
+  return (
+    typeof message === "string" &&
+    /timeout exceeded when trying to connect|Connection terminated|self[- ]signed certificate|unable to verify the first certificate|does not support SSL|no pg_hba\.conf entry/i.test(
+      message
+    )
+  );
+}
+
 export async function testConnection() {
   try {
     const result = await query("SELECT NOW() as current_time");

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { query } from '../../lib/db';
+import { isConnectionError, query } from '../../lib/db';
 import { safeQuery } from '../../lib/safeQuery';
 
 export default async function handler(
@@ -28,6 +28,7 @@ export default async function handler(
       FROM gold__ecosystem_overview
       ORDER BY total_funding_usd DESC NULLS LAST
     `).catch((e: Error) => {
+      if (isConnectionError(e)) throw e;
       console.error('ecosystem_overview query failed:', e.message);
       return [];
     });
@@ -52,6 +53,7 @@ export default async function handler(
       ORDER BY total_funding_across_platforms DESC
       LIMIT 10
     `).catch((e: Error) => {
+      if (isConnectionError(e)) throw e;
       console.error('cross_platform query failed:', e.message);
       return [];
     });
@@ -65,6 +67,7 @@ export default async function handler(
       FROM gold__scf_system_profile
       LIMIT 1
     `).catch((e: Error) => {
+      if (isConnectionError(e)) throw e;
       console.error('scf_system_profile query failed:', e.message);
       return [];
     });
@@ -103,6 +106,7 @@ export default async function handler(
       FROM silver_gitcoin2_grant_applications
       WHERE "fundsApprovedInUSD" IS NOT NULL AND CAST("fundsApprovedInUSD" AS numeric) > 0
     `).catch((e: Error) => {
+      if (isConnectionError(e)) throw e;
       console.error('avgGrantSize query failed:', e.message);
       return [];
     });
@@ -157,6 +161,7 @@ export default async function handler(
       SELECT * FROM gitcoin2_ranked WHERE rank <= 20
       ORDER BY platform, rank
     `).catch((e: Error) => {
+      if (isConnectionError(e)) throw e;
       console.error('fundingDistribution query failed:', e.message);
       return [];
     });
